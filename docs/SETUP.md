@@ -19,29 +19,60 @@
    ```bash
    flutter pub get
    ```
-3. Create `config.json` in project root:
-   ```bash
-   # Create config file
-   echo '{"OPENAI_API_KEY": "your-key-here"}' > config.json
-   ```
 
-   Or manually create `config.json`:
-   ```json
-   {
-     "OPENAI_API_KEY": "sk-your-actual-key-here"
-   }
-   ```
+## Configuration (Choose One)
+
+The app supports two configuration methods:
+
+### Option 1: config.json File (Best for Desktop Development)
+
+Create `config.json` in project root:
+```bash
+echo '{"OPENAI_API_KEY": "your-key-here"}' > config.json
+```
+
+Or manually create `config.json`:
+```json
+{
+  "OPENAI_API_KEY": "sk-your-actual-key-here"
+}
+```
+
+**Note:** `config.json` is gitignored and won't be committed.
+
+### Option 2: Environment Variable (Required for Mobile)
+
+Pass API key via `--dart-define` when running:
+```bash
+flutter run --dart-define=OPENAI_API_KEY=your-key-here
+```
+
+**When to use each:**
+- **Desktop (Windows/Mac/Linux):** Use config.json (simpler)
+- **Mobile (Android/iOS):** Use --dart-define (required)
 
 ## Running the App
 
-Simply run:
+### Desktop
 ```bash
-flutter run
+flutter run -d windows  # or macos, linux
+```
+Reads from `config.json` automatically.
+
+### Android Emulator
+```bash
+flutter run -d android --dart-define=OPENAI_API_KEY=your-key-here
 ```
 
-The app reads `config.json` automatically at startup.
+### iOS Simulator
+```bash
+flutter run -d ios --dart-define=OPENAI_API_KEY=your-key-here
+```
 
-**Note:** `config.json` is gitignored and won't be committed to version control.
+### Android Device (Release Build)
+```bash
+flutter build apk --dart-define=OPENAI_API_KEY=your-key-here
+```
 
 ## Security Notes
 
