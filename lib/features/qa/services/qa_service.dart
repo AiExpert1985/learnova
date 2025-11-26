@@ -1,13 +1,12 @@
 import '../models/qa_models.dart';
-import '../../../core/services/openai/openai_service.dart';
+import '../../../core/services/llm/llm_service.dart';
 
 /// Business logic for Question & Answer feature
-/// Coordinates between UI and OpenAI service
+/// Coordinates between UI and LLM service
 class QAService {
-  final OpenAIService _openAIService;
+  final LLMService _llmService;
 
-  QAService({required OpenAIService openAIService})
-      : _openAIService = openAIService;
+  QAService({required LLMService llmService}) : _llmService = llmService;
 
   /// Process a user question with transcript context
   /// Returns QAResult with either answer or error
@@ -21,7 +20,7 @@ class QAService {
     }
 
     try {
-      final response = await _openAIService.askQuestion(
+      final response = await _llmService.askQuestion(
         context: transcript,
         question: questionText,
       );
@@ -33,7 +32,7 @@ class QAService {
       );
 
       return QAResult.success(answer);
-    } on OpenAIException catch (e) {
+    } on LLMException catch (e) {
       return QAResult.failure(e.message);
     } catch (e) {
       return QAResult.failure('An unexpected error occurred. Please try again.');

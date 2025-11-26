@@ -95,33 +95,51 @@ lib/
 
 ### Design Decisions
 
-#### 1. OpenAI Service Abstraction
+#### 1. LLM Service Abstraction
 
-**Decision:** Abstract OpenAI API behind an interface (`OpenAIService`)
+**Decision:** Abstract LLM providers behind a provider-agnostic interface (`LLMService`)
 
 **Why:**
 - External service dependency (guideline: abstract external services)
 - Enables testing without API calls
-- Allows switching providers later if needed
+- Allows switching between OpenAI, Gemini, Claude, etc.
 - Clear separation of concerns
+- Name reflects generic purpose, not specific provider
 
 **Implementation:**
 ```dart
-// Abstract interface
-abstract class OpenAIService {
-  Future<String> askQuestion(String context, String question);
+// Provider-agnostic interface
+abstract class LLMService {
+  Future<LLMResponse> askQuestion({
+    required String context,
+    required String question,
+  });
 }
 
-// Concrete implementation
-class OpenAIServiceImpl implements OpenAIService {
-  // HTTP implementation details
+// OpenAI implementation
+class OpenAILLMService implements LLMService {
+  // OpenAI HTTP implementation
 }
+
+// Future: Other implementations
+// class GeminiLLMService implements LLMService { ... }
+// class ClaudeLLMService implements LLMService { ... }
+```
+
+**Switching providers:**
+```dart
+// In app_providers.dart, just change one line:
+final llmServiceProvider = Provider<LLMService>((ref) {
+  return OpenAILLMService(apiKey: apiKey);  // Current
+  // return GeminiLLMService(apiKey: apiKey);  // Future
+});
 ```
 
 **Trade-offs:**
 - ✅ Testability (can mock easily)
-- ✅ Flexibility (swap providers)
-- ⚠️ Slight overhead (one extra class)
+- ✅ Flexibility (swap providers in one place)
+- ✅ Provider independence
+- ⚠️ Slight overhead (interface + implementation)
 
 ---
 
