@@ -1,5 +1,6 @@
 /// Abstract interface for OpenAI API integration
 /// Allows testing and potential provider switching
+library;
 
 abstract class OpenAIService {
   /// Ask a question given a transcript context

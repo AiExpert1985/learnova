@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/qa_models.dart';
 import '../services/qa_service.dart';
 import '../../../core/constants/mock_data.dart';
 
@@ -172,7 +171,7 @@ class _QAScreenState extends State<QAScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
             spreadRadius: 1,
             blurRadius: 5,
           ),

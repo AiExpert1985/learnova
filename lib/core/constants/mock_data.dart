@@ -1,4 +1,5 @@
 /// Mock data for testing and development
+library;
 
 class MockData {
   /// Sample transcript from a business/learning video (2-3 minutes)

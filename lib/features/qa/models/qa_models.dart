@@ -1,4 +1,5 @@
 /// Data models for Question & Answer feature
+library;
 
 class Question {
   final String text;
