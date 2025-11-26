@@ -2,6 +2,10 @@
 
 A new Flutter project.
 
+## Documentation
+
+- [Development Guidelines](docs/DEVELOPMENT_GUIDELINES.md) - Core principles and practices for contributing to this project
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
