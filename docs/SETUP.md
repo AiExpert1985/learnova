@@ -19,67 +19,34 @@
    ```bash
    flutter pub get
    ```
-3. Set up API key:
+3. Create `config.json` in project root:
    ```bash
-   # Copy the example config
-   cp config.example.json config.json
+   # Create config file
+   echo '{"OPENAI_API_KEY": "your-key-here"}' > config.json
+   ```
 
-   # Edit config.json and add your OpenAI API key
+   Or manually create `config.json`:
+   ```json
+   {
+     "OPENAI_API_KEY": "sk-your-actual-key-here"
+   }
    ```
 
 ## Running the App
 
-### Option 1: Config File (Recommended)
-
-Run with config file:
+Simply run:
 ```bash
-flutter run --dart-define-from-file=config.json
+flutter run
 ```
 
-**One-time setup:**
-- Copy `config.example.json` to `config.json`
-- Add your API key to `config.json`
-- `config.json` is gitignored (won't be committed)
+The app reads `config.json` automatically at startup.
 
-### Option 2: Command Line
-
-Run with inline API key:
-```bash
-flutter run --dart-define=OPENAI_API_KEY=your_api_key_here
-```
-
-### Option 3: VS Code Launch Configuration
-
-Create `.vscode/launch.json`:
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Learnova",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main.dart",
-      "args": [
-        "--dart-define-from-file=config.json"
-      ]
-    }
-  ]
-}
-```
-
-### Option 4: Android Studio
-
-1. Go to Run → Edit Configurations
-2. Add to "Additional run args":
-   ```
-   --dart-define-from-file=config.json
-   ```
+**Note:** `config.json` is gitignored and won't be committed to version control.
 
 ## Security Notes
 
 - **Never commit your API key** to version control
-- The API key is passed at build time via `--dart-define`
+- `config.json` is already in `.gitignore`
 - For production, use a backend service to protect your API key
 
 ## Testing Step 1 MVP

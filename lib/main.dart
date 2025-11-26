@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'core/services/config_service.dart';
 import 'core/services/openai/openai_service_impl.dart';
 import 'features/qa/services/qa_service.dart';
 import 'features/qa/screens/qa_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ConfigService.load();
   runApp(const LearnovaApp());
 }
 
@@ -23,8 +26,8 @@ class LearnovaApp extends StatelessWidget {
   }
 
   Widget _buildHomeScreen() {
-    // Get API key from environment
-    const apiKey = String.fromEnvironment('OPENAI_API_KEY');
+    // Get API key from config file
+    final apiKey = ConfigService.get('OPENAI_API_KEY');
 
     if (apiKey.isEmpty) {
       return const _ApiKeyMissingScreen();
@@ -66,7 +69,7 @@ class _ApiKeyMissingScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             const Text(
-              'Run the app with:',
+              'Steps to fix:',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -77,8 +80,10 @@ class _ApiKeyMissingScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
-                'flutter run --dart-define=OPENAI_API_KEY=your_key_here',
-                style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+                '1. Create config.json in project root\n'
+                '2. Add: {"OPENAI_API_KEY": "your-key-here"}\n'
+                '3. Restart the app',
+                style: TextStyle(fontSize: 12),
               ),
             ),
           ],
