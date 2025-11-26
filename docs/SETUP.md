@@ -20,64 +20,73 @@
    flutter pub get
    ```
 
-## Configuration (Choose One)
+## Configuration
 
-The app supports two configuration methods:
+**One standard way:** Use `--dart-define` to pass API key at compile time.
 
-### Option 1: config.json File (Best for Desktop Development)
+This is the official Flutter approach - works on **all platforms**.
 
-Create `config.json` in project root:
-```bash
-echo '{"OPENAI_API_KEY": "your-key-here"}' > config.json
-```
+## Running the App
 
-Or manually create `config.json`:
-```json
-{
-  "OPENAI_API_KEY": "sk-your-actual-key-here"
-}
-```
-
-**Note:** `config.json` is gitignored and won't be committed.
-
-### Option 2: Environment Variable (Required for Mobile)
-
-Pass API key via `--dart-define` when running:
+### Any Platform
 ```bash
 flutter run --dart-define=OPENAI_API_KEY=your-key-here
 ```
 
-**When to use each:**
-- **Desktop (Windows/Mac/Linux):** Use config.json (simpler)
-- **Mobile (Android/iOS):** Use --dart-define (required)
-
-## Running the App
-
-### Desktop
+### Specific Platforms
 ```bash
-flutter run -d windows  # or macos, linux
-```
-Reads from `config.json` automatically.
+# Desktop
+flutter run -d windows --dart-define=OPENAI_API_KEY=your-key-here
+flutter run -d macos --dart-define=OPENAI_API_KEY=your-key-here
+flutter run -d linux --dart-define=OPENAI_API_KEY=your-key-here
 
-### Android Emulator
-```bash
+# Mobile
 flutter run -d android --dart-define=OPENAI_API_KEY=your-key-here
-```
-
-### iOS Simulator
-```bash
 flutter run -d ios --dart-define=OPENAI_API_KEY=your-key-here
 ```
 
-### Android Device (Release Build)
+### Production Builds
 ```bash
+# Android APK
 flutter build apk --dart-define=OPENAI_API_KEY=your-key-here
+
+# Android App Bundle (for Play Store)
+flutter build appbundle --dart-define=OPENAI_API_KEY=your-key-here
+
+# iOS (for App Store)
+flutter build ios --dart-define=OPENAI_API_KEY=your-key-here
 ```
+
+## For Convenience (Optional)
+
+### VS Code Launch Configuration
+
+Create `.vscode/launch.json`:
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Learnova",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=OPENAI_API_KEY=your-key-here"
+      ]
+    }
+  ]
+}
+```
+
+Then press F5 to run.
+
+**Note:** Add `.vscode/` to `.gitignore` to avoid committing your API key.
 
 ## Security Notes
 
 - **Never commit your API key** to version control
-- `config.json` is already in `.gitignore`
+- Use environment variables in CI/CD pipelines
 - For production, use a backend service to protect your API key
 
 ## Testing Step 1 MVP

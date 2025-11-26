@@ -4,9 +4,9 @@ import '../services/llm/llm_service.dart';
 import '../services/llm/openai_llm_service.dart';
 import '../../features/qa/services/qa_service.dart';
 
-/// Provider for OpenAI API key from config
+/// Provider for OpenAI API key from environment
 final apiKeyProvider = Provider<String>((ref) {
-  return ConfigService.get('OPENAI_API_KEY');
+  return ConfigService.apiKey;
 });
 
 /// Provider for LLM service (currently OpenAI, easily swappable)

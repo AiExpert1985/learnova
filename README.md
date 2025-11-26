@@ -23,11 +23,12 @@ Basic Q&A with hardcoded transcript to validate the core AI interaction.
 # Install dependencies
 flutter pub get
 
-# Create config.json in project root
-echo '{"OPENAI_API_KEY": "your-key-here"}' > config.json
+# Run with API key (works on all platforms)
+flutter run --dart-define=OPENAI_API_KEY=your-key-here
 
-# Run the app
-flutter run
+# Or specify platform
+flutter run -d windows --dart-define=OPENAI_API_KEY=your-key-here
+flutter run -d android --dart-define=OPENAI_API_KEY=your-key-here
 ```
 
 See [SETUP.md](docs/SETUP.md) for detailed instructions.

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'core/services/config_service.dart';
 import 'core/routes/app_router.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await ConfigService.load();
+void main() {
   runApp(const ProviderScope(child: LearnovaApp()));
 }
 

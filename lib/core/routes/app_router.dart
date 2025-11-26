@@ -26,7 +26,7 @@ final appRouter = GoRouter(
   ],
   redirect: (context, state) {
     // Redirect to API key missing screen if no key configured
-    final apiKey = ConfigService.get('OPENAI_API_KEY');
+    final apiKey = ConfigService.apiKey;
     final isApiKeyMissing = apiKey.isEmpty;
     final goingToApiKeyMissing = state.matchedLocation == Routes.apiKeyMissing;
 
@@ -81,9 +81,8 @@ class _ApiKeyMissingScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
-                '1. Create config.json in project root\n'
-                '2. Add: {"OPENAI_API_KEY": "your-key-here"}\n'
-                '3. Restart the app',
+                'Run with API key:\n\n'
+                'flutter run --dart-define=OPENAI_API_KEY=your-key',
                 style: TextStyle(fontSize: 12),
               ),
             ),
