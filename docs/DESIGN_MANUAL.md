@@ -20,22 +20,36 @@ Following the development guidelines, the codebase is organized by features rath
 ```
 lib/
   features/
-    qa/                      # Question & Answer feature
-      models/                # Data models specific to Q&A
-      services/              # Business logic
-      screens/               # UI screens
-      widgets/               # Reusable UI components
+    qa/                           # Question & Answer feature
+      models/                     # Data models (Question, Answer, QAResult)
+      services/                   # Business logic (QAService)
+      screens/                    # UI screens (QAScreen)
   core/
-    services/                # Shared services (external APIs)
-    constants/               # App-wide constants
-  main.dart
+    providers/                    # Riverpod DI providers
+      app_providers.dart          # Service providers
+    routes/                       # GoRouter configuration
+      app_router.dart             # Route definitions and guards
+    services/                     # Shared services
+      llm/                        # LLM abstraction layer
+        llm_service.dart          # Provider-agnostic interface
+        openai_llm_service.dart   # OpenAI implementation
+      config_service.dart         # Config file reader
+    constants/                    # App-wide constants
+      mock_data.dart              # Test data
+  main.dart                       # App entry point
+
+test/
+  core/services/                  # Service unit tests
+  features/qa/services/           # Feature unit tests
+  widget_test.dart                # Widget tests
 ```
 
 **Why:**
 - Each feature is self-contained
 - Easy to locate feature-specific code
 - Clear boundaries between features
-- Scales well as app grows
+- Provider-agnostic LLM layer (swap OpenAI/Gemini/Claude easily)
+- Tests mirror source structure
 
 ### State Management & Routing
 
@@ -209,50 +223,90 @@ Provide a clear, concise answer (2-3 sentences). If the answer isn't in the tran
 
 #### 5. Dependency Injection
 
-**Decision:** Constructor injection, manual wiring in `main.dart`
+**Decision:** Riverpod providers for dependency injection
 
 **Why:**
-- Simple and explicit
-- No framework overhead
-- Follows DI guideline without premature complexity
+- Compile-time safety (no runtime errors)
+- Easy mocking for tests
+- Clean service lifecycle management
+- Scales to complex apps
 
-**Example:**
+**Implementation:**
 ```dart
-final openAIService = OpenAIServiceImpl(apiKey: apiKey);
-final qaService = QAService(openAIService: openAIService);
-final screen = QAScreen(qaService: qaService);
+// Define providers
+final llmServiceProvider = Provider<LLMService>((ref) {
+  return OpenAILLMService(apiKey: ref.watch(apiKeyProvider));
+});
+
+final qaServiceProvider = Provider<QAService>((ref) {
+  return QAService(llmService: ref.watch(llmServiceProvider));
+});
+
+// Consume in widgets
+class QAScreen extends ConsumerStatefulWidget {
+  Widget build(BuildContext context) {
+    final qaService = ref.read(qaServiceProvider);
+    // ...
+  }
+}
+```
+
+**Switching LLM providers:**
+```dart
+// Just change the provider implementation
+final llmServiceProvider = Provider<LLMService>((ref) {
+  return GeminiLLMService(apiKey: ref.watch(geminiKeyProvider));
+});
 ```
 
 ---
 
 #### 6. State Management
 
-**Decision:** Use `StatefulWidget` with simple `setState` for now
+**Decision:** Riverpod for DI, `setState` for local UI state
 
 **Why:**
-- Built-in, zero dependencies
-- Sufficient for single-screen MVP
-- Avoid premature abstraction
-
-**When to revisit:**
-- Multi-screen state sharing
-- Complex state logic
-- Performance issues
+- Riverpod handles service lifecycle and injection
+- `setState` sufficient for simple UI state (loading, form inputs)
+- Separation of concerns: services via providers, UI state locally
+- Can add StateNotifierProvider later for complex shared state
 
 ---
 
-### Testable Units
+### Testing Strategy
 
-Following "testable by design" principle, these units are ready for testing:
+Following "testable by design" principle, the codebase has comprehensive unit tests.
 
-1. **OpenAIServiceImpl**
-   - Edge cases: API timeout, invalid API key, malformed response, network error
+**Test Coverage:**
 
-2. **QAService**
-   - Edge cases: Empty question, null transcript, OpenAI error propagation
+1. **QAService** (`test/features/qa/services/qa_service_test.dart`)
+   - ✅ Valid question and transcript → success
+   - ✅ Empty question → validation error
+   - ✅ Empty transcript → validation error
+   - ✅ LLM exception handling
+   - ✅ Unexpected exception handling
 
-3. **Prompt construction**
-   - Edge cases: Very long transcript, special characters, empty context
+2. **OpenAILLMService** (`test/core/services/openai_llm_service_test.dart`)
+   - ✅ Successful API call → correct parsing
+   - ✅ Empty API key → exception
+   - ✅ 401 Unauthorized → invalid key error
+   - ✅ 429 Rate limit → rate limit error
+   - ✅ Request body construction (model, tokens, temperature)
+
+3. **Widget Tests** (`test/widget_test.dart`)
+   - ✅ App launches with ProviderScope
+   - ✅ API key missing screen shown when no config
+
+**Running Tests:**
+```bash
+flutter test
+```
+
+**Test Design Principles:**
+- Mock external dependencies (LLM service, HTTP client)
+- Test business logic in isolation
+- Clear arrange-act-assert structure
+- Test edge cases and error paths
 
 ---
 

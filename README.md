@@ -44,13 +44,23 @@ See [SETUP.md](docs/SETUP.md) for detailed instructions.
 lib/
   features/
     qa/                    # Question & Answer feature
-      models/              # Data models
-      services/            # Business logic
-      screens/             # UI
+      models/              # Data models (Question, Answer, QAResult)
+      services/            # Business logic (QAService)
+      screens/             # UI screens (QAScreen)
   core/
-    services/              # Shared services (OpenAI)
+    providers/             # Riverpod DI providers
+    routes/                # GoRouter configuration
+    services/              # Shared services
+      llm/                 # LLM abstraction (OpenAI, future: Gemini, Claude)
+      config_service.dart  # Config file reader
     constants/             # Mock data and constants
+  main.dart
 ```
+
+**Architecture:**
+- **State Management**: Riverpod
+- **Routing**: GoRouter
+- **LLM Provider**: OpenAI (swappable to Gemini/Claude)
 
 ## Getting Started
 
