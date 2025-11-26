@@ -41,7 +41,6 @@ lib/
 test/
   core/services/                  # Service unit tests
   features/qa/services/           # Feature unit tests
-  widget_test.dart                # Widget tests
 ```
 
 **Why:**
@@ -275,7 +274,16 @@ final llmServiceProvider = Provider<LLMService>((ref) {
 
 ### Testing Strategy
 
-Following "testable by design" principle, the codebase has comprehensive unit tests.
+**Philosophy:** Practical testing over test perfection. Avoid over-engineering.
+
+**Current Focus:** Unit tests for business logic
+
+Following "testable by design" principle, we focus on testing what matters:
+- ✅ Business logic (services, models)
+- ✅ Edge cases and error handling
+- ✅ External API integration
+- ❌ NOT widget tests (slow, brittle, low ROI at this stage)
+- ❌ NOT 100% coverage (diminishing returns)
 
 **Test Coverage:**
 
@@ -293,13 +301,11 @@ Following "testable by design" principle, the codebase has comprehensive unit te
    - ✅ 429 Rate limit → rate limit error
    - ✅ Request body construction (model, tokens, temperature)
 
-3. **Widget Tests** (`test/widget_test.dart`)
-   - ✅ App launches with ProviderScope
-   - ✅ API key missing screen shown when no config
+**Total:** 10 unit tests covering critical business logic
 
 **Running Tests:**
 ```bash
-flutter test
+flutter test test/core test/features
 ```
 
 **Test Design Principles:**
@@ -307,6 +313,18 @@ flutter test
 - Test business logic in isolation
 - Clear arrange-act-assert structure
 - Test edge cases and error paths
+- Fast execution (< 5 seconds total)
+
+**What We Don't Test (Intentionally):**
+- **Widget tests** - Slow, brittle, test framework more than app logic. Manual testing on devices is more valuable.
+- **UI interactions** - Better tested manually on real devices
+- **GoRouter navigation** - Complex to test, low failure risk
+- **Riverpod providers** - Simple wiring, low risk
+
+**Future Testing (When Needed):**
+- **Integration tests** - Add when critical user flows need end-to-end validation
+- **Golden tests** - Add if UI consistency becomes an issue
+- When to add: When manual testing becomes painful or bugs slip through
 
 ---
 
