@@ -23,8 +23,12 @@ Basic Q&A with hardcoded transcript to validate the core AI interaction.
 # Install dependencies
 flutter pub get
 
-# Run with your OpenAI API key
-flutter run --dart-define=OPENAI_API_KEY=your_key_here
+# Set up API key
+cp config.example.json config.json
+# Edit config.json and add your OpenAI API key
+
+# Run the app
+flutter run --dart-define-from-file=config.json
 ```
 
 See [SETUP.md](docs/SETUP.md) for detailed instructions.

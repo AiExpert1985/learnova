@@ -19,17 +19,36 @@
    ```bash
    flutter pub get
    ```
+3. Set up API key:
+   ```bash
+   # Copy the example config
+   cp config.example.json config.json
+
+   # Edit config.json and add your OpenAI API key
+   ```
 
 ## Running the App
 
-### Option 1: Command Line (Recommended for Testing)
+### Option 1: Config File (Recommended)
 
-Run with your API key:
+Run with config file:
+```bash
+flutter run --dart-define-from-file=config.json
+```
+
+**One-time setup:**
+- Copy `config.example.json` to `config.json`
+- Add your API key to `config.json`
+- `config.json` is gitignored (won't be committed)
+
+### Option 2: Command Line
+
+Run with inline API key:
 ```bash
 flutter run --dart-define=OPENAI_API_KEY=your_api_key_here
 ```
 
-### Option 2: VS Code Launch Configuration
+### Option 3: VS Code Launch Configuration
 
 Create `.vscode/launch.json`:
 ```json
@@ -42,21 +61,19 @@ Create `.vscode/launch.json`:
       "type": "dart",
       "program": "lib/main.dart",
       "args": [
-        "--dart-define=OPENAI_API_KEY=your_api_key_here"
+        "--dart-define-from-file=config.json"
       ]
     }
   ]
 }
 ```
 
-**Important:** Add `.vscode/launch.json` to `.gitignore` to avoid committing your API key.
-
-### Option 3: Android Studio
+### Option 4: Android Studio
 
 1. Go to Run → Edit Configurations
 2. Add to "Additional run args":
    ```
-   --dart-define=OPENAI_API_KEY=your_api_key_here
+   --dart-define-from-file=config.json
    ```
 
 ## Security Notes
