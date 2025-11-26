@@ -37,6 +37,42 @@ lib/
 - Clear boundaries between features
 - Scales well as app grows
 
+### State Management & Routing
+
+**Stack:**
+- **Riverpod** for dependency injection and state management
+- **GoRouter** for declarative routing
+
+**Structure:**
+```
+lib/
+  core/
+    providers/
+      app_providers.dart     # DI providers (services)
+    routes/
+      app_router.dart        # GoRouter configuration
+```
+
+**Why Riverpod:**
+- ✅ Modern, recommended by Flutter team
+- ✅ Compile-time safety (no runtime lookup errors)
+- ✅ Built-in dependency injection
+- ✅ Testability (easy mocking)
+- ✅ Scales from simple to complex state
+
+**Why GoRouter:**
+- ✅ Declarative routing (easier to reason about)
+- ✅ Type-safe navigation
+- ✅ Built-in deep linking support
+- ✅ Route guards (for auth later)
+- ✅ Web URL support
+
+**Trade-offs:**
+- ⚠️ Added complexity vs manual DI
+- ✅ Pays off as app grows (multiple screens, shared state)
+
+**When added:** After Step 1, before Step 2 - to avoid refactoring pain when adding multiple screens (history, subscription, etc.)
+
 ---
 
 ## Step 1: Basic Q&A with Fake Transcript

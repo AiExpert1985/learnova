@@ -36,6 +36,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.2.0
 
+  # State management and DI
+  flutter_riverpod: ^2.6.1
+
+  # Routing
+  go_router: ^14.6.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

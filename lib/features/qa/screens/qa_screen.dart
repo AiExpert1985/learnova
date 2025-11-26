@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import '../services/qa_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/mock_data.dart';
+import '../../../core/providers/app_providers.dart';
 
 /// Main Q&A screen for Step 1 MVP
 /// Uses hardcoded transcript for testing
-class QAScreen extends StatefulWidget {
-  final QAService qaService;
-
-  const QAScreen({
-    super.key,
-    required this.qaService,
-  });
+class QAScreen extends ConsumerStatefulWidget {
+  const QAScreen({super.key});
 
   @override
-  State<QAScreen> createState() => _QAScreenState();
+  ConsumerState<QAScreen> createState() => _QAScreenState();
 }
 
-class _QAScreenState extends State<QAScreen> {
+class _QAScreenState extends ConsumerState<QAScreen> {
   final _questionController = TextEditingController();
   final _scrollController = ScrollController();
 
@@ -217,7 +213,8 @@ class _QAScreenState extends State<QAScreen> {
 
     _questionController.clear();
 
-    final result = await widget.qaService.askQuestion(
+    final qaService = ref.read(qaServiceProvider);
+    final result = await qaService.askQuestion(
       transcript: MockData.sampleTranscript,
       questionText: questionText,
     );
