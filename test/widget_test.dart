@@ -1,6 +1,5 @@
 // Basic Flutter widget test for Learnova
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:learnova/main.dart';
