@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learnova/features/qa/services/qa_service.dart';
-import 'package:learnova/features/qa/models/qa_models.dart';
 import 'package:learnova/core/services/llm/llm_service.dart';
 
 /// Mock LLM service for testing
@@ -19,10 +18,7 @@ class MockLLMService implements LLMService {
       throw mockError!;
     }
 
-    return LLMResponse(
-      text: mockResponse ?? 'Mock answer',
-      tokensUsed: 100,
-    );
+    return LLMResponse(text: mockResponse ?? 'Mock answer', tokensUsed: 100);
   }
 }
 
