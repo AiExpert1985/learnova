@@ -288,6 +288,24 @@ final llmServiceProvider = Provider<LLMService>((ref) {
 - `hasApiKey` reads better than `apiKey.isEmpty`
 - Name things for what they check/do, not how they do it
 
+**4. Break large files into smaller components**
+- Screen files should be ~100-150 lines max
+- Extract reusable widgets into separate files in `widgets/` directory
+- Extract models used only within a feature into `models/` directory
+- Each widget file should be focused and ~30-60 lines
+- Benefits:
+  - Easier to navigate and understand
+  - Better code reusability
+  - Clearer separation of concerns
+  - Simpler testing
+
+**Example:** `qa_screen.dart` refactoring (261 lines → 120 lines)
+- Extracted `QAHistoryEntry` model → `models/qa_history_entry.dart`
+- Extracted `TranscriptHeader` widget → `widgets/transcript_header.dart`
+- Extracted `QABubble` widget → `widgets/qa_bubble.dart`
+- Extracted `QuestionInput` widget → `widgets/question_input.dart`
+- Result: Main screen focuses on state management and coordination
+
 ---
 
 ### Testing Strategy

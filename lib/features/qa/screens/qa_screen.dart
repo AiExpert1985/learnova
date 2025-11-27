@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../core/providers/app_providers.dart';
+import '../models/qa_history_entry.dart';
+import '../widgets/transcript_header.dart';
+import '../widgets/qa_bubble.dart';
+import '../widgets/question_input.dart';
 
 /// Main Q&A screen for Step 1 MVP
 /// Uses hardcoded transcript for testing
@@ -16,7 +20,7 @@ class _QAScreenState extends ConsumerState<QAScreen> {
   final _questionController = TextEditingController();
   final _scrollController = ScrollController();
 
-  final List<_QAEntry> _qaHistory = [];
+  final List<QAHistoryEntry> _qaHistory = [];
   bool _isLoading = false;
 
   @override
@@ -35,29 +39,15 @@ class _QAScreenState extends ConsumerState<QAScreen> {
       ),
       body: Column(
         children: [
-          _buildTranscriptHeader(),
-          Expanded(child: _buildQAHistory()),
-          _buildQuestionInput(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTranscriptHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.grey[200],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            MockData.videoTitle,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          TranscriptHeader(
+            title: MockData.videoTitle,
+            duration: MockData.videoDuration,
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Duration: ${MockData.videoDuration.inMinutes}:${(MockData.videoDuration.inSeconds % 60).toString().padLeft(2, '0')}',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          Expanded(child: _buildQAHistory()),
+          QuestionInput(
+            controller: _questionController,
+            isLoading: _isLoading,
+            onSubmit: _handleAskQuestion,
           ),
         ],
       ),
@@ -82,124 +72,7 @@ class _QAScreenState extends ConsumerState<QAScreen> {
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
       itemCount: _qaHistory.length,
-      itemBuilder: (context, index) {
-        final entry = _qaHistory[index];
-        return _buildQAEntryWidget(entry);
-      },
-    );
-  }
-
-  Widget _buildQAEntryWidget(_QAEntry entry) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildQuestionBubble(entry.question),
-        const SizedBox(height: 8),
-        _buildAnswerBubble(entry),
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-
-  Widget _buildQuestionBubble(String question) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.blue[100],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(question),
-      ),
-    );
-  }
-
-  Widget _buildAnswerBubble(_QAEntry entry) {
-    if (entry.error != null) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.red[100],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red),
-              const SizedBox(width: 8),
-              Flexible(child: Text(entry.error!)),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey[300],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(entry.answer!),
-            const SizedBox(height: 4),
-            Text(
-              'Tokens: ${entry.tokensUsed}',
-              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuestionInput() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.2),
-            spreadRadius: 1,
-            blurRadius: 5,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _questionController,
-              decoration: const InputDecoration(
-                hintText: 'Ask a question...',
-                border: OutlineInputBorder(),
-              ),
-              enabled: !_isLoading,
-              onSubmitted: (_) => _handleAskQuestion(),
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: _isLoading ? null : _handleAskQuestion,
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.send),
-            color: Colors.blue,
-          ),
-        ],
-      ),
+      itemBuilder: (context, index) => QABubble(entry: _qaHistory[index]),
     );
   }
 
@@ -221,7 +94,7 @@ class _QAScreenState extends ConsumerState<QAScreen> {
 
     setState(() {
       _isLoading = false;
-      _qaHistory.add(_QAEntry(
+      _qaHistory.add(QAHistoryEntry(
         question: questionText,
         answer: result.answer?.text,
         error: result.error,
@@ -243,18 +116,4 @@ class _QAScreenState extends ConsumerState<QAScreen> {
       }
     });
   }
-}
-
-class _QAEntry {
-  final String question;
-  final String? answer;
-  final String? error;
-  final int tokensUsed;
-
-  _QAEntry({
-    required this.question,
-    this.answer,
-    this.error,
-    required this.tokensUsed,
-  });
 }
