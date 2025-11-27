@@ -272,6 +272,24 @@ final llmServiceProvider = Provider<LLMService>((ref) {
 
 ---
 
+### Code Organization Principles
+
+**1. Screens in separate files**
+- UI components don't live in router/config files
+- Each screen = one file in appropriate feature/core screens directory
+- Example: `ApiKeyMissingScreen` in `core/screens/` (not in `app_router.dart`)
+
+**2. Use existing getters/methods**
+- If a class has a getter, use it (don't recreate the logic)
+- Example: Use `ConfigService.hasApiKey` not `ConfigService.apiKey.isEmpty`
+- Benefits: Single source of truth, clearer intent, easier refactoring
+
+**3. Self-documenting code**
+- `hasApiKey` reads better than `apiKey.isEmpty`
+- Name things for what they check/do, not how they do it
+
+---
+
 ### Testing Strategy
 
 **Philosophy:** Practical testing over test perfection. Avoid over-engineering.
