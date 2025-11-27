@@ -18,7 +18,7 @@ class QAScreen extends ConsumerStatefulWidget {
 
 class _QAScreenState extends ConsumerState<QAScreen> {
   final _questionController = TextEditingController();
-  final _scrollController = ScrollController();
+  final _scrollController = ScrollController(); // auto scrolling
 
   final List<QAHistoryEntry> _qaHistory = [];
   bool _isLoading = false;
@@ -94,12 +94,14 @@ class _QAScreenState extends ConsumerState<QAScreen> {
 
     setState(() {
       _isLoading = false;
-      _qaHistory.add(QAHistoryEntry(
-        question: questionText,
-        answer: result.answer?.text,
-        error: result.error,
-        tokensUsed: result.answer?.tokensUsed ?? 0,
-      ));
+      _qaHistory.add(
+        QAHistoryEntry(
+          question: questionText,
+          answer: result.answer?.text,
+          error: result.error,
+          tokensUsed: result.answer?.tokensUsed ?? 0,
+        ),
+      );
     });
 
     _scrollToBottom();
