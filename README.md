@@ -171,7 +171,7 @@ flutter test --coverage         # With coverage
 ## Contributing
 
 1. Read [DESIGN_MANUAL.md](docs/DESIGN_MANUAL.md) for architecture
-2. Read [DEVELOPMENT_GUIDELINES.md](docs/DEVELOPMENT_GUIDELINES.md) for standards
+2. Read [DEVELOPMENT_GUIDELINES.md](docs/AI_ASSISTANT_GUIDE.md) for standards
 3. Follow feature-based structure
 4. Test business logic with unit tests
 5. Keep files under 150 lines
