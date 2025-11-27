@@ -245,18 +245,39 @@ lib/
 
 ### 2. State Management Approach
 
-**Decision:** Riverpod for services, `setState` for local UI state.
+**Decision:** Use StateNotifier for feature state management, not callbacks.
 
 **Why:**
-- Riverpod handles service lifecycle and dependency injection
-- `setState` sufficient for simple UI state (loading, form inputs)
-- Clear separation: services via providers, UI state locally
-- Can add `StateNotifierProvider` later for complex shared state
+- Centralizes business logic in one place (notifier)
+- Widgets call notifiers directly via `ref.read(notifier).method()`
+- No callback drilling through widget trees
+- More intuitive: UI calls actions, notifier manages state
+- Ready for future expansion (shared state, complex flows)
 
-**When to Upgrade:**
-- Shared state across multiple screens
-- Complex state transitions
-- Undo/redo functionality
+**Pattern:**
+```dart
+// State
+class FeatureState {
+  final List<Data> items;
+  final bool isLoading;
+}
+
+// Notifier
+class FeatureNotifier extends StateNotifier<FeatureState> {
+  void performAction(params) {
+    // Business logic here
+    state = state.copyWith(...);
+  }
+}
+
+// Widget calls directly
+ref.read(featureNotifier.notifier).performAction(params);
+```
+
+**When NOT to use StateNotifier:**
+- Simple forms with no business logic
+- One-off UI animations or transitions
+- Widget-local state (expanded/collapsed, selected index)
 
 ### 3. Service Layer Separation
 

@@ -1,17 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/app_providers.dart';
 
 /// Input field for asking questions
-class QuestionInput extends StatelessWidget {
-  final TextEditingController controller;
+/// Calls QANotifier directly without callbacks
+class QuestionInput extends ConsumerStatefulWidget {
   final bool isLoading;
-  final VoidCallback onSubmit;
 
   const QuestionInput({
     super.key,
-    required this.controller,
     required this.isLoading,
-    required this.onSubmit,
   });
+
+  @override
+  ConsumerState<QuestionInput> createState() => _QuestionInputState();
+}
+
+class _QuestionInputState extends ConsumerState<QuestionInput> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleSubmit() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    ref.read(qaNotifierProvider.notifier).askQuestion(text);
+    _controller.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,19 +51,19 @@ class QuestionInput extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
-              controller: controller,
+              controller: _controller,
               decoration: const InputDecoration(
                 hintText: 'Ask a question...',
                 border: OutlineInputBorder(),
               ),
-              enabled: !isLoading,
-              onSubmitted: (_) => onSubmit(),
+              enabled: !widget.isLoading,
+              onSubmitted: (_) => _handleSubmit(),
             ),
           ),
           const SizedBox(width: 8),
           IconButton(
-            onPressed: isLoading ? null : onSubmit,
-            icon: isLoading
+            onPressed: widget.isLoading ? null : _handleSubmit,
+            icon: widget.isLoading
                 ? const SizedBox(
                     width: 24,
                     height: 24,
