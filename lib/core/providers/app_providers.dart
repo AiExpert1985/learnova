@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../constants/mock_data.dart';
 import '../services/config_service.dart';
 import '../services/llm/llm_service.dart';
 import '../services/llm/openai_llm_service.dart';
+import '../services/youtube/youtube_service.dart';
 import '../../features/qa/services/qa_service.dart';
 import '../../features/qa/state/qa_notifier.dart';
 import '../../features/qa/state/qa_state.dart';
@@ -28,12 +28,18 @@ final qaServiceProvider = Provider<QAService>((ref) {
   return QAService(llmService: llmService);
 });
 
+/// Provider for YouTube service
+final youtubeServiceProvider = Provider<YouTubeService>((ref) {
+  return YouTubeService();
+});
+
 /// StateNotifier provider for Q&A feature
-/// Manages question history and loading state
+/// Manages video info, question history, and loading state
 final qaNotifierProvider = StateNotifierProvider<QANotifier, QAState>((ref) {
   final qaService = ref.watch(qaServiceProvider);
+  final youtubeService = ref.watch(youtubeServiceProvider);
   return QANotifier(
     qaService: qaService,
-    transcript: MockData.sampleTranscript,
+    youtubeService: youtubeService,
   );
 });
