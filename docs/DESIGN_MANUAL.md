@@ -195,6 +195,28 @@ class QANotifier extends StateNotifier<QAState> {
 
 ---
 
+## Refactoring Guidelines
+
+### Widget Extraction
+**Goal:** Keep screens focused on orchestration, not rendering.
+
+**When to extract:**
+- **Complex UI Logic:** If a section has its own state (e.g., `TextEditingController`), loading state, or complex validation.
+- **Reusability:** If a UI element (like an error banner) could be used elsewhere.
+- **Readability:** If a `build` method exceeds ~50 lines or contains multiple nested builders.
+
+**How to extract:**
+1. **Create a new widget file** in `widgets/`.
+2. **Move logic and state** (controllers, local variables) to the new widget.
+3. **Pass callbacks** for actions (e.g., `onLoad(String url)`) to keep the parent screen clean.
+4. **Pass data** via constructor arguments.
+
+**Example:**
+- `UrlInput` extracted from `QAScreen` to handle its own text controller and loading state.
+- `QAHistoryList` extracted to handle its own scroll controller and auto-scrolling logic.
+
+---
+
 ## Testing Philosophy
 
 **Guiding Principle:** Practical testing over test perfection. Avoid over-engineering.
