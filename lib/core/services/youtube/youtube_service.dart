@@ -77,25 +77,45 @@ class YouTubeService {
         print('Available track: ${track.language.name} (${track.language.code})');
       }
 
-      // Try to get English transcript first
-      final track = trackManifest.tracks.firstWhere(
-        (t) => t.language.code.toLowerCase().startsWith('en'),
-        orElse: () {
-          print('No English track found, using first available: ${trackManifest.tracks.first.language.name}');
-          return trackManifest.tracks.first;
-        },
-      );
+      // Try multiple tracks in order of preference
+      // Prioritize: 1) English manual captions, 2) English auto-generated, 3) Any other
+      final trackPriority = [
+        // Try manual English captions first (more reliable)
+        ...trackManifest.tracks.where(
+          (t) => t.language.code.toLowerCase().startsWith('en') &&
+                 !t.language.name.toLowerCase().contains('auto'),
+        ),
+        // Then try auto-generated English
+        ...trackManifest.tracks.where(
+          (t) => t.language.code.toLowerCase().startsWith('en'),
+        ),
+        // Finally try any available track
+        ...trackManifest.tracks,
+      ];
 
-      print('Fetching captions for track: ${track.language.name}');
-      final captions = await _youtubeExplode.videos.closedCaptions.get(track);
+      // Try each track until one works
+      for (final track in trackPriority) {
+        try {
+          print('Attempting to fetch captions for: ${track.language.name}');
+          final captions = await _youtubeExplode.videos.closedCaptions.get(track);
 
-      print('Retrieved ${captions.captions.length} caption segments');
+          print('✓ Successfully retrieved ${captions.captions.length} caption segments');
 
-      // Combine all caption text
-      final transcript = captions.captions.map((c) => c.text).join(' ');
-      print('Total transcript length: ${transcript.length} characters');
+          // Combine all caption text
+          final transcript = captions.captions.map((c) => c.text).join(' ');
+          print('Total transcript length: ${transcript.length} characters');
 
-      return transcript;
+          return transcript;
+        } catch (trackError) {
+          print('✗ Failed for ${track.language.name}: ${trackError.runtimeType}');
+          // Continue to next track
+          continue;
+        }
+      }
+
+      // If we get here, all tracks failed
+      print('All caption tracks failed to load');
+      return null;
     } catch (e) {
       print('Error fetching transcript: $e');
       print('Error type: ${e.runtimeType}');
