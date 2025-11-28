@@ -79,13 +79,15 @@ class YouTubeService {
     try {
       final response = await _httpClient.post(
         Uri.parse('https://www.youtube.com/youtubei/v1/player?key=$_apiKey'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
         body: jsonEncode({
           'context': {
             'client': {
-              'clientName': 'ANDROID',
-              'clientVersion': '17.31.35',
-              'androidSdkVersion': 30,
+              'clientName': 'WEB',
+              'clientVersion': '2.20250201.00.00',
             }
           },
           'videoId': videoId,
@@ -94,6 +96,7 @@ class YouTubeService {
 
       if (response.statusCode != 200) {
         print('Metadata fetch failed: ${response.statusCode}');
+        print('Response body: ${response.body}');
         return null;
       }
 
@@ -120,13 +123,15 @@ class YouTubeService {
       // Get caption tracks list
       final tracksResponse = await _httpClient.post(
         Uri.parse('https://www.youtube.com/youtubei/v1/player?key=$_apiKey'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
         body: jsonEncode({
           'context': {
             'client': {
-              'clientName': 'ANDROID',
-              'clientVersion': '17.31.35',
-              'androidSdkVersion': 30,
+              'clientName': 'WEB',
+              'clientVersion': '2.20250201.00.00',
             }
           },
           'videoId': videoId,
