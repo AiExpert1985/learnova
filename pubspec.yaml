@@ -42,9 +42,6 @@ dependencies:
   # Routing
   go_router: ^14.6.2
 
-  # YouTube integration (no API key needed)
-  youtube_explode_dart: ^2.2.1
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

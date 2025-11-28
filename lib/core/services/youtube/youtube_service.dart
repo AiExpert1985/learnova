@@ -1,136 +1,252 @@
-import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'youtube_models.dart';
 
 /// Service for fetching YouTube video information and transcripts
-/// Uses youtube_explode_dart (no API key required)
+/// Uses YouTube Innertube API (no API key required, more reliable)
 class YouTubeService {
-  final _youtubeExplode = YoutubeExplode();
+  static const _apiKey = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8'; // Public web client key
+  final http.Client _httpClient;
+
+  YouTubeService({http.Client? httpClient})
+      : _httpClient = httpClient ?? http.Client();
 
   /// Fetch video info and transcript from YouTube URL
   Future<YouTubeResult> fetchVideo(String url) async {
     try {
       print('Processing URL: $url');
 
-      // Validate and parse URL
       final videoId = _extractVideoId(url);
       if (videoId == null) {
-        print('Failed to extract video ID from URL');
+        print('Invalid URL');
         return YouTubeResult.failure('Invalid YouTube URL');
       }
 
-      print('Extracted video ID: $videoId');
+      print('Video ID: $videoId');
 
       // Fetch video metadata
-      print('Fetching video metadata...');
-      final video = await _youtubeExplode.videos.get(videoId);
-      print('Video title: ${video.title}');
-      print('Video duration: ${video.duration}');
+      final videoInfo = await _fetchVideoMetadata(videoId);
+      if (videoInfo == null) {
+        return YouTubeResult.failure('Could not load video information');
+      }
+
+      print('Title: ${videoInfo['title']}');
+      print('Duration: ${videoInfo['duration']}');
 
       // Fetch transcript
       final transcript = await _fetchTranscript(videoId);
       if (transcript == null) {
         return YouTubeResult.failure(
-          'Could not load captions for this video. The caption format may not be supported. Try a different video.',
+          'No captions available for this video. Try another video with subtitles.',
         );
       }
 
       return YouTubeResult.success(VideoInfo(
         id: videoId,
-        title: video.title,
-        duration: video.duration ?? Duration.zero,
+        title: videoInfo['title'] as String,
+        duration: Duration(seconds: videoInfo['duration'] as int),
         transcript: transcript,
       ));
     } catch (e) {
-      print('Error in fetchVideo: $e');
-      return YouTubeResult.failure(
-        'Failed to load video: ${e.toString()}',
-      );
+      print('Error: $e');
+      return YouTubeResult.failure('Failed to load video: ${e.toString()}');
     }
   }
 
   /// Extract video ID from various YouTube URL formats
   String? _extractVideoId(String url) {
+    final patterns = [
+      RegExp(r'(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})'),
+      RegExp(r'youtube\.com/embed/([a-zA-Z0-9_-]{11})'),
+      RegExp(r'youtube\.com/v/([a-zA-Z0-9_-]{11})'),
+    ];
+
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(url);
+      if (match != null) return match.group(1);
+    }
+
+    // If URL is already just the ID
+    if (RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(url)) {
+      return url;
+    }
+
+    return null;
+  }
+
+  /// Fetch video metadata using Innertube API
+  Future<Map<String, dynamic>?> _fetchVideoMetadata(String videoId) async {
     try {
-      return VideoId.parseVideoId(url);
+      final response = await _httpClient.post(
+        Uri.parse('https://www.youtube.com/youtubei/v1/player?key=$_apiKey'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'context': {
+            'client': {
+              'clientName': 'ANDROID',
+              'clientVersion': '17.31.35',
+              'androidSdkVersion': 30,
+            }
+          },
+          'videoId': videoId,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        print('Metadata fetch failed: ${response.statusCode}');
+        return null;
+      }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final videoDetails = data['videoDetails'] as Map<String, dynamic>?;
+
+      if (videoDetails == null) return null;
+
+      return {
+        'title': videoDetails['title'] as String? ?? 'Unknown',
+        'duration': int.tryParse(videoDetails['lengthSeconds'] as String? ?? '0') ?? 0,
+      };
     } catch (e) {
+      print('Metadata error: $e');
       return null;
     }
   }
 
-  /// Fetch transcript/captions for a video
+  /// Fetch transcript using Innertube API
   Future<String?> _fetchTranscript(String videoId) async {
     try {
-      print('Fetching transcript for video: $videoId');
+      print('Fetching captions...');
 
-      final trackManifest = await _youtubeExplode.videos.closedCaptions
-          .getManifest(videoId);
+      // Get caption tracks list
+      final tracksResponse = await _httpClient.post(
+        Uri.parse('https://www.youtube.com/youtubei/v1/player?key=$_apiKey'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'context': {
+            'client': {
+              'clientName': 'ANDROID',
+              'clientVersion': '17.31.35',
+              'androidSdkVersion': 30,
+            }
+          },
+          'videoId': videoId,
+        }),
+      );
 
-      print('Found ${trackManifest.tracks.length} caption tracks');
-
-      if (trackManifest.tracks.isEmpty) {
-        print('No caption tracks available');
+      if (tracksResponse.statusCode != 200) {
+        print('Failed to fetch caption tracks');
         return null;
       }
 
-      // Print available tracks for debugging
-      for (final track in trackManifest.tracks) {
-        print('Available track: ${track.language.name} (${track.language.code})');
+      final data = jsonDecode(tracksResponse.body) as Map<String, dynamic>;
+      final captions = data['captions'] as Map<String, dynamic>?;
+
+      if (captions == null) {
+        print('No captions available');
+        return null;
       }
 
-      // Remove duplicate tracks by using a Set with unique URL
-      final uniqueTracks = <String, dynamic>{};
-      for (final track in trackManifest.tracks) {
-        uniqueTracks[track.url.toString()] = track;
+      final playerCaptionsRenderer = captions['playerCaptionsTracklistRenderer'] as Map<String, dynamic>?;
+      if (playerCaptionsRenderer == null) {
+        print('No caption renderer');
+        return null;
       }
 
-      // Prioritize tracks: manual English > auto English > any language
-      final uniqueTrackList = uniqueTracks.values.toList();
-      final manualEnglish = uniqueTrackList.where(
-        (t) => t.language.code.toLowerCase().startsWith('en') &&
-               !t.language.name.toLowerCase().contains('auto'),
-      ).toList();
+      final captionTracks = playerCaptionsRenderer['captionTracks'] as List?;
+      if (captionTracks == null || captionTracks.isEmpty) {
+        print('No caption tracks');
+        return null;
+      }
 
-      final autoEnglish = uniqueTrackList.where(
-        (t) => t.language.code.toLowerCase().startsWith('en') &&
-               t.language.name.toLowerCase().contains('auto'),
-      ).toList();
+      print('Found ${captionTracks.length} tracks');
 
-      final others = uniqueTrackList.where(
-        (t) => !t.language.code.toLowerCase().startsWith('en'),
-      ).toList();
+      // Prioritize: English manual > English auto > any language
+      String? bestTrackUrl;
 
-      final trackPriority = [...manualEnglish, ...autoEnglish, ...others];
+      // Try manual English first
+      for (final track in captionTracks) {
+        final trackMap = track as Map<String, dynamic>;
+        final langCode = trackMap['languageCode'] as String?;
+        final kind = trackMap['kind'] as String?;
 
-      print('Trying ${trackPriority.length} unique tracks...');
-
-      // Try each track until one works
-      for (final track in trackPriority) {
-        try {
-          print('Attempting: ${track.language.name}');
-          final captions = await _youtubeExplode.videos.closedCaptions.get(track);
-
-          print('✓ Success! ${captions.captions.length} segments');
-
-          final transcript = captions.captions.map((c) => c.text).join(' ');
-          print('Transcript length: ${transcript.length} characters');
-
-          return transcript;
-        } catch (trackError) {
-          print('✗ Failed: ${trackError.runtimeType}');
-          continue;
+        if (langCode != null && langCode.startsWith('en') && kind != 'asr') {
+          bestTrackUrl = trackMap['baseUrl'] as String?;
+          print('Using manual English track');
+          break;
         }
       }
 
-      print('All tracks failed - video format not supported');
-      return null;
+      // Try auto-generated English
+      if (bestTrackUrl == null) {
+        for (final track in captionTracks) {
+          final trackMap = track as Map<String, dynamic>;
+          final langCode = trackMap['languageCode'] as String?;
+
+          if (langCode != null && langCode.startsWith('en')) {
+            bestTrackUrl = trackMap['baseUrl'] as String?;
+            print('Using auto-generated English track');
+            break;
+          }
+        }
+      }
+
+      // Use any available track
+      if (bestTrackUrl == null && captionTracks.isNotEmpty) {
+        final firstTrack = captionTracks.first as Map<String, dynamic>;
+        bestTrackUrl = firstTrack['baseUrl'] as String?;
+        print('Using first available track');
+      }
+
+      if (bestTrackUrl == null) {
+        print('No usable track found');
+        return null;
+      }
+
+      // Fetch the actual transcript
+      final transcriptResponse = await _httpClient.get(Uri.parse(bestTrackUrl));
+
+      if (transcriptResponse.statusCode != 200) {
+        print('Failed to fetch transcript content');
+        return null;
+      }
+
+      // Parse XML response
+      final xml = transcriptResponse.body;
+      final textPattern = RegExp(r'<text[^>]*>([^<]*)</text>');
+      final matches = textPattern.allMatches(xml);
+
+      final texts = matches
+          .map((m) => m.group(1) ?? '')
+          .where((t) => t.isNotEmpty)
+          .map((t) => _decodeHtmlEntities(t))
+          .join(' ');
+
+      if (texts.isEmpty) {
+        print('No text extracted from transcript');
+        return null;
+      }
+
+      print('✓ Transcript: ${texts.length} chars');
+      return texts;
     } catch (e) {
-      print('Error fetching transcript: $e');
+      print('Transcript error: $e');
       return null;
     }
+  }
+
+  /// Decode HTML entities in transcript text
+  String _decodeHtmlEntities(String text) {
+    return text
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .replaceAll('&nbsp;', ' ');
   }
 
   /// Clean up resources
   void dispose() {
-    _youtubeExplode.close();
+    _httpClient.close();
   }
 }
