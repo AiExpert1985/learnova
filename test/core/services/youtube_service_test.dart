@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:learnova/core/services/youtube/youtube_service.dart';
-import 'package:learnova/core/services/youtube/youtube_models.dart';
 
 /// Mock HTTP client for testing
 class MockHttpClient extends http.BaseClient {
@@ -20,7 +20,7 @@ class MockHttpClient extends http.BaseClient {
     if (request.url.path.contains('/player')) {
       // Player API response
       final body = mockPlayerResponse != null
-          ? '${_jsonEncode(mockPlayerResponse!)}'
+          ? jsonEncode(mockPlayerResponse)
           : '{}';
       return http.StreamedResponse(
         Stream.value(body.codeUnits),
@@ -37,20 +37,6 @@ class MockHttpClient extends http.BaseClient {
       );
     }
   }
-
-  String _jsonEncode(Map<String, dynamic> data) {
-    // Simple JSON encoding for test purposes
-    final parts = data.entries.map((e) {
-      if (e.value is Map) {
-        return '"${e.key}":${_jsonEncode(e.value as Map<String, dynamic>)}';
-      } else if (e.value is String) {
-        return '"${e.key}":"${e.value}"';
-      } else {
-        return '"${e.key}":${e.value}';
-      }
-    });
-    return '{${parts.join(',')}}';
-  }
 }
 
 void main() {
@@ -58,14 +44,25 @@ void main() {
     test('extracts video ID from standard YouTube URL', () async {
       final mockClient = MockHttpClient(
         mockPlayerResponse: {
-          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'}
+          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'},
+          'captions': {
+            'playerCaptionsTracklistRenderer': {
+              'captionTracks': [
+                {
+                  'languageCode': 'en',
+                  'baseUrl': 'http://example.com/transcript',
+                },
+              ],
+            },
+          },
         },
         mockTranscriptXml: '<transcript><text>Test</text></transcript>',
       );
       final service = YouTubeService(httpClient: mockClient);
 
-      final result =
-          await service.fetchVideo('https://www.youtube.com/watch?v=abc12345678');
+      final result = await service.fetchVideo(
+        'https://www.youtube.com/watch?v=abc12345678',
+      );
 
       expect(result.isSuccess, true);
       service.dispose();
@@ -74,7 +71,17 @@ void main() {
     test('extracts video ID from short YouTube URL', () async {
       final mockClient = MockHttpClient(
         mockPlayerResponse: {
-          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'}
+          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'},
+          'captions': {
+            'playerCaptionsTracklistRenderer': {
+              'captionTracks': [
+                {
+                  'languageCode': 'en',
+                  'baseUrl': 'http://example.com/transcript',
+                },
+              ],
+            },
+          },
         },
         mockTranscriptXml: '<transcript><text>Test</text></transcript>',
       );
@@ -100,28 +107,26 @@ void main() {
     test('fetches video metadata successfully', () async {
       final mockClient = MockHttpClient(
         mockPlayerResponse: {
-          'videoDetails': {
-            'title': 'Test Video Title',
-            'lengthSeconds': '300',
-          },
+          'videoDetails': {'title': 'Test Video Title', 'lengthSeconds': '300'},
           'captions': {
             'playerCaptionsTracklistRenderer': {
               'captionTracks': [
                 {
                   'languageCode': 'en',
                   'baseUrl': 'http://example.com/transcript',
-                }
-              ]
-            }
-          }
+                },
+              ],
+            },
+          },
         },
         mockTranscriptXml:
             '<transcript><text>Hello world</text><text>Test transcript</text></transcript>',
       );
       final service = YouTubeService(httpClient: mockClient);
 
-      final result =
-          await service.fetchVideo('https://www.youtube.com/watch?v=abc12345678');
+      final result = await service.fetchVideo(
+        'https://www.youtube.com/watch?v=abc12345678',
+      );
 
       expect(result.isSuccess, true);
       expect(result.video?.title, 'Test Video Title');
@@ -139,8 +144,9 @@ void main() {
       );
       final service = YouTubeService(httpClient: mockClient);
 
-      final result =
-          await service.fetchVideo('https://www.youtube.com/watch?v=abc12345678');
+      final result = await service.fetchVideo(
+        'https://www.youtube.com/watch?v=abc12345678',
+      );
 
       expect(result.isFailure, true);
       expect(result.error, contains('No captions available'));
@@ -151,8 +157,9 @@ void main() {
       final mockClient = MockHttpClient(statusCode: 400);
       final service = YouTubeService(httpClient: mockClient);
 
-      final result =
-          await service.fetchVideo('https://www.youtube.com/watch?v=abc12345678');
+      final result = await service.fetchVideo(
+        'https://www.youtube.com/watch?v=abc12345678',
+      );
 
       expect(result.isFailure, true);
       expect(result.error, contains('Could not load video information'));
@@ -169,18 +176,19 @@ void main() {
                 {
                   'languageCode': 'en',
                   'baseUrl': 'http://example.com/transcript',
-                }
-              ]
-            }
-          }
+                },
+              ],
+            },
+          },
         },
         mockTranscriptXml:
             '<transcript><text>Hello &amp; welcome</text><text>It&#39;s great</text></transcript>',
       );
       final service = YouTubeService(httpClient: mockClient);
 
-      final result =
-          await service.fetchVideo('https://www.youtube.com/watch?v=abc12345678');
+      final result = await service.fetchVideo(
+        'https://www.youtube.com/watch?v=abc12345678',
+      );
 
       expect(result.isSuccess, true);
       expect(result.video?.transcript, contains('Hello & welcome'));
