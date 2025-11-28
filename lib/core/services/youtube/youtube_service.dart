@@ -9,14 +9,22 @@ class YouTubeService {
   /// Fetch video info and transcript from YouTube URL
   Future<YouTubeResult> fetchVideo(String url) async {
     try {
+      print('Processing URL: $url');
+
       // Validate and parse URL
       final videoId = _extractVideoId(url);
       if (videoId == null) {
+        print('Failed to extract video ID from URL');
         return YouTubeResult.failure('Invalid YouTube URL');
       }
 
+      print('Extracted video ID: $videoId');
+
       // Fetch video metadata
+      print('Fetching video metadata...');
       final video = await _youtubeExplode.videos.get(videoId);
+      print('Video title: ${video.title}');
+      print('Video duration: ${video.duration}');
 
       // Fetch transcript
       final transcript = await _fetchTranscript(videoId);
@@ -33,6 +41,7 @@ class YouTubeService {
         transcript: transcript,
       ));
     } catch (e) {
+      print('Error in fetchVideo: $e');
       return YouTubeResult.failure(
         'Failed to load video: ${e.toString()}',
       );
@@ -51,20 +60,45 @@ class YouTubeService {
   /// Fetch transcript/captions for a video
   Future<String?> _fetchTranscript(String videoId) async {
     try {
+      print('Fetching transcript for video: $videoId');
+
       final trackManifest = await _youtubeExplode.videos.closedCaptions
           .getManifest(videoId);
 
-      // Get English transcript or first available
+      print('Found ${trackManifest.tracks.length} caption tracks');
+
+      if (trackManifest.tracks.isEmpty) {
+        print('No caption tracks available');
+        return null;
+      }
+
+      // Print available tracks for debugging
+      for (final track in trackManifest.tracks) {
+        print('Available track: ${track.language.name} (${track.language.code})');
+      }
+
+      // Try to get English transcript first
       final track = trackManifest.tracks.firstWhere(
-        (t) => t.language.code == 'en',
-        orElse: () => trackManifest.tracks.first,
+        (t) => t.language.code.toLowerCase().startsWith('en'),
+        orElse: () {
+          print('No English track found, using first available: ${trackManifest.tracks.first.language.name}');
+          return trackManifest.tracks.first;
+        },
       );
 
+      print('Fetching captions for track: ${track.language.name}');
       final captions = await _youtubeExplode.videos.closedCaptions.get(track);
 
+      print('Retrieved ${captions.captions.length} caption segments');
+
       // Combine all caption text
-      return captions.captions.map((c) => c.text).join(' ');
+      final transcript = captions.captions.map((c) => c.text).join(' ');
+      print('Total transcript length: ${transcript.length} characters');
+
+      return transcript;
     } catch (e) {
+      print('Error fetching transcript: $e');
+      print('Error type: ${e.runtimeType}');
       return null;
     }
   }
