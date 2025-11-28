@@ -30,7 +30,7 @@ class YouTubeService {
       final transcript = await _fetchTranscript(videoId);
       if (transcript == null) {
         return YouTubeResult.failure(
-          'No transcript available for this video. Please try another video with captions.',
+          'Could not load captions for this video. The caption format may not be supported. Try a different video.',
         );
       }
 
@@ -77,48 +77,54 @@ class YouTubeService {
         print('Available track: ${track.language.name} (${track.language.code})');
       }
 
-      // Try multiple tracks in order of preference
-      // Prioritize: 1) English manual captions, 2) English auto-generated, 3) Any other
-      final trackPriority = [
-        // Try manual English captions first (more reliable)
-        ...trackManifest.tracks.where(
-          (t) => t.language.code.toLowerCase().startsWith('en') &&
-                 !t.language.name.toLowerCase().contains('auto'),
-        ),
-        // Then try auto-generated English
-        ...trackManifest.tracks.where(
-          (t) => t.language.code.toLowerCase().startsWith('en'),
-        ),
-        // Finally try any available track
-        ...trackManifest.tracks,
-      ];
+      // Remove duplicate tracks by using a Set with unique URL
+      final uniqueTracks = <String, dynamic>{};
+      for (final track in trackManifest.tracks) {
+        uniqueTracks[track.url.toString()] = track;
+      }
+
+      // Prioritize tracks: manual English > auto English > any language
+      final uniqueTrackList = uniqueTracks.values.toList();
+      final manualEnglish = uniqueTrackList.where(
+        (t) => t.language.code.toLowerCase().startsWith('en') &&
+               !t.language.name.toLowerCase().contains('auto'),
+      ).toList();
+
+      final autoEnglish = uniqueTrackList.where(
+        (t) => t.language.code.toLowerCase().startsWith('en') &&
+               t.language.name.toLowerCase().contains('auto'),
+      ).toList();
+
+      final others = uniqueTrackList.where(
+        (t) => !t.language.code.toLowerCase().startsWith('en'),
+      ).toList();
+
+      final trackPriority = [...manualEnglish, ...autoEnglish, ...others];
+
+      print('Trying ${trackPriority.length} unique tracks...');
 
       // Try each track until one works
       for (final track in trackPriority) {
         try {
-          print('Attempting to fetch captions for: ${track.language.name}');
+          print('Attempting: ${track.language.name}');
           final captions = await _youtubeExplode.videos.closedCaptions.get(track);
 
-          print('✓ Successfully retrieved ${captions.captions.length} caption segments');
+          print('✓ Success! ${captions.captions.length} segments');
 
-          // Combine all caption text
           final transcript = captions.captions.map((c) => c.text).join(' ');
-          print('Total transcript length: ${transcript.length} characters');
+          print('Transcript length: ${transcript.length} characters');
 
           return transcript;
         } catch (trackError) {
-          print('✗ Failed for ${track.language.name}: ${trackError.runtimeType}');
-          // Continue to next track
+          print('✗ Failed: ${trackError.runtimeType}');
           continue;
         }
       }
 
-      // If we get here, all tracks failed
-      print('All caption tracks failed to load');
+      print('All tracks failed - video format not supported');
       return null;
     } catch (e) {
       print('Error fetching transcript: $e');
-      print('Error type: ${e.runtimeType}');
       return null;
     }
   }
