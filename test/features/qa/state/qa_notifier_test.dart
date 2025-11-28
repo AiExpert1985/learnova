@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learnova/features/qa/state/qa_notifier.dart';
 import 'package:learnova/features/qa/services/qa_service.dart';
 import 'package:learnova/features/qa/models/qa_models.dart';
-import 'package:learnova/core/services/llm/llm_service.dart';
 
 /// Mock QAService for testing
 class MockQAService implements QAService {
@@ -17,9 +16,6 @@ class MockQAService implements QAService {
   }) async {
     return mockResult;
   }
-
-  @override
-  LLMService get llmService => throw UnimplementedError();
 }
 
 void main() {
