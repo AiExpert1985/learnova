@@ -18,21 +18,23 @@
 
 ## Current Status
 
-**Phase:** Step 1 - MVP Implementation (Complete)
+**Phase:** Step 2 - YouTube Integration (Complete)
 
 **Current Features:**
-- Basic Q&A interface with hardcoded transcript
+- YouTube URL input and video loading
+- Real-time transcript fetching via Innertube API
+- Text-based Q&A on any YouTube video with captions
 - OpenAI GPT-4o-mini integration
-- Text-based interaction
 - Error handling and token tracking
 - API key configuration via environment variables
+- StateNotifier-based state management
 
 **Not Yet Implemented:**
-- YouTube transcript integration
 - Voice input/output
 - User authentication
-- State persistence
+- State persistence (save Q&A history)
 - Subscription management
+- Video history/favorites
 
 ---
 
@@ -123,6 +125,33 @@ lib/
 **Trade-off:**
 - ⚠️ Slight complexity increase for MVP
 - ✅ Prevents major refactoring later
+
+### StateNotifier Pattern (No Callbacks)
+
+**Decision:** Use StateNotifier for feature state, widgets call notifiers directly.
+
+**Why:**
+- More intuitive than callback drilling
+- Business logic centralized in notifier (single source of truth)
+- Widgets call actions directly: `ref.read(notifier).method()`
+- Cleaner code, easier to understand
+- Ready for multi-screen state sharing
+
+**Pattern:**
+```dart
+// Widget calls notifier directly
+ref.read(qaNotifierProvider.notifier).loadVideo(url);
+
+// Notifier handles all logic
+class QANotifier extends StateNotifier<QAState> {
+  Future<void> loadVideo(String url) async {
+    state = state.copyWith(isLoading: true);
+    // Fetch video, update state
+  }
+}
+```
+
+**Avoid:** Callback drilling (passing VoidCallback through widget tree)
 
 ---
 
@@ -313,19 +342,39 @@ ref.read(featureNotifier.notifier).performAction(params);
 - Model handles "I don't know" appropriately
 - Token usage reasonable (~300-500 per question)
 
-### Step 2: YouTube Transcript Integration 🔜 **Next**
+### Step 2: YouTube Transcript Integration ✅ **Complete**
 
-**Goals:**
-- Integrate YouTube API for video metadata
-- Fetch video transcripts programmatically
-- Handle transcript formatting and cleanup
-- Support multiple languages
+**Goal:** Fetch transcripts from any YouTube video with captions.
 
-**Challenges to Address:**
-- YouTube API quota limits
-- Transcript availability (not all videos have them)
-- Transcript quality and formatting
-- Error handling for missing transcripts
+**Achievements:**
+- YouTube Innertube API integration (no API key needed)
+- WEB client for maximum reliability
+- Video metadata extraction (title, duration)
+- Caption track selection (prioritizes manual English > auto English > any language)
+- HTML entity decoding in transcripts
+- Comprehensive error handling
+
+**Critical Decision: Innertube API over youtube_explode_dart**
+
+**Why we switched:**
+- `youtube_explode_dart` had XmlParserException on many videos
+- Library-based solutions are fragile (depend on third-party maintenance)
+- Innertube API is YouTube's internal API (more stable)
+- Direct HTTP implementation gives us full control
+- No external library dependency
+
+**Implementation:**
+- Endpoint: `https://www.youtube.com/youtubei/v1/player`
+- Client: WEB (more reliable than ANDROID for transcripts)
+- Simple regex for XML text extraction (avoids parser complexity)
+- ~250 lines of clean, maintainable code
+
+**Key Learnings:**
+- WEB client (clientName: 'WEB') more stable than ANDROID for transcripts
+- ANDROID client requires integrity checks, prone to 400 errors
+- User-Agent header important for request legitimacy
+- Regex-based XML parsing simpler and more reliable than XML parsers
+- Direct API implementation > third-party libraries for critical features
 
 ### Step 3+: Voice & Advanced Features 🔮 **Future**
 
@@ -370,3 +419,11 @@ ref.read(featureNotifier.notifier).performAction(params);
 - Provider abstraction was correct decision
 - Riverpod/GoRouter worth adding early (team already knows them)
 - Result pattern makes error handling explicit
+
+### YouTube Integration
+- ✅ **Direct API implementation > third-party libraries**
+- YouTube Innertube API is reliable (YouTube's own internal API)
+- WEB client more stable than ANDROID for transcript fetching
+- Simple regex parsing > complex XML parsers
+- No API key needed, no quota limits
+- Direct control over requests and error handling

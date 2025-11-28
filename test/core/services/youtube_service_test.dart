@@ -1,0 +1,191 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:learnova/core/services/youtube/youtube_service.dart';
+import 'package:learnova/core/services/youtube/youtube_models.dart';
+
+/// Mock HTTP client for testing
+class MockHttpClient extends http.BaseClient {
+  final Map<String, dynamic>? mockPlayerResponse;
+  final String? mockTranscriptXml;
+  final int statusCode;
+
+  MockHttpClient({
+    this.mockPlayerResponse,
+    this.mockTranscriptXml,
+    this.statusCode = 200,
+  });
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (request.url.path.contains('/player')) {
+      // Player API response
+      final body = mockPlayerResponse != null
+          ? '${_jsonEncode(mockPlayerResponse!)}'
+          : '{}';
+      return http.StreamedResponse(
+        Stream.value(body.codeUnits),
+        statusCode,
+        headers: {'content-type': 'application/json'},
+      );
+    } else {
+      // Transcript XML response
+      final body = mockTranscriptXml ?? '';
+      return http.StreamedResponse(
+        Stream.value(body.codeUnits),
+        statusCode,
+        headers: {'content-type': 'text/xml'},
+      );
+    }
+  }
+
+  String _jsonEncode(Map<String, dynamic> data) {
+    // Simple JSON encoding for test purposes
+    final parts = data.entries.map((e) {
+      if (e.value is Map) {
+        return '"${e.key}":${_jsonEncode(e.value as Map<String, dynamic>)}';
+      } else if (e.value is String) {
+        return '"${e.key}":"${e.value}"';
+      } else {
+        return '"${e.key}":${e.value}';
+      }
+    });
+    return '{${parts.join(',')}}';
+  }
+}
+
+void main() {
+  group('YouTubeService', () {
+    test('extracts video ID from standard YouTube URL', () async {
+      final mockClient = MockHttpClient(
+        mockPlayerResponse: {
+          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'}
+        },
+        mockTranscriptXml: '<transcript><text>Test</text></transcript>',
+      );
+      final service = YouTubeService(httpClient: mockClient);
+
+      final result =
+          await service.fetchVideo('https://www.youtube.com/watch?v=abc12345678');
+
+      expect(result.isSuccess, true);
+      service.dispose();
+    });
+
+    test('extracts video ID from short YouTube URL', () async {
+      final mockClient = MockHttpClient(
+        mockPlayerResponse: {
+          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'}
+        },
+        mockTranscriptXml: '<transcript><text>Test</text></transcript>',
+      );
+      final service = YouTubeService(httpClient: mockClient);
+
+      final result = await service.fetchVideo('https://youtu.be/abc12345678');
+
+      expect(result.isSuccess, true);
+      service.dispose();
+    });
+
+    test('returns failure for invalid URL', () async {
+      final mockClient = MockHttpClient();
+      final service = YouTubeService(httpClient: mockClient);
+
+      final result = await service.fetchVideo('not-a-valid-url');
+
+      expect(result.isFailure, true);
+      expect(result.error, 'Invalid YouTube URL');
+      service.dispose();
+    });
+
+    test('fetches video metadata successfully', () async {
+      final mockClient = MockHttpClient(
+        mockPlayerResponse: {
+          'videoDetails': {
+            'title': 'Test Video Title',
+            'lengthSeconds': '300',
+          },
+          'captions': {
+            'playerCaptionsTracklistRenderer': {
+              'captionTracks': [
+                {
+                  'languageCode': 'en',
+                  'baseUrl': 'http://example.com/transcript',
+                }
+              ]
+            }
+          }
+        },
+        mockTranscriptXml:
+            '<transcript><text>Hello world</text><text>Test transcript</text></transcript>',
+      );
+      final service = YouTubeService(httpClient: mockClient);
+
+      final result =
+          await service.fetchVideo('https://www.youtube.com/watch?v=abc12345678');
+
+      expect(result.isSuccess, true);
+      expect(result.video?.title, 'Test Video Title');
+      expect(result.video?.duration, const Duration(seconds: 300));
+      expect(result.video?.transcript, contains('Hello world'));
+      service.dispose();
+    });
+
+    test('returns failure when no captions available', () async {
+      final mockClient = MockHttpClient(
+        mockPlayerResponse: {
+          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'},
+          // No captions field
+        },
+      );
+      final service = YouTubeService(httpClient: mockClient);
+
+      final result =
+          await service.fetchVideo('https://www.youtube.com/watch?v=abc12345678');
+
+      expect(result.isFailure, true);
+      expect(result.error, contains('No captions available'));
+      service.dispose();
+    });
+
+    test('handles HTTP errors gracefully', () async {
+      final mockClient = MockHttpClient(statusCode: 400);
+      final service = YouTubeService(httpClient: mockClient);
+
+      final result =
+          await service.fetchVideo('https://www.youtube.com/watch?v=abc12345678');
+
+      expect(result.isFailure, true);
+      expect(result.error, contains('Could not load video information'));
+      service.dispose();
+    });
+
+    test('decodes HTML entities in transcript', () async {
+      final mockClient = MockHttpClient(
+        mockPlayerResponse: {
+          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'},
+          'captions': {
+            'playerCaptionsTracklistRenderer': {
+              'captionTracks': [
+                {
+                  'languageCode': 'en',
+                  'baseUrl': 'http://example.com/transcript',
+                }
+              ]
+            }
+          }
+        },
+        mockTranscriptXml:
+            '<transcript><text>Hello &amp; welcome</text><text>It&#39;s great</text></transcript>',
+      );
+      final service = YouTubeService(httpClient: mockClient);
+
+      final result =
+          await service.fetchVideo('https://www.youtube.com/watch?v=abc12345678');
+
+      expect(result.isSuccess, true);
+      expect(result.video?.transcript, contains('Hello & welcome'));
+      expect(result.video?.transcript, contains("It's great"));
+      service.dispose();
+    });
+  });
+}
