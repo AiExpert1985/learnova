@@ -66,7 +66,11 @@
 - **Reusability:** Used in multiple places (e.g., ErrorBanner).
 - **Readability:** `build` method > 50 lines.
 
-**How:** Move logic/state to new widget, pass callbacks for actions.
+**How:**
+- Move UI logic/local state to new widget.
+- **Do NOT pass callbacks.**
+- Widget should access `StateNotifier` directly via `ref.read(notifier).method()` for actions.
+- Widget should watch `StateNotifier` state via `ref.watch(provider)` for updates.
 
 ---
 
