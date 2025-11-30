@@ -29,9 +29,9 @@ class QAScreen extends ConsumerWidget {
               title: qaState.videoTitle!,
               duration: qaState.videoDuration!,
             ),
-          if (qaState.videoError != null)
+          if (qaState.videoError != null && qaState.videoError!.isNotEmpty)
             ErrorBanner(error: qaState.videoError!),
-          if (qaState.hasVideo || qaState.isLoadingVideo)
+          if (qaState.hasVideo)
             Expanded(child: QAHistoryList(history: qaState.history))
           else
             Expanded(

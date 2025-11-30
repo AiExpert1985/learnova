@@ -42,4 +42,16 @@ class QAState {
       videoError: videoError ?? this.videoError,
     );
   }
+
+  QAState clearVideoData() {
+    return QAState(
+      videoTitle: null,
+      videoDuration: null,
+      transcript: null,
+      history: [],
+      isLoadingAnswer: isLoadingAnswer, // Keep this
+      isLoadingVideo: true, // Set to true as we are about to load
+      videoError: '', // Clear error
+    );
+  }
 }

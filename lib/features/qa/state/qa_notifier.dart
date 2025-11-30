@@ -22,8 +22,8 @@ class QANotifier extends StateNotifier<QAState> {
     final trimmedUrl = url.trim();
     if (trimmedUrl.isEmpty) return;
 
-    // Clear previous error if any and start loading
-    state = state.copyWith(videoError: '', isLoadingVideo: true);
+    // Clear previous error and data, then start loading
+    state = state.clearVideoData();
 
     final result = await _youtubeService.fetchVideo(trimmedUrl);
 
@@ -44,7 +44,6 @@ class QANotifier extends StateNotifier<QAState> {
         videoDuration: video.duration,
         transcript: video.transcript,
         isLoadingVideo: false,
-        history: [], // Clear history when loading new video
       );
     } else {
       state = state.copyWith(isLoadingVideo: false, videoError: result.error);
