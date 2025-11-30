@@ -13,9 +13,9 @@ class QANotifier extends StateNotifier<QAState> {
   QANotifier({
     required QAService qaService,
     required YouTubeService youtubeService,
-  })  : _qaService = qaService,
-        _youtubeService = youtubeService,
-        super(const QAState());
+  }) : _qaService = qaService,
+       _youtubeService = youtubeService,
+       super(const QAState());
 
   /// Load video from YouTube URL
   Future<void> loadVideo(String url) async {
@@ -48,10 +48,7 @@ class QANotifier extends StateNotifier<QAState> {
         history: [], // Clear history when loading new video
       );
     } else {
-      state = state.copyWith(
-        isLoadingVideo: false,
-        videoError: result.error,
-      );
+      state = state.copyWith(isLoadingVideo: false, videoError: result.error);
     }
   }
 
@@ -65,7 +62,7 @@ class QANotifier extends StateNotifier<QAState> {
       return;
     }
 
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoadingAnswer: true);
 
     final result = await _qaService.askQuestion(
       transcript: state.transcript!,
@@ -80,7 +77,7 @@ class QANotifier extends StateNotifier<QAState> {
     );
 
     state = state.copyWith(
-      isLoading: false,
+      isLoadingAnswer: false,
       history: [...state.history, newEntry],
     );
   }

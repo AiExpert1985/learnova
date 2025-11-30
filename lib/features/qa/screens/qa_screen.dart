@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../widgets/transcript_header.dart';
 import '../widgets/question_input.dart';
 import '../widgets/url_input.dart';
@@ -22,11 +23,7 @@ class QAScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          UrlInput(
-            isLoading: qaState.isLoadingVideo,
-            onLoad: (url) =>
-                ref.read(qaNotifierProvider.notifier).loadVideo(url),
-          ),
+          const UrlInput(),
           if (qaState.hasVideo)
             TranscriptHeader(
               title: qaState.videoTitle!,
@@ -38,29 +35,12 @@ class QAScreen extends ConsumerWidget {
             Expanded(child: QAHistoryList(history: qaState.history))
           else
             Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.video_library_outlined,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Paste a YouTube URL and press play to start',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
+              child: EmptyState(
+                icon: Icons.video_library_outlined,
+                message: 'Paste a YouTube URL and press play to start',
               ),
             ),
-          if (qaState.hasVideo) QuestionInput(isLoading: qaState.isLoading),
+          if (qaState.hasVideo) const QuestionInput(),
         ],
       ),
     );

@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/app_providers.dart';
 
-class UrlInput extends StatefulWidget {
-  final Function(String) onLoad;
-  final bool isLoading;
-
-  const UrlInput({super.key, required this.onLoad, required this.isLoading});
+class UrlInput extends ConsumerStatefulWidget {
+  const UrlInput({super.key});
 
   @override
-  State<UrlInput> createState() => _UrlInputState();
+  ConsumerState<UrlInput> createState() => _UrlInputState();
 }
 
-class _UrlInputState extends State<UrlInput> {
+class _UrlInputState extends ConsumerState<UrlInput> {
   final _urlController = TextEditingController();
 
   @override
@@ -22,11 +21,15 @@ class _UrlInputState extends State<UrlInput> {
   void _handleLoad() {
     final url = _urlController.text.trim();
     if (url.isEmpty) return;
-    widget.onLoad(url);
+    ref.read(qaNotifierProvider.notifier).loadVideo(url);
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = ref.watch(
+      qaNotifierProvider.select((state) => state.isLoadingVideo),
+    );
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -49,14 +52,14 @@ class _UrlInputState extends State<UrlInput> {
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.link),
               ),
-              enabled: !widget.isLoading,
+              enabled: !isLoading,
               onSubmitted: (_) => _handleLoad(),
             ),
           ),
           const SizedBox(width: 8),
           IconButton(
-            onPressed: widget.isLoading ? null : _handleLoad,
-            icon: widget.isLoading
+            onPressed: isLoading ? null : _handleLoad,
+            icon: isLoading
                 ? const SizedBox(
                     width: 24,
                     height: 24,

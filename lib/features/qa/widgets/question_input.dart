@@ -5,12 +5,7 @@ import '../../../core/providers/app_providers.dart';
 /// Input field for asking questions
 /// Calls QANotifier directly without callbacks
 class QuestionInput extends ConsumerStatefulWidget {
-  final bool isLoading;
-
-  const QuestionInput({
-    super.key,
-    required this.isLoading,
-  });
+  const QuestionInput({super.key});
 
   @override
   ConsumerState<QuestionInput> createState() => _QuestionInputState();
@@ -35,6 +30,10 @@ class _QuestionInputState extends ConsumerState<QuestionInput> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = ref.watch(
+      qaNotifierProvider.select((state) => state.isLoadingAnswer),
+    );
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -56,14 +55,14 @@ class _QuestionInputState extends ConsumerState<QuestionInput> {
                 hintText: 'Ask a question...',
                 border: OutlineInputBorder(),
               ),
-              enabled: !widget.isLoading,
+              enabled: !isLoading,
               onSubmitted: (_) => _handleSubmit(),
             ),
           ),
           const SizedBox(width: 8),
           IconButton(
-            onPressed: widget.isLoading ? null : _handleSubmit,
-            icon: widget.isLoading
+            onPressed: isLoading ? null : _handleSubmit,
+            icon: isLoading
                 ? const SizedBox(
                     width: 24,
                     height: 24,

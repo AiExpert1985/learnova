@@ -39,19 +39,19 @@ void main() {
   group('QANotifier', () {
     test('initial state is empty', () {
       final mockQAService = MockQAService(
-        mockResult: QAResult.success(Answer(
-          text: 'Test',
-          timestamp: DateTime.now(),
-          tokensUsed: 100,
-        )),
+        mockResult: QAResult.success(
+          Answer(text: 'Test', timestamp: DateTime.now(), tokensUsed: 100),
+        ),
       );
       final mockYouTubeService = MockYouTubeService(
-        mockResult: YouTubeResult.success(const VideoInfo(
-          id: 'test',
-          title: 'Test Video',
-          duration: Duration(minutes: 5),
-          transcript: 'Test transcript',
-        )),
+        mockResult: YouTubeResult.success(
+          const VideoInfo(
+            id: 'test',
+            title: 'Test Video',
+            duration: Duration(minutes: 5),
+            transcript: 'Test transcript',
+          ),
+        ),
       );
       final notifier = QANotifier(
         qaService: mockQAService,
@@ -59,26 +59,26 @@ void main() {
       );
 
       expect(notifier.state.history.isEmpty, true);
-      expect(notifier.state.isLoading, false);
+      expect(notifier.state.isLoadingAnswer, false);
       expect(notifier.state.hasVideo, false);
       expect(notifier.state.videoTitle, null);
     });
 
     test('loadVideo updates state with video info', () async {
       final mockQAService = MockQAService(
-        mockResult: QAResult.success(Answer(
-          text: 'Test',
-          timestamp: DateTime.now(),
-          tokensUsed: 100,
-        )),
+        mockResult: QAResult.success(
+          Answer(text: 'Test', timestamp: DateTime.now(), tokensUsed: 100),
+        ),
       );
       final mockYouTubeService = MockYouTubeService(
-        mockResult: YouTubeResult.success(const VideoInfo(
-          id: 'test123',
-          title: 'How to Code',
-          duration: Duration(minutes: 10),
-          transcript: 'This is a transcript about coding',
-        )),
+        mockResult: YouTubeResult.success(
+          const VideoInfo(
+            id: 'test123',
+            title: 'How to Code',
+            duration: Duration(minutes: 10),
+            transcript: 'This is a transcript about coding',
+          ),
+        ),
       );
       final notifier = QANotifier(
         qaService: mockQAService,
@@ -96,11 +96,9 @@ void main() {
 
     test('loadVideo handles errors gracefully', () async {
       final mockQAService = MockQAService(
-        mockResult: QAResult.success(Answer(
-          text: 'Test',
-          timestamp: DateTime.now(),
-          tokensUsed: 100,
-        )),
+        mockResult: QAResult.success(
+          Answer(text: 'Test', timestamp: DateTime.now(), tokensUsed: 100),
+        ),
       );
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.failure('Invalid YouTube URL'),
@@ -127,12 +125,14 @@ void main() {
         mockResult: QAResult.success(mockAnswer),
       );
       final mockYouTubeService = MockYouTubeService(
-        mockResult: YouTubeResult.success(const VideoInfo(
-          id: 'test',
-          title: 'Test Video',
-          duration: Duration(minutes: 5),
-          transcript: 'Test transcript',
-        )),
+        mockResult: YouTubeResult.success(
+          const VideoInfo(
+            id: 'test',
+            title: 'Test Video',
+            duration: Duration(minutes: 5),
+            transcript: 'Test transcript',
+          ),
+        ),
       );
       final notifier = QANotifier(
         qaService: mockQAService,
@@ -150,7 +150,7 @@ void main() {
       expect(notifier.state.history.first.answer, 'Test answer');
       expect(notifier.state.history.first.tokensUsed, 150);
       expect(notifier.state.history.first.hasError, false);
-      expect(notifier.state.isLoading, false);
+      expect(notifier.state.isLoadingAnswer, false);
     });
 
     test('askQuestion updates state with error result', () async {
@@ -158,12 +158,14 @@ void main() {
         mockResult: QAResult.failure('Rate limit exceeded'),
       );
       final mockYouTubeService = MockYouTubeService(
-        mockResult: YouTubeResult.success(const VideoInfo(
-          id: 'test',
-          title: 'Test Video',
-          duration: Duration(minutes: 5),
-          transcript: 'Test transcript',
-        )),
+        mockResult: YouTubeResult.success(
+          const VideoInfo(
+            id: 'test',
+            title: 'Test Video',
+            duration: Duration(minutes: 5),
+            transcript: 'Test transcript',
+          ),
+        ),
       );
       final notifier = QANotifier(
         qaService: mockQAService,
@@ -180,24 +182,24 @@ void main() {
       expect(notifier.state.history.first.question, 'What is this about?');
       expect(notifier.state.history.first.hasError, true);
       expect(notifier.state.history.first.error, 'Rate limit exceeded');
-      expect(notifier.state.isLoading, false);
+      expect(notifier.state.isLoadingAnswer, false);
     });
 
     test('askQuestion does nothing when no video loaded', () async {
       final mockQAService = MockQAService(
-        mockResult: QAResult.success(Answer(
-          text: 'Test',
-          timestamp: DateTime.now(),
-          tokensUsed: 100,
-        )),
+        mockResult: QAResult.success(
+          Answer(text: 'Test', timestamp: DateTime.now(), tokensUsed: 100),
+        ),
       );
       final mockYouTubeService = MockYouTubeService(
-        mockResult: YouTubeResult.success(const VideoInfo(
-          id: 'test',
-          title: 'Test Video',
-          duration: Duration(minutes: 5),
-          transcript: 'Test transcript',
-        )),
+        mockResult: YouTubeResult.success(
+          const VideoInfo(
+            id: 'test',
+            title: 'Test Video',
+            duration: Duration(minutes: 5),
+            transcript: 'Test transcript',
+          ),
+        ),
       );
       final notifier = QANotifier(
         qaService: mockQAService,
@@ -213,19 +215,19 @@ void main() {
 
     test('askQuestion ignores empty or whitespace questions', () async {
       final mockQAService = MockQAService(
-        mockResult: QAResult.success(Answer(
-          text: 'Test',
-          timestamp: DateTime.now(),
-          tokensUsed: 100,
-        )),
+        mockResult: QAResult.success(
+          Answer(text: 'Test', timestamp: DateTime.now(), tokensUsed: 100),
+        ),
       );
       final mockYouTubeService = MockYouTubeService(
-        mockResult: YouTubeResult.success(const VideoInfo(
-          id: 'test',
-          title: 'Test Video',
-          duration: Duration(minutes: 5),
-          transcript: 'Test transcript',
-        )),
+        mockResult: YouTubeResult.success(
+          const VideoInfo(
+            id: 'test',
+            title: 'Test Video',
+            duration: Duration(minutes: 5),
+            transcript: 'Test transcript',
+          ),
+        ),
       );
       final notifier = QANotifier(
         qaService: mockQAService,
@@ -252,12 +254,14 @@ void main() {
         mockResult: QAResult.success(mockAnswer),
       );
       final mockYouTubeService = MockYouTubeService(
-        mockResult: YouTubeResult.success(const VideoInfo(
-          id: 'test',
-          title: 'Test Video',
-          duration: Duration(minutes: 5),
-          transcript: 'Test transcript',
-        )),
+        mockResult: YouTubeResult.success(
+          const VideoInfo(
+            id: 'test',
+            title: 'Test Video',
+            duration: Duration(minutes: 5),
+            transcript: 'Test transcript',
+          ),
+        ),
       );
       final notifier = QANotifier(
         qaService: mockQAService,
@@ -283,12 +287,14 @@ void main() {
         mockResult: QAResult.success(mockAnswer),
       );
       final mockYouTubeService = MockYouTubeService(
-        mockResult: YouTubeResult.success(const VideoInfo(
-          id: 'test',
-          title: 'Test Video',
-          duration: Duration(minutes: 5),
-          transcript: 'Test transcript',
-        )),
+        mockResult: YouTubeResult.success(
+          const VideoInfo(
+            id: 'test',
+            title: 'Test Video',
+            duration: Duration(minutes: 5),
+            transcript: 'Test transcript',
+          ),
+        ),
       );
       final notifier = QANotifier(
         qaService: mockQAService,
@@ -318,12 +324,14 @@ void main() {
         mockResult: QAResult.success(mockAnswer),
       );
       final mockYouTubeService = MockYouTubeService(
-        mockResult: YouTubeResult.success(const VideoInfo(
-          id: 'test',
-          title: 'Test Video',
-          duration: Duration(minutes: 5),
-          transcript: 'Test transcript',
-        )),
+        mockResult: YouTubeResult.success(
+          const VideoInfo(
+            id: 'test',
+            title: 'Test Video',
+            duration: Duration(minutes: 5),
+            transcript: 'Test transcript',
+          ),
+        ),
       );
       final notifier = QANotifier(
         qaService: mockQAService,

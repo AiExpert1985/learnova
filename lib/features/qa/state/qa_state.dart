@@ -7,7 +7,7 @@ class QAState {
   final Duration? videoDuration;
   final String? transcript;
   final List<QAHistoryEntry> history;
-  final bool isLoading;
+  final bool isLoadingAnswer;
   final bool isLoadingVideo;
   final String? videoError;
 
@@ -16,7 +16,7 @@ class QAState {
     this.videoDuration,
     this.transcript,
     this.history = const [],
-    this.isLoading = false,
+    this.isLoadingAnswer = false,
     this.isLoadingVideo = false,
     this.videoError,
   });
@@ -28,7 +28,7 @@ class QAState {
     Duration? videoDuration,
     String? transcript,
     List<QAHistoryEntry>? history,
-    bool? isLoading,
+    bool? isLoadingAnswer,
     bool? isLoadingVideo,
     String? videoError,
   }) {
@@ -37,7 +37,7 @@ class QAState {
       videoDuration: videoDuration ?? this.videoDuration,
       transcript: transcript ?? this.transcript,
       history: history ?? this.history,
-      isLoading: isLoading ?? this.isLoading,
+      isLoadingAnswer: isLoadingAnswer ?? this.isLoadingAnswer,
       isLoadingVideo: isLoadingVideo ?? this.isLoadingVideo,
       videoError: videoError ?? this.videoError,
     );
@@ -49,7 +49,7 @@ class QAState {
       videoDuration: videoDuration,
       transcript: transcript,
       history: history,
-      isLoading: isLoading,
+      isLoadingAnswer: isLoadingAnswer,
       isLoadingVideo: isLoadingVideo,
       videoError: null,
     );
