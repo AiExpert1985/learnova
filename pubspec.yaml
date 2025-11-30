@@ -45,6 +45,11 @@ dependencies:
   # YouTube player
   youtube_player_iframe: ^5.2.1
 
+  # WebView platform implementations (required by youtube_player_iframe)
+  webview_flutter_android: ^3.16.0
+  webview_flutter_wkwebview: ^3.15.0
+  webview_flutter_web: ^0.2.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
