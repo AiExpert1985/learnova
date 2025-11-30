@@ -34,13 +34,32 @@ class QAScreen extends ConsumerWidget {
             ),
           if (qaState.videoError != null)
             ErrorBanner(error: qaState.videoError!),
-          Expanded(
-            child: QAHistoryList(
-              hasVideo: qaState.hasVideo,
-              isLoadingVideo: qaState.isLoadingVideo,
-              history: qaState.history,
+          if (qaState.hasVideo || qaState.isLoadingVideo)
+            Expanded(child: QAHistoryList(history: qaState.history))
+          else
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.video_library_outlined,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Paste a YouTube URL and press play to start',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
           if (qaState.hasVideo) QuestionInput(isLoading: qaState.isLoading),
         ],
       ),
