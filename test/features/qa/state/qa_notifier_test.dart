@@ -448,13 +448,6 @@ void main() {
       String? transcriptReceived;
 
       // Mock service that captures the transcript it receives
-      final mockQAService = MockQAService(
-        mockResult: QAResult.success(
-          Answer(text: 'Answer', timestamp: DateTime.now(), tokensUsed: 100),
-        ),
-      );
-
-      // Override askQuestion to capture transcript
       final capturingService = _CapturingQAService(
         mockResult: QAResult.success(
           Answer(text: 'Answer', timestamp: DateTime.now(), tokensUsed: 100),
@@ -503,15 +496,25 @@ void main() {
       await notifier.askQuestion('Question at 5s');
       expect(transcriptReceived, 'Intro Middle End');
 
+      // At position 7 seconds - should still use full transcript (< 10s threshold)
+      notifier.updatePosition(const Duration(seconds: 7));
+      await notifier.askQuestion('Question at 7s');
+      expect(transcriptReceived, 'Intro Middle End'); // Full transcript before 10s
+
       // At position 15 seconds - should use filtered transcript (> 10s threshold)
       notifier.updatePosition(const Duration(seconds: 15));
       await notifier.askQuestion('Question at 15s');
       expect(transcriptReceived, 'Intro Middle End'); // All segments before 15s
 
-      // At position 7 seconds - should filter to segments before 7s
-      notifier.updatePosition(const Duration(seconds: 7));
-      await notifier.askQuestion('Question at 7s');
-      expect(transcriptReceived, 'Intro Middle'); // Only first two segments
+      // At position 12 seconds - should filter to segments before 12s
+      notifier.updatePosition(const Duration(seconds: 12));
+      await notifier.askQuestion('Question at 12s');
+      expect(transcriptReceived, 'Intro Middle End'); // All three segments (last starts at 10s < 12s)
+
+      // At position 11 seconds - should filter to segments before 11s
+      notifier.updatePosition(const Duration(seconds: 11));
+      await notifier.askQuestion('Question at 11s');
+      expect(transcriptReceived, 'Intro Middle End'); // All three segments (last starts at 10s < 11s)
     });
   });
 }

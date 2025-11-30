@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -19,6 +20,7 @@ class VideoPlayer extends ConsumerStatefulWidget {
 
 class _VideoPlayerState extends ConsumerState<VideoPlayer> {
   late YoutubePlayerController _controller;
+  Timer? _positionTimer;
 
   @override
   void initState() {
@@ -34,9 +36,15 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> {
 
     _controller.loadVideoById(videoId: widget.videoId);
 
-    // Listen to playback position changes and update QA state
-    _controller.listen((event) {
-      ref.read(qaNotifierProvider.notifier).updatePosition(event.position);
+    // Poll playback position every second and update QA state
+    _positionTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
+      try {
+        final positionSeconds = await _controller.currentTime;
+        final position = Duration(seconds: positionSeconds.round());
+        ref.read(qaNotifierProvider.notifier).updatePosition(position);
+      } catch (_) {
+        // Ignore errors during position updates
+      }
     });
   }
 
@@ -51,6 +59,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> {
 
   @override
   void dispose() {
+    _positionTimer?.cancel();
     _controller.close();
     super.dispose();
   }
