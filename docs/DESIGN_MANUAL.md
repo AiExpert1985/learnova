@@ -47,6 +47,8 @@
 | **GoRouter** | Routing | Type-safe, deep linking |
 | **OpenAI** | LLM | GPT-4o-mini (Cost-effective: ~$0.0001/q) |
 | **youtube_player_iframe** | Video Player | Official iFrame API, cross-platform |
+| **webview_flutter_android** | WebView (Android) | Required by youtube_player_iframe v5.2.2 (^4.10.9) |
+| **webview_flutter_wkwebview** | WebView (iOS) | Required by youtube_player_iframe v5.2.2 (^3.23.0) |
 
 ### State Management
 **Decision:** `StateNotifier` for logic, widgets call `ref.read(notifier).method()`.
@@ -107,9 +109,11 @@
 - **Implementation:** Video player tracks position → QAState stores currentPosition → QANotifier filters transcript.
 
 ### Video Player Integration
-- **Decision:** Use `youtube_player_iframe` package for video playback with position tracking.
-- **Why:** Actively maintained (updated Aug 2025), official YouTube iFrame API, works cross-platform, no API key required.
-- **Architecture:** VideoPlayer widget → updates QANotifier.currentPosition → QANotifier filters transcript on askQuestion.
+- **Decision:** Use `youtube_player_iframe` v5.2.2 with required webview platform implementations.
+- **Why:** Actively maintained, official YouTube iFrame API, works cross-platform, no API key required.
+- **Dependencies:** Requires `webview_flutter_android` ^4.10.9 and `webview_flutter_wkwebview` ^3.23.0 (version compatibility critical).
+- **Position Tracking:** Poll `controller.currentTime` every 1 second via Timer.periodic (returns Future<double> in seconds).
+- **Architecture:** VideoPlayer widget → Timer polls position → updates QANotifier.currentPosition → QANotifier filters transcript on askQuestion.
 - **Smart Threshold:** Use full transcript for first 10 seconds (avoid empty context), then switch to position-aware filtering.
 - **State Design:** Store full `VideoInfo` object in state, use computed getters (videoTitle, videoId) for backward compatibility.
 
@@ -121,3 +125,5 @@
 ### Development
 - **Extract when painful:** Don't premature optimize.
 - **Standard over clever:** Simple solutions are better.
+- **Package versions:** Always verify dependency compatibility (e.g., youtube_player_iframe v5.2.2 requires webview ^4.x, not ^3.x).
+- **Step-by-step approach:** Validate each iteration before building on it (hybrid approach for timestamps validated Q&A first).
