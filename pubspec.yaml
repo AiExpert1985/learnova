@@ -43,12 +43,11 @@ dependencies:
   go_router: ^14.6.2
 
   # YouTube player
-  youtube_player_iframe: ^5.2.1
+  youtube_player_iframe: ^5.2.2
 
   # WebView platform implementations (required by youtube_player_iframe)
-  webview_flutter_android: ^3.16.0
-  webview_flutter_wkwebview: ^3.15.0
-  webview_flutter_web: ^0.2.3
+  webview_flutter_android: ^4.10.9
+  webview_flutter_wkwebview: ^3.23.0
 
 dev_dependencies:
   flutter_test:
