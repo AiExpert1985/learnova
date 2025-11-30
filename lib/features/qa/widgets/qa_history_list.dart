@@ -1,31 +1,22 @@
 import 'package:flutter/material.dart';
-import '../models/qa_history_entry.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/app_providers.dart';
 import 'qa_bubble.dart';
 
-class QAHistoryList extends StatefulWidget {
-  final List<QAHistoryEntry> history;
-
-  const QAHistoryList({super.key, required this.history});
+class QAHistoryList extends ConsumerStatefulWidget {
+  const QAHistoryList({super.key});
 
   @override
-  State<QAHistoryList> createState() => _QAHistoryListState();
+  ConsumerState<QAHistoryList> createState() => _QAHistoryListState();
 }
 
-class _QAHistoryListState extends State<QAHistoryList> {
+class _QAHistoryListState extends ConsumerState<QAHistoryList> {
   final _scrollController = ScrollController();
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(QAHistoryList oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.history.length > oldWidget.history.length) {
-      _scrollToBottom();
-    }
   }
 
   void _scrollToBottom() {
@@ -42,7 +33,16 @@ class _QAHistoryListState extends State<QAHistoryList> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.history.isEmpty) {
+    final history = ref.watch(qaNotifierProvider.select((s) => s.history));
+
+    // Listen for history changes to scroll to bottom
+    ref.listen(qaNotifierProvider.select((s) => s.history), (previous, next) {
+      if (next.length > (previous?.length ?? 0)) {
+        _scrollToBottom();
+      }
+    });
+
+    if (history.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -58,8 +58,8 @@ class _QAHistoryListState extends State<QAHistoryList> {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: widget.history.length,
-      itemBuilder: (context, index) => QABubble(entry: widget.history[index]),
+      itemCount: history.length,
+      itemBuilder: (context, index) => QABubble(entry: history[index]),
     );
   }
 }
