@@ -29,20 +29,22 @@ class QANotifier extends StateNotifier<QAState> {
 
     if (result.isSuccess) {
       final video = result.video!;
+      final fullTranscript = video.getFullTranscript();
 
       // Print transcript to console for debugging
       print('=== YouTube Transcript ===');
       print('Video: ${video.title}');
       print('Duration: ${video.duration}');
-      print('Transcript length: ${video.transcript.length} characters');
+      print('Segments: ${video.transcriptSegments.length}');
+      print('Transcript length: ${fullTranscript.length} characters');
       print('\nTranscript content:');
-      print(video.transcript);
+      print(fullTranscript);
       print('=== End Transcript ===\n');
 
       state = state.copyWith(
         videoTitle: video.title,
         videoDuration: video.duration,
-        transcript: video.transcript,
+        transcript: fullTranscript,
         isLoadingVideo: false,
       );
     } else {

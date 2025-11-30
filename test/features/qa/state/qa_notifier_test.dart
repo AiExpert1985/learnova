@@ -45,11 +45,17 @@ void main() {
       );
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
-          const VideoInfo(
+          VideoInfo(
             id: 'test',
             title: 'Test Video',
-            duration: Duration(minutes: 5),
-            transcript: 'Test transcript',
+            duration: const Duration(minutes: 5),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'Test transcript',
+                start: Duration.zero,
+                duration: Duration(seconds: 5),
+              ),
+            ],
           ),
         ),
       );
@@ -72,11 +78,17 @@ void main() {
       );
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
-          const VideoInfo(
+          VideoInfo(
             id: 'test123',
             title: 'How to Code',
-            duration: Duration(minutes: 10),
-            transcript: 'This is a transcript about coding',
+            duration: const Duration(minutes: 10),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'This is a transcript about coding',
+                start: Duration.zero,
+                duration: Duration(seconds: 10),
+              ),
+            ],
           ),
         ),
       );
@@ -126,11 +138,17 @@ void main() {
       );
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
-          const VideoInfo(
+          VideoInfo(
             id: 'test',
             title: 'Test Video',
-            duration: Duration(minutes: 5),
-            transcript: 'Test transcript',
+            duration: const Duration(minutes: 5),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'Test transcript',
+                start: Duration.zero,
+                duration: Duration(seconds: 5),
+              ),
+            ],
           ),
         ),
       );
@@ -159,11 +177,17 @@ void main() {
       );
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
-          const VideoInfo(
+          VideoInfo(
             id: 'test',
             title: 'Test Video',
-            duration: Duration(minutes: 5),
-            transcript: 'Test transcript',
+            duration: const Duration(minutes: 5),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'Test transcript',
+                start: Duration.zero,
+                duration: Duration(seconds: 5),
+              ),
+            ],
           ),
         ),
       );
@@ -193,11 +217,17 @@ void main() {
       );
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
-          const VideoInfo(
+          VideoInfo(
             id: 'test',
             title: 'Test Video',
-            duration: Duration(minutes: 5),
-            transcript: 'Test transcript',
+            duration: const Duration(minutes: 5),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'Test transcript',
+                start: Duration.zero,
+                duration: Duration(seconds: 5),
+              ),
+            ],
           ),
         ),
       );
@@ -221,11 +251,17 @@ void main() {
       );
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
-          const VideoInfo(
+          VideoInfo(
             id: 'test',
             title: 'Test Video',
-            duration: Duration(minutes: 5),
-            transcript: 'Test transcript',
+            duration: const Duration(minutes: 5),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'Test transcript',
+                start: Duration.zero,
+                duration: Duration(seconds: 5),
+              ),
+            ],
           ),
         ),
       );
@@ -255,11 +291,17 @@ void main() {
       );
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
-          const VideoInfo(
+          VideoInfo(
             id: 'test',
             title: 'Test Video',
-            duration: Duration(minutes: 5),
-            transcript: 'Test transcript',
+            duration: const Duration(minutes: 5),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'Test transcript',
+                start: Duration.zero,
+                duration: Duration(seconds: 5),
+              ),
+            ],
           ),
         ),
       );
@@ -288,11 +330,17 @@ void main() {
       );
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
-          const VideoInfo(
+          VideoInfo(
             id: 'test',
             title: 'Test Video',
-            duration: Duration(minutes: 5),
-            transcript: 'Test transcript',
+            duration: const Duration(minutes: 5),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'Test transcript',
+                start: Duration.zero,
+                duration: Duration(seconds: 5),
+              ),
+            ],
           ),
         ),
       );
@@ -325,11 +373,17 @@ void main() {
       );
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
-          const VideoInfo(
+          VideoInfo(
             id: 'test',
             title: 'Test Video',
-            duration: Duration(minutes: 5),
-            transcript: 'Test transcript',
+            duration: const Duration(minutes: 5),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'Test transcript',
+                start: Duration.zero,
+                duration: Duration(seconds: 5),
+              ),
+            ],
           ),
         ),
       );

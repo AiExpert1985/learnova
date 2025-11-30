@@ -39,7 +39,7 @@ class YouTubeService {
           id: videoId,
           title: videoInfo['title'] as String,
           duration: Duration(seconds: videoInfo['duration'] as int),
-          transcript: transcript,
+          transcriptSegments: transcript,
         ),
       );
     } catch (e) {
@@ -112,8 +112,8 @@ class YouTubeService {
     }
   }
 
-  /// Fetch transcript using Innertube API
-  Future<String?> _fetchTranscript(String videoId) async {
+  /// Fetch transcript with timestamps using Innertube API
+  Future<List<TranscriptSegment>?> _fetchTranscript(String videoId) async {
     try {
       print('Fetching captions...');
 
@@ -214,24 +214,41 @@ class YouTubeService {
         return null;
       }
 
-      // Parse XML response
+      // Parse XML response with timestamps
       final xml = transcriptResponse.body;
-      final textPattern = RegExp(r'<text[^>]*>([^<]*)</text>');
+      // Match: <text start="123.45" dur="2.5">text content</text>
+      final textPattern = RegExp(
+        r'<text start="([^"]*)"(?:\s+dur="([^"]*)")?>([^<]*)</text>',
+      );
       final matches = textPattern.allMatches(xml);
 
-      final texts = matches
-          .map((m) => m.group(1) ?? '')
-          .where((t) => t.isNotEmpty)
-          .map((t) => _decodeHtmlEntities(t))
-          .join(' ');
+      final segments = matches
+          .map((m) {
+            final startStr = m.group(1) ?? '0';
+            final durStr = m.group(2) ?? '0';
+            final text = m.group(3) ?? '';
 
-      if (texts.isEmpty) {
-        print('No text extracted from transcript');
+            if (text.trim().isEmpty) return null;
+
+            final startSeconds = double.tryParse(startStr) ?? 0.0;
+            final durSeconds = double.tryParse(durStr) ?? 0.0;
+
+            return TranscriptSegment(
+              text: _decodeHtmlEntities(text),
+              start: Duration(milliseconds: (startSeconds * 1000).round()),
+              duration: Duration(milliseconds: (durSeconds * 1000).round()),
+            );
+          })
+          .whereType<TranscriptSegment>()
+          .toList();
+
+      if (segments.isEmpty) {
+        print('No segments extracted from transcript');
         return null;
       }
 
-      print('✓ Transcript: ${texts.length} chars');
-      return texts;
+      print('✓ Transcript: ${segments.length} segments');
+      return segments;
     } catch (e) {
       print('Transcript error: $e');
       return null;

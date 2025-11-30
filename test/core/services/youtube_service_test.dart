@@ -56,7 +56,7 @@ void main() {
             },
           },
         },
-        mockTranscriptXml: '<transcript><text>Test</text></transcript>',
+        mockTranscriptXml: '<transcript><text start="0.0" dur="2.0">Test</text></transcript>',
       );
       final service = YouTubeService(httpClient: mockClient);
 
@@ -83,7 +83,7 @@ void main() {
             },
           },
         },
-        mockTranscriptXml: '<transcript><text>Test</text></transcript>',
+        mockTranscriptXml: '<transcript><text start="0.0" dur="2.0">Test</text></transcript>',
       );
       final service = YouTubeService(httpClient: mockClient);
 
@@ -120,7 +120,7 @@ void main() {
           },
         },
         mockTranscriptXml:
-            '<transcript><text>Hello world</text><text>Test transcript</text></transcript>',
+            '<transcript><text start="0.0" dur="2.0">Hello world</text><text start="2.0" dur="3.0">Test transcript</text></transcript>',
       );
       final service = YouTubeService(httpClient: mockClient);
 
@@ -131,7 +131,8 @@ void main() {
       expect(result.isSuccess, true);
       expect(result.video?.title, 'Test Video Title');
       expect(result.video?.duration, const Duration(seconds: 300));
-      expect(result.video?.transcript, contains('Hello world'));
+      expect(result.video?.transcriptSegments.length, 2);
+      expect(result.video?.getFullTranscript(), contains('Hello world'));
       service.dispose();
     });
 
@@ -182,7 +183,7 @@ void main() {
           },
         },
         mockTranscriptXml:
-            '<transcript><text>Hello &amp; welcome</text><text>It&#39;s great</text></transcript>',
+            '<transcript><text start="0.0" dur="2.0">Hello &amp; welcome</text><text start="2.0" dur="2.0">It&#39;s great</text></transcript>',
       );
       final service = YouTubeService(httpClient: mockClient);
 
@@ -191,8 +192,9 @@ void main() {
       );
 
       expect(result.isSuccess, true);
-      expect(result.video?.transcript, contains('Hello & welcome'));
-      expect(result.video?.transcript, contains("It's great"));
+      final transcript = result.video?.getFullTranscript() ?? '';
+      expect(transcript, contains('Hello & welcome'));
+      expect(transcript, contains("It's great"));
       service.dispose();
     });
   });
