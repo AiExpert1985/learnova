@@ -404,5 +404,134 @@ void main() {
 
       expect(notifier.state.history.isEmpty, true);
     });
+
+    test('updatePosition updates current position in state', () {
+      final mockQAService = MockQAService(
+        mockResult: QAResult.success(
+          Answer(text: 'Test', timestamp: DateTime.now(), tokensUsed: 100),
+        ),
+      );
+      final mockYouTubeService = MockYouTubeService(
+        mockResult: YouTubeResult.success(
+          VideoInfo(
+            id: 'test',
+            title: 'Test Video',
+            duration: const Duration(minutes: 5),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'Test transcript',
+                start: Duration.zero,
+                duration: Duration(seconds: 5),
+              ),
+            ],
+          ),
+        ),
+      );
+      final notifier = QANotifier(
+        qaService: mockQAService,
+        youtubeService: mockYouTubeService,
+      );
+
+      // Initial position should be zero
+      expect(notifier.state.currentPosition, Duration.zero);
+
+      // Update position
+      notifier.updatePosition(const Duration(seconds: 30));
+      expect(notifier.state.currentPosition, const Duration(seconds: 30));
+
+      // Update again
+      notifier.updatePosition(const Duration(minutes: 2));
+      expect(notifier.state.currentPosition, const Duration(minutes: 2));
+    });
+
+    test('askQuestion uses position-aware transcript after 10 seconds', () async {
+      String? transcriptReceived;
+
+      // Mock service that captures the transcript it receives
+      final mockQAService = MockQAService(
+        mockResult: QAResult.success(
+          Answer(text: 'Answer', timestamp: DateTime.now(), tokensUsed: 100),
+        ),
+      );
+
+      // Override askQuestion to capture transcript
+      final capturingService = _CapturingQAService(
+        mockResult: QAResult.success(
+          Answer(text: 'Answer', timestamp: DateTime.now(), tokensUsed: 100),
+        ),
+        onAskQuestion: (transcript, _) {
+          transcriptReceived = transcript;
+        },
+      );
+
+      final mockYouTubeService = MockYouTubeService(
+        mockResult: YouTubeResult.success(
+          VideoInfo(
+            id: 'test',
+            title: 'Test Video',
+            duration: const Duration(minutes: 1),
+            transcriptSegments: [
+              const TranscriptSegment(
+                text: 'Intro',
+                start: Duration.zero,
+                duration: Duration(seconds: 5),
+              ),
+              const TranscriptSegment(
+                text: 'Middle',
+                start: Duration(seconds: 5),
+                duration: Duration(seconds: 5),
+              ),
+              const TranscriptSegment(
+                text: 'End',
+                start: Duration(seconds: 10),
+                duration: Duration(seconds: 5),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final notifier = QANotifier(
+        qaService: capturingService,
+        youtubeService: mockYouTubeService,
+      );
+
+      await notifier.loadVideo('https://youtube.com/watch?v=test');
+
+      // At position 5 seconds - should use full transcript (< 10s threshold)
+      notifier.updatePosition(const Duration(seconds: 5));
+      await notifier.askQuestion('Question at 5s');
+      expect(transcriptReceived, 'Intro Middle End');
+
+      // At position 15 seconds - should use filtered transcript (> 10s threshold)
+      notifier.updatePosition(const Duration(seconds: 15));
+      await notifier.askQuestion('Question at 15s');
+      expect(transcriptReceived, 'Intro Middle End'); // All segments before 15s
+
+      // At position 7 seconds - should filter to segments before 7s
+      notifier.updatePosition(const Duration(seconds: 7));
+      await notifier.askQuestion('Question at 7s');
+      expect(transcriptReceived, 'Intro Middle'); // Only first two segments
+    });
   });
+}
+
+/// Mock QA service that captures transcript for testing
+class _CapturingQAService implements QAService {
+  final QAResult mockResult;
+  final Function(String transcript, String question) onAskQuestion;
+
+  _CapturingQAService({
+    required this.mockResult,
+    required this.onAskQuestion,
+  });
+
+  @override
+  Future<QAResult> askQuestion({
+    required String transcript,
+    required String questionText,
+  }) async {
+    onAskQuestion(transcript, questionText);
+    return mockResult;
+  }
 }

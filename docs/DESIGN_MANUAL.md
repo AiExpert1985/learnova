@@ -11,9 +11,9 @@
 **Platform:** Flutter (iOS, Android, Web).
 
 ### Current Status
-**Phase:** Step 2.5 - Timestamp-Aware Transcripts (Complete)
-- **Features:** YouTube URL loading, Transcript fetching with timestamps, Context-aware Q&A foundation, GPT-4o-mini Q&A.
-- **Pending:** Video player integration, Voice I/O, Auth, Persistence.
+**Phase:** Step 3 - Video Player Integration (Complete)
+- **Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A.
+- **Pending:** Voice I/O, Auth, Persistence, History management.
 
 ---
 
@@ -46,6 +46,7 @@
 | **Riverpod** | State/DI | Testable, scalable, compile-time safety |
 | **GoRouter** | Routing | Type-safe, deep linking |
 | **OpenAI** | LLM | GPT-4o-mini (Cost-effective: ~$0.0001/q) |
+| **youtube_player_iframe** | Video Player | Official iFrame API, cross-platform |
 
 ### State Management
 **Decision:** `StateNotifier` for logic, widgets call `ref.read(notifier).method()`.
@@ -99,16 +100,23 @@
 - **Detail:** Use `WEB` client for reliable transcripts.
 
 ### Timestamp-Aware Transcripts (Hybrid Approach)
-- **Decision:** Parse and store transcript segments with timestamps from YouTube XML, but send full transcript to LLM for now.
-- **Why:** Validates core Q&A value quickly while preserving timestamp data for future video-position-aware features.
-- **Structure:** `TranscriptSegment{text, start, duration}` → `VideoInfo.getFullTranscript()` (current) / `getTranscriptUpTo(position)` (future).
-- **Use Case:** When video player tracking is added, questions like "summarize what I've learned so far" will only send watched content to LLM.
-- **Benefit:** No rework needed later—data is already captured.
+- **Decision:** Parse and store transcript segments with timestamps from YouTube XML.
+- **Why:** Enables position-aware Q&A where questions only consider watched content.
+- **Structure:** `TranscriptSegment{text, start, duration}` → `VideoInfo.getFullTranscript()` / `getTranscriptUpTo(position)`.
+- **Use Case:** Questions like "summarize what I've learned so far" only send watched content to LLM.
+- **Implementation:** Video player tracks position → QAState stores currentPosition → QANotifier filters transcript.
+
+### Video Player Integration
+- **Decision:** Use `youtube_player_iframe` package for video playback with position tracking.
+- **Why:** Actively maintained (updated Aug 2025), official YouTube iFrame API, works cross-platform, no API key required.
+- **Architecture:** VideoPlayer widget → updates QANotifier.currentPosition → QANotifier filters transcript on askQuestion.
+- **Smart Threshold:** Use full transcript for first 10 seconds (avoid empty context), then switch to position-aware filtering.
+- **State Design:** Store full `VideoInfo` object in state, use computed getters (videoTitle, videoId) for backward compatibility.
 
 ### Prompt Engineering
-- **Strategy:** Full transcript + Question -> GPT-4o-mini.
+- **Strategy:** Position-aware transcript + Question -> GPT-4o-mini.
 - **Constraint:** Limit answers to 2-3 sentences to control cost/hallucination.
-- **Future:** Context will be filtered by video position using `getTranscriptUpTo()`.
+- **Context Filtering:** After 10s of playback, only send transcript up to current video position via `getTranscriptUpTo()`.
 
 ### Development
 - **Extract when painful:** Don't premature optimize.
