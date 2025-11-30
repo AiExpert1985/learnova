@@ -5,33 +5,26 @@ import 'youtube_models.dart';
 /// Service for fetching YouTube video information and transcripts
 /// Uses YouTube Innertube API (no API key required, more reliable)
 class YouTubeService {
-  static const _apiKey = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8'; // Public web client key
+  static const _apiKey =
+      'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8'; // Public web client key
   final http.Client _httpClient;
 
   YouTubeService({http.Client? httpClient})
-      : _httpClient = httpClient ?? http.Client();
+    : _httpClient = httpClient ?? http.Client();
 
   /// Fetch video info and transcript from YouTube URL
   Future<YouTubeResult> fetchVideo(String url) async {
     try {
-      print('Processing URL: $url');
-
       final videoId = _extractVideoId(url);
       if (videoId == null) {
-        print('Invalid URL');
         return YouTubeResult.failure('Invalid YouTube URL');
       }
-
-      print('Video ID: $videoId');
 
       // Fetch video metadata
       final videoInfo = await _fetchVideoMetadata(videoId);
       if (videoInfo == null) {
         return YouTubeResult.failure('Could not load video information');
       }
-
-      print('Title: ${videoInfo['title']}');
-      print('Duration: ${videoInfo['duration']}');
 
       // Fetch transcript
       final transcript = await _fetchTranscript(videoId);
@@ -41,12 +34,14 @@ class YouTubeService {
         );
       }
 
-      return YouTubeResult.success(VideoInfo(
-        id: videoId,
-        title: videoInfo['title'] as String,
-        duration: Duration(seconds: videoInfo['duration'] as int),
-        transcript: transcript,
-      ));
+      return YouTubeResult.success(
+        VideoInfo(
+          id: videoId,
+          title: videoInfo['title'] as String,
+          duration: Duration(seconds: videoInfo['duration'] as int),
+          transcript: transcript,
+        ),
+      );
     } catch (e) {
       print('Error: $e');
       return YouTubeResult.failure('Failed to load video: ${e.toString()}');
@@ -81,14 +76,15 @@ class YouTubeService {
         Uri.parse('https://www.youtube.com/youtubei/v1/player?key=$_apiKey'),
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
         body: jsonEncode({
           'context': {
             'client': {
               'clientName': 'WEB',
               'clientVersion': '2.20250201.00.00',
-            }
+            },
           },
           'videoId': videoId,
         }),
@@ -107,7 +103,8 @@ class YouTubeService {
 
       return {
         'title': videoDetails['title'] as String? ?? 'Unknown',
-        'duration': int.tryParse(videoDetails['lengthSeconds'] as String? ?? '0') ?? 0,
+        'duration':
+            int.tryParse(videoDetails['lengthSeconds'] as String? ?? '0') ?? 0,
       };
     } catch (e) {
       print('Metadata error: $e');
@@ -125,14 +122,15 @@ class YouTubeService {
         Uri.parse('https://www.youtube.com/youtubei/v1/player?key=$_apiKey'),
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
         body: jsonEncode({
           'context': {
             'client': {
               'clientName': 'WEB',
               'clientVersion': '2.20250201.00.00',
-            }
+            },
           },
           'videoId': videoId,
         }),
@@ -151,7 +149,8 @@ class YouTubeService {
         return null;
       }
 
-      final playerCaptionsRenderer = captions['playerCaptionsTracklistRenderer'] as Map<String, dynamic>?;
+      final playerCaptionsRenderer =
+          captions['playerCaptionsTracklistRenderer'] as Map<String, dynamic>?;
       if (playerCaptionsRenderer == null) {
         print('No caption renderer');
         return null;
