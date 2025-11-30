@@ -50,9 +50,7 @@ class QANotifier extends StateNotifier<QAState> {
       print('=== End Transcript ===\n');
 
       state = state.copyWith(
-        videoTitle: video.title,
-        videoDuration: video.duration,
-        transcript: fullTranscript,
+        videoInfo: video,
         isLoadingVideo: false,
       );
     } else {
@@ -60,7 +58,14 @@ class QANotifier extends StateNotifier<QAState> {
     }
   }
 
+  /// Update video playback position
+  /// Called by video player widget when position changes
+  void updatePosition(Duration position) {
+    state = state.copyWith(currentPosition: position);
+  }
+
   /// Ask a question and update state with result
+  /// Uses current video position to determine context
   Future<void> askQuestion(String questionText) async {
     final trimmedQuestion = questionText.trim();
     if (trimmedQuestion.isEmpty) return;
@@ -72,8 +77,14 @@ class QANotifier extends StateNotifier<QAState> {
 
     state = state.copyWith(isLoadingAnswer: true);
 
+    // Get transcript based on current video position
+    // Use position-aware transcript only if user has watched past 10 seconds
+    final transcript = state.currentPosition.inSeconds > 10
+        ? state.videoInfo!.getTranscriptUpTo(state.currentPosition)
+        : state.videoInfo!.getFullTranscript();
+
     final result = await _qaService.askQuestion(
-      transcript: state.transcript!,
+      transcript: transcript,
       questionText: trimmedQuestion,
     );
 

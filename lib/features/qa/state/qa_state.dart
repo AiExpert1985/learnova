@@ -1,41 +1,44 @@
 import '../models/qa_history_entry.dart';
+import '../../../core/services/youtube/youtube_models.dart';
 
 /// State for Q&A feature
 /// Manages video info, question history, and loading status
 class QAState {
-  final String? videoTitle;
-  final Duration? videoDuration;
-  final String? transcript;
+  final VideoInfo? videoInfo;
+  final Duration currentPosition;
   final List<QAHistoryEntry> history;
   final bool isLoadingAnswer;
   final bool isLoadingVideo;
   final String? videoError;
 
   const QAState({
-    this.videoTitle,
-    this.videoDuration,
-    this.transcript,
+    this.videoInfo,
+    this.currentPosition = Duration.zero,
     this.history = const [],
     this.isLoadingAnswer = false,
     this.isLoadingVideo = false,
     this.videoError,
   });
 
-  bool get hasVideo => transcript != null;
+  // Computed properties for backward compatibility
+  String? get videoTitle => videoInfo?.title;
+  Duration? get videoDuration => videoInfo?.duration;
+  String? get transcript => videoInfo?.getFullTranscript();
+  String? get videoId => videoInfo?.id;
+
+  bool get hasVideo => videoInfo != null;
 
   QAState copyWith({
-    String? videoTitle,
-    Duration? videoDuration,
-    String? transcript,
+    VideoInfo? videoInfo,
+    Duration? currentPosition,
     List<QAHistoryEntry>? history,
     bool? isLoadingAnswer,
     bool? isLoadingVideo,
     String? videoError,
   }) {
     return QAState(
-      videoTitle: videoTitle ?? this.videoTitle,
-      videoDuration: videoDuration ?? this.videoDuration,
-      transcript: transcript ?? this.transcript,
+      videoInfo: videoInfo ?? this.videoInfo,
+      currentPosition: currentPosition ?? this.currentPosition,
       history: history ?? this.history,
       isLoadingAnswer: isLoadingAnswer ?? this.isLoadingAnswer,
       isLoadingVideo: isLoadingVideo ?? this.isLoadingVideo,
@@ -45,9 +48,8 @@ class QAState {
 
   QAState clearVideoData() {
     return QAState(
-      videoTitle: null,
-      videoDuration: null,
-      transcript: null,
+      videoInfo: null,
+      currentPosition: Duration.zero,
       history: [],
       isLoadingAnswer: isLoadingAnswer, // Keep this
       isLoadingVideo: true, // Set to true as we are about to load

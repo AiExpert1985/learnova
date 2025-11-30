@@ -7,6 +7,7 @@ import '../widgets/question_input.dart';
 import '../widgets/url_input.dart';
 import '../widgets/error_banner.dart';
 import '../widgets/qa_history_list.dart';
+import '../widgets/video_player.dart';
 
 /// Main Q&A screen with YouTube integration
 class QAScreen extends ConsumerWidget {
@@ -24,6 +25,8 @@ class QAScreen extends ConsumerWidget {
       body: Column(
         children: [
           const UrlInput(),
+          if (qaState.hasVideo)
+            VideoPlayer(videoId: qaState.videoId!),
           if (qaState.hasVideo)
             TranscriptHeader(
               title: qaState.videoTitle!,
