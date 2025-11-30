@@ -37,7 +37,15 @@ class QANotifier extends StateNotifier<QAState> {
       print('Duration: ${video.duration}');
       print('Segments: ${video.transcriptSegments.length}');
       print('Transcript length: ${fullTranscript.length} characters');
-      print('\nTranscript content:');
+
+      // Show first 3 segments with timestamps to verify they're captured
+      print('\nFirst 3 segments with timestamps:');
+      final sampleSegments = video.transcriptSegments.take(3);
+      for (final seg in sampleSegments) {
+        print('  [${seg.start.inSeconds}s - ${seg.end.inSeconds}s] ${seg.text}');
+      }
+
+      print('\nFull transcript content:');
       print(fullTranscript);
       print('=== End Transcript ===\n');
 
