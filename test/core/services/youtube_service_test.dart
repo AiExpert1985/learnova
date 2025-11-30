@@ -197,5 +197,123 @@ void main() {
       expect(transcript, contains("It's great"));
       service.dispose();
     });
+
+    test('parses timestamps correctly from XML', () async {
+      final mockClient = MockHttpClient(
+        mockPlayerResponse: {
+          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'},
+          'captions': {
+            'playerCaptionsTracklistRenderer': {
+              'captionTracks': [
+                {
+                  'languageCode': 'en',
+                  'baseUrl': 'http://example.com/transcript',
+                },
+              ],
+            },
+          },
+        },
+        mockTranscriptXml:
+            '<transcript><text start="5.5" dur="3.25">First segment</text><text start="10.0" dur="2.0">Second segment</text></transcript>',
+      );
+      final service = YouTubeService(httpClient: mockClient);
+
+      final result = await service.fetchVideo(
+        'https://www.youtube.com/watch?v=abc12345678',
+      );
+
+      expect(result.isSuccess, true);
+      final segments = result.video?.transcriptSegments ?? [];
+      expect(segments.length, 2);
+
+      // Verify first segment timestamps
+      expect(segments[0].start, const Duration(milliseconds: 5500));
+      expect(segments[0].duration, const Duration(milliseconds: 3250));
+      expect(segments[0].end, const Duration(milliseconds: 8750));
+      expect(segments[0].text, 'First segment');
+
+      // Verify second segment timestamps
+      expect(segments[1].start, const Duration(milliseconds: 10000));
+      expect(segments[1].duration, const Duration(milliseconds: 2000));
+      expect(segments[1].end, const Duration(milliseconds: 12000));
+      expect(segments[1].text, 'Second segment');
+
+      service.dispose();
+    });
+
+    test('getTranscriptUpTo filters segments by timestamp', () async {
+      final mockClient = MockHttpClient(
+        mockPlayerResponse: {
+          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'},
+          'captions': {
+            'playerCaptionsTracklistRenderer': {
+              'captionTracks': [
+                {
+                  'languageCode': 'en',
+                  'baseUrl': 'http://example.com/transcript',
+                },
+              ],
+            },
+          },
+        },
+        mockTranscriptXml:
+            '<transcript><text start="0.0" dur="5.0">Intro</text><text start="5.0" dur="5.0">Middle</text><text start="10.0" dur="5.0">End</text></transcript>',
+      );
+      final service = YouTubeService(httpClient: mockClient);
+
+      final result = await service.fetchVideo(
+        'https://www.youtube.com/watch?v=abc12345678',
+      );
+
+      expect(result.isSuccess, true);
+      final video = result.video!;
+
+      // Get transcript up to 6 seconds (should include first 2 segments)
+      final partialTranscript = video.getTranscriptUpTo(
+        const Duration(seconds: 6),
+      );
+      expect(partialTranscript, 'Intro Middle');
+      expect(partialTranscript, isNot(contains('End')));
+
+      // Get full transcript
+      final fullTranscript = video.getFullTranscript();
+      expect(fullTranscript, 'Intro Middle End');
+
+      service.dispose();
+    });
+
+    test('getTranscriptUpTo returns empty string when position is before first segment', () async {
+      final mockClient = MockHttpClient(
+        mockPlayerResponse: {
+          'videoDetails': {'title': 'Test', 'lengthSeconds': '120'},
+          'captions': {
+            'playerCaptionsTracklistRenderer': {
+              'captionTracks': [
+                {
+                  'languageCode': 'en',
+                  'baseUrl': 'http://example.com/transcript',
+                },
+              ],
+            },
+          },
+        },
+        mockTranscriptXml:
+            '<transcript><text start="5.0" dur="5.0">First</text><text start="10.0" dur="5.0">Second</text></transcript>',
+      );
+      final service = YouTubeService(httpClient: mockClient);
+
+      final result = await service.fetchVideo(
+        'https://www.youtube.com/watch?v=abc12345678',
+      );
+
+      expect(result.isSuccess, true);
+      final video = result.video!;
+
+      // Position before any segments
+      final transcript = video.getTranscriptUpTo(const Duration(seconds: 2));
+      expect(transcript, '');
+
+      service.dispose();
+    });
   });
 }

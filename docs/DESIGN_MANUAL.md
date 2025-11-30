@@ -11,9 +11,9 @@
 **Platform:** Flutter (iOS, Android, Web).
 
 ### Current Status
-**Phase:** Step 2 - YouTube Integration (Complete)
-- **Features:** YouTube URL loading, Transcript fetching (Innertube API), GPT-4o-mini Q&A.
-- **Pending:** Voice I/O, Auth, Persistence, History.
+**Phase:** Step 2.5 - Timestamp-Aware Transcripts (Complete)
+- **Features:** YouTube URL loading, Transcript fetching with timestamps, Context-aware Q&A foundation, GPT-4o-mini Q&A.
+- **Pending:** Video player integration, Voice I/O, Auth, Persistence.
 
 ---
 
@@ -98,9 +98,17 @@
 - **Why:** Stability, control, no external dependencies.
 - **Detail:** Use `WEB` client for reliable transcripts.
 
+### Timestamp-Aware Transcripts (Hybrid Approach)
+- **Decision:** Parse and store transcript segments with timestamps from YouTube XML, but send full transcript to LLM for now.
+- **Why:** Validates core Q&A value quickly while preserving timestamp data for future video-position-aware features.
+- **Structure:** `TranscriptSegment{text, start, duration}` → `VideoInfo.getFullTranscript()` (current) / `getTranscriptUpTo(position)` (future).
+- **Use Case:** When video player tracking is added, questions like "summarize what I've learned so far" will only send watched content to LLM.
+- **Benefit:** No rework needed later—data is already captured.
+
 ### Prompt Engineering
 - **Strategy:** Full transcript + Question -> GPT-4o-mini.
 - **Constraint:** Limit answers to 2-3 sentences to control cost/hallucination.
+- **Future:** Context will be filtered by video position using `getTranscriptUpTo()`.
 
 ### Development
 - **Extract when painful:** Don't premature optimize.
