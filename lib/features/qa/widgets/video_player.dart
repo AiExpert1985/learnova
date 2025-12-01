@@ -31,6 +31,9 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> {
         mute: false,
         showFullscreenButton: true,
         loop: false,
+        // Required for YouTube's origin policy (fixes Error 15/153)
+        // See: https://stackoverflow.com/questions/79804589
+        origin: 'https://www.youtube-nocookie.com',
       ),
     );
 
