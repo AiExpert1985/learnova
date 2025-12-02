@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/qa_history_entry.dart';
 import '../services/qa_service.dart';
 import '../../../core/services/youtube/youtube_service.dart';
+import '../../history/services/history_service.dart';
+import '../../history/data/models/qa_entry.dart' as history_models;
 import 'qa_state.dart';
 
 /// StateNotifier for Q&A feature
@@ -9,12 +11,15 @@ import 'qa_state.dart';
 class QANotifier extends StateNotifier<QAState> {
   final QAService _qaService;
   final YouTubeService _youtubeService;
+  final HistoryService _historyService;
 
   QANotifier({
     required QAService qaService,
     required YouTubeService youtubeService,
+    required HistoryService historyService,
   }) : _qaService = qaService,
        _youtubeService = youtubeService,
+       _historyService = historyService,
        super(const QAState());
 
   /// Load video from YouTube URL
@@ -99,5 +104,66 @@ class QANotifier extends StateNotifier<QAState> {
       isLoadingAnswer: false,
       history: [...state.history, newEntry],
     );
+
+    // Auto-save conversation to history after successful Q&A
+    if (newEntry.hasAnswer) {
+      await _saveConversationToHistory();
+    }
+  }
+
+  /// Save current conversation to history storage
+  /// Called automatically after each successful Q&A interaction
+  Future<void> _saveConversationToHistory() async {
+    if (!state.hasVideo || state.history.isEmpty) return;
+
+    // Convert QA history entries to history models
+    final historyQAEntries = state.history
+        .where((entry) => entry.hasAnswer) // Only save successful answers
+        .map((entry) => history_models.QAEntry(
+              question: entry.question,
+              answer: entry.answer!,
+              timestamp: DateTime.now(),
+              videoPosition: state.currentPosition.inSeconds.toDouble(),
+              tokensUsed: entry.tokensUsed,
+            ))
+        .toList();
+
+    final result = await _historyService.saveConversation(
+      videoId: state.videoId!,
+      videoTitle: state.videoTitle!,
+      qaHistory: historyQAEntries,
+    );
+
+    // Silent failure - don't interrupt user experience if history save fails
+    if (result.isFailure) {
+      print('Failed to save conversation to history: ${result.failure}');
+    }
+  }
+
+  /// Load conversation from history and restore state
+  /// Used when user selects a conversation from history
+  Future<void> loadConversationFromHistory(String conversationId) async {
+    final result = await _historyService.loadConversationById(conversationId);
+
+    if (result.isSuccess && result.data != null) {
+      final conversation = result.data!;
+
+      // Load the video first
+      await loadVideo('https://www.youtube.com/watch?v=${conversation.videoId}');
+
+      // Restore Q&A history after video loads
+      if (state.hasVideo) {
+        final qaHistoryEntries = conversation.qaHistory
+            .map((entry) => QAHistoryEntry(
+                  question: entry.question,
+                  answer: entry.answer,
+                  error: null,
+                  tokensUsed: entry.tokensUsed,
+                ))
+            .toList();
+
+        state = state.copyWith(history: qaHistoryEntries);
+      }
+    }
   }
 }

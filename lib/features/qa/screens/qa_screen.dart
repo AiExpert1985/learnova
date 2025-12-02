@@ -8,10 +8,26 @@ import '../widgets/url_input.dart';
 import '../widgets/error_banner.dart';
 import '../widgets/qa_history_list.dart';
 import '../widgets/video_player.dart';
+import '../../history/ui/widgets/history_bottom_sheet.dart';
+import '../../history/providers/history_providers.dart';
 
 /// Main Q&A screen with YouTube integration
 class QAScreen extends ConsumerWidget {
   const QAScreen({super.key});
+
+  void _showHistoryBottomSheet(BuildContext context, WidgetRef ref) {
+    // Refresh history before showing
+    ref.read(historyNotifierProvider.notifier).loadHistory();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => const HistoryBottomSheet(),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,6 +37,13 @@ class QAScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Learnova'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Conversation History',
+            onPressed: () => _showHistoryBottomSheet(context, ref),
+          ),
+        ],
       ),
       body: Column(
         children: [

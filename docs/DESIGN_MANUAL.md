@@ -11,9 +11,9 @@
 **Platform:** Flutter (iOS, Android, Web).
 
 ### Current Status
-**Phase:** Step 3 - Video Player Integration (Complete)
-- **Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A.
-- **Pending:** Voice I/O, Auth, Persistence, History management.
+**Phase:** Step 4 - Persistence & History Storage (Complete)
+- **Features:** YouTube URL loading, Transcript fetching, Video playback, Position-aware Q&A, GPT-4o-mini Q&A, Auto-save conversations, History retrieval.
+- **Pending:** Voice I/O, Auth, Conversation context.
 
 ---
 
@@ -36,6 +36,10 @@
 **Decision:** Return `Result<Success, Failure>` instead of throwing exceptions.
 **Why:** Explicit error handling, fail-fast principle.
 
+### 5. Storage Abstraction via Repository Pattern
+**Decision:** Abstract storage behind `Repository` interface (e.g., `HistoryRepository` → `HiveHistoryRepository`).
+**Why:** Swap storage implementations (Hive → SQLite → Cloud), testability (mock repository), DB-agnostic domain models.
+
 ---
 
 ## Technology Stack
@@ -49,6 +53,7 @@
 | **youtube_player_iframe** | Video Player | Official iFrame API, cross-platform |
 | **webview_flutter_android** | WebView (Android) | Required by youtube_player_iframe v5.2.2 (^4.10.9) |
 | **webview_flutter_wkwebview** | WebView (iOS) | Required by youtube_player_iframe v5.2.2 (^3.23.0) |
+| **Hive** | Local Storage | NoSQL, zero setup, fast, cross-platform |
 
 ### State Management
 **Decision:** `StateNotifier` for logic, widgets call `ref.read(notifier).method()`.
@@ -122,8 +127,42 @@
 - **Constraint:** Limit answers to 2-3 sentences to control cost/hallucination.
 - **Context Filtering:** After 10s of playback, only send transcript up to current video position via `getTranscriptUpTo()`.
 
+### Persistence & History Storage
+- **Decision:** Separate history feature (`features/history/`), not coupled to QA. Hive for storage, abstracted via Repository pattern.
+- **Why:** Clear boundaries, reusable across features, future flexibility (cloud sync, SQLite).
+- **Architecture:** QA feature → HistoryService (public API) → HistoryRepository (abstraction) → HiveHistoryRepository (implementation).
+- **Auto-Save:** After each successful Q&A, save conversation (one per video, append entries if same video). Silent failure (don't disrupt UX).
+- **Models:** DB-agnostic domain models (`ConversationHistory`, `QAEntry`). Hive adapters in separate layer for serialization.
+- **UI:** Bottom sheet with conversation list (video title, date, Q&A count). Tap row → load video + restore history. Swipe/button to delete.
+- **Loading:** `loadConversationFromHistory()` in QANotifier loads video via URL, then restores Q&A history in state.
+
 ### Development
 - **Extract when painful:** Don't premature optimize.
 - **Standard over clever:** Simple solutions are better.
 - **Package versions:** Always verify dependency compatibility (e.g., youtube_player_iframe v5.2.2 requires webview ^4.x, not ^3.x).
 - **Step-by-step approach:** Validate each iteration before building on it (hybrid approach for timestamps validated Q&A first).
+
+---
+
+## Future Features
+
+### Voice I/O
+- Speech-to-text for questions
+- Text-to-speech for answers
+- Hands-free interaction
+
+### History Enhancements
+- Search conversations
+- Export conversation as text/PDF
+- Group by date (Today, Yesterday, Last Week)
+- Cloud sync (requires auth)
+
+### Context & Conversation
+- Multi-turn conversations with context
+- Reference previous questions
+- Conversation summarization
+
+### Authentication
+- User accounts
+- Cross-device sync
+- Usage tracking
