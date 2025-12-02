@@ -4,6 +4,10 @@ import 'package:learnova/features/qa/services/qa_service.dart';
 import 'package:learnova/features/qa/models/qa_models.dart';
 import 'package:learnova/core/services/youtube/youtube_service.dart';
 import 'package:learnova/core/services/youtube/youtube_models.dart';
+import 'package:learnova/features/history/services/history_service.dart';
+import 'package:learnova/features/history/data/models/history_result.dart';
+import 'package:learnova/features/history/data/models/conversation_history.dart';
+import 'package:learnova/features/history/data/models/qa_entry.dart' as history_models;
 
 /// Mock QAService for testing
 class MockQAService implements QAService {
@@ -35,6 +39,61 @@ class MockYouTubeService implements YouTubeService {
   void dispose() {}
 }
 
+/// Mock HistoryService for testing
+class MockHistoryService implements HistoryService {
+  MockHistoryService() : super(null as dynamic);
+
+  @override
+  Future<HistoryResult<void>> initialize() async {
+    return HistoryResult.success(null);
+  }
+
+  @override
+  Future<HistoryResult<ConversationHistory>> saveConversation({
+    required String videoId,
+    required String videoTitle,
+    required List<history_models.QAEntry> qaHistory,
+  }) async {
+    return HistoryResult.success(
+      ConversationHistory.create(
+        videoId: videoId,
+        videoTitle: videoTitle,
+        initialQAHistory: qaHistory,
+      ),
+    );
+  }
+
+  @override
+  Future<HistoryResult<List<ConversationHistory>>> loadAllConversations() async {
+    return HistoryResult.success([]);
+  }
+
+  @override
+  Future<HistoryResult<ConversationHistory?>> loadConversationById(String id) async {
+    return HistoryResult.success(null);
+  }
+
+  @override
+  Future<HistoryResult<ConversationHistory?>> loadConversationByVideoId(String videoId) async {
+    return HistoryResult.success(null);
+  }
+
+  @override
+  Future<HistoryResult<void>> deleteConversation(String id) async {
+    return HistoryResult.success(null);
+  }
+
+  @override
+  Future<HistoryResult<void>> clearAllHistory() async {
+    return HistoryResult.success(null);
+  }
+
+  @override
+  Future<HistoryResult<void>> close() async {
+    return HistoryResult.success(null);
+  }
+}
+
 void main() {
   group('QANotifier', () {
     test('initial state is empty', () {
@@ -62,6 +121,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       expect(notifier.state.history.isEmpty, true);
@@ -95,6 +155,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       await notifier.loadVideo('https://youtube.com/watch?v=test123');
@@ -118,6 +179,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       await notifier.loadVideo('invalid-url');
@@ -155,6 +217,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       // Load video first
@@ -194,6 +257,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       // Load video first
@@ -234,6 +298,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       // Try to ask question without loading video
@@ -268,6 +333,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       // Load video first
@@ -308,6 +374,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       // Load video first
@@ -347,6 +414,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       // Load video first
@@ -390,6 +458,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       // Load video and ask questions
@@ -430,6 +499,7 @@ void main() {
       final notifier = QANotifier(
         qaService: mockQAService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       // Initial position should be zero

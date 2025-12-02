@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learnova/features/history/data/models/conversation_history.dart';
 import 'package:learnova/features/history/data/models/history_failures.dart';
 import 'package:learnova/features/history/data/models/history_result.dart';
-import 'package:learnova/features/history/data/models/qa_entry.dart';
 import 'package:learnova/features/history/services/history_service.dart';
 import 'package:learnova/features/history/state/history_notifier.dart';
 

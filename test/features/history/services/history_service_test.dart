@@ -8,17 +8,14 @@ import 'package:learnova/features/history/services/history_service.dart';
 /// Mock repository for testing
 class MockHistoryRepository implements HistoryRepository {
   final Map<String, ConversationHistory> _storage = {};
-  bool _initialized = false;
 
   @override
   Future<HistoryResult<void>> initialize() async {
-    _initialized = true;
     return HistoryResult.success(null);
   }
 
   @override
   Future<HistoryResult<void>> close() async {
-    _initialized = false;
     return HistoryResult.success(null);
   }
 
