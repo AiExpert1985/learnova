@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/qa_history_entry.dart';
 import '../services/qa_service.dart';
@@ -34,25 +35,27 @@ class QANotifier extends StateNotifier<QAState> {
 
     if (result.isSuccess) {
       final video = result.video!;
-      final fullTranscript = video.getFullTranscript();
 
-      // Print transcript to console for debugging
-      print('=== YouTube Transcript ===');
-      print('Video: ${video.title}');
-      print('Duration: ${video.duration}');
-      print('Segments: ${video.transcriptSegments.length}');
-      print('Transcript length: ${fullTranscript.length} characters');
+      // Print transcript to console for debugging (only in debug mode)
+      if (kDebugMode) {
+        final fullTranscript = video.getFullTranscript();
+        print('=== YouTube Transcript ===');
+        print('Video: ${video.title}');
+        print('Duration: ${video.duration}');
+        print('Segments: ${video.transcriptSegments.length}');
+        print('Transcript length: ${fullTranscript.length} characters');
 
-      // Show first 3 segments with timestamps to verify they're captured
-      print('\nFirst 3 segments with timestamps:');
-      final sampleSegments = video.transcriptSegments.take(3);
-      for (final seg in sampleSegments) {
-        print('  [${seg.start.inSeconds}s - ${seg.end.inSeconds}s] ${seg.text}');
+        // Show first 3 segments with timestamps to verify they're captured
+        print('\nFirst 3 segments with timestamps:');
+        final sampleSegments = video.transcriptSegments.take(3);
+        for (final seg in sampleSegments) {
+          print('  [${seg.start.inSeconds}s - ${seg.end.inSeconds}s] ${seg.text}');
+        }
+
+        print('\nFull transcript content:');
+        print(fullTranscript);
+        print('=== End Transcript ===\n');
       }
-
-      print('\nFull transcript content:');
-      print(fullTranscript);
-      print('=== End Transcript ===\n');
 
       state = state.copyWith(
         videoInfo: video,
@@ -80,6 +83,10 @@ class QANotifier extends StateNotifier<QAState> {
       return;
     }
 
+    // Capture video position WHEN question is asked
+    final videoPositionAtQuestion = state.currentPosition.inSeconds.toDouble();
+    final questionTimestamp = DateTime.now();
+
     state = state.copyWith(isLoadingAnswer: true);
 
     // Get transcript based on current video position
@@ -98,6 +105,8 @@ class QANotifier extends StateNotifier<QAState> {
       answer: result.answer?.text,
       error: result.error,
       tokensUsed: result.answer?.tokensUsed ?? 0,
+      timestamp: questionTimestamp,
+      videoPosition: videoPositionAtQuestion,
     );
 
     state = state.copyWith(
@@ -122,8 +131,8 @@ class QANotifier extends StateNotifier<QAState> {
         .map((entry) => history_models.QAEntry(
               question: entry.question,
               answer: entry.answer!,
-              timestamp: DateTime.now(),
-              videoPosition: state.currentPosition.inSeconds.toDouble(),
+              timestamp: entry.timestamp, // Use actual Q&A timestamp
+              videoPosition: entry.videoPosition, // Use position when question was asked
               tokensUsed: entry.tokensUsed,
             ))
         .toList();
@@ -135,7 +144,7 @@ class QANotifier extends StateNotifier<QAState> {
     );
 
     // Silent failure - don't interrupt user experience if history save fails
-    if (result.isFailure) {
+    if (result.isFailure && kDebugMode) {
       print('Failed to save conversation to history: ${result.failure}');
     }
   }
@@ -159,6 +168,8 @@ class QANotifier extends StateNotifier<QAState> {
                   answer: entry.answer,
                   error: null,
                   tokensUsed: entry.tokensUsed,
+                  timestamp: entry.timestamp,
+                  videoPosition: entry.videoPosition,
                 ))
             .toList();
 

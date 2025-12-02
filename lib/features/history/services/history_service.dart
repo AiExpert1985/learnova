@@ -4,6 +4,7 @@ library;
 import '../data/models/conversation_history.dart';
 import '../data/models/qa_entry.dart';
 import '../data/models/history_result.dart';
+import '../data/models/history_failures.dart';
 import '../data/repositories/history_repository.dart';
 
 class HistoryService {
@@ -94,6 +95,3 @@ class HistoryService {
     return await _repository.close();
   }
 }
-
-// Import for StorageFailure
-import '../data/models/history_failures.dart';
