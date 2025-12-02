@@ -41,7 +41,6 @@ class MockYouTubeService implements YouTubeService {
 
 /// Mock HistoryService for testing
 class MockHistoryService implements HistoryService {
-  MockHistoryService() : super(null as dynamic);
 
   @override
   Future<HistoryResult<void>> initialize() async {
@@ -557,6 +556,7 @@ void main() {
       final notifier = QANotifier(
         qaService: capturingService,
         youtubeService: mockYouTubeService,
+        historyService: MockHistoryService(),
       );
 
       await notifier.loadVideo('https://youtube.com/watch?v=test');
