@@ -22,29 +22,31 @@ class QAScreen extends ConsumerWidget {
         title: const Text('Learnova'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Column(
-        children: [
-          const UrlInput(),
-          if (qaState.hasVideo)
-            VideoPlayer(videoId: qaState.videoId!),
-          if (qaState.hasVideo)
-            TranscriptHeader(
-              title: qaState.videoTitle!,
-              duration: qaState.videoDuration!,
-            ),
-          if (qaState.videoError != null && qaState.videoError!.isNotEmpty)
-            ErrorBanner(error: qaState.videoError!),
-          if (qaState.hasVideo)
-            const Expanded(child: QAHistoryList())
-          else
-            Expanded(
-              child: EmptyState(
-                icon: Icons.video_library_outlined,
-                message: 'Paste a YouTube URL and press play to start',
+      body: SafeArea(
+        bottom: true,
+        child: Column(
+          children: [
+            const UrlInput(),
+            if (qaState.hasVideo) VideoPlayer(videoId: qaState.videoId!),
+            if (qaState.hasVideo)
+              TranscriptHeader(
+                title: qaState.videoTitle!,
+                duration: qaState.videoDuration!,
               ),
-            ),
-          if (qaState.hasVideo) const QuestionInput(),
-        ],
+            if (qaState.videoError != null && qaState.videoError!.isNotEmpty)
+              ErrorBanner(error: qaState.videoError!),
+            if (qaState.hasVideo)
+              const Expanded(child: QAHistoryList())
+            else
+              Expanded(
+                child: EmptyState(
+                  icon: Icons.video_library_outlined,
+                  message: 'Paste a YouTube URL and press play to start',
+                ),
+              ),
+            if (qaState.hasVideo) const QuestionInput(),
+          ],
+        ),
       ),
     );
   }
