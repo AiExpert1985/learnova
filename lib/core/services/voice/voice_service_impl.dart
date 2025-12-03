@@ -165,6 +165,7 @@ class VoiceServiceImpl implements VoiceService {
 
     final stream = _sttService.startListening(
       listenDuration: listenFor,
+      pauseFor: pauseFor,
     );
 
     String? finalRecognizedText;

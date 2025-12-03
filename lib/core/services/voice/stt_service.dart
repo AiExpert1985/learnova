@@ -13,9 +13,11 @@ abstract class STTService {
   /// Start listening for speech input
   /// Returns a stream of recognition results
   /// Throws VoiceException if not initialized or permission denied
+  /// pauseFor: Duration of silence before finalizing speech (default: 3 seconds)
   Stream<SpeechRecognitionResult> startListening({
     String? localeId,
     Duration? listenDuration,
+    Duration? pauseFor,
   });
 
   /// Stop listening and finalize the current recognition

@@ -50,6 +50,7 @@ class FlutterSTTService implements STTService {
   Stream<SpeechRecognitionResult> startListening({
     String? localeId,
     Duration? listenDuration,
+    Duration? pauseFor,
   }) {
     if (!_isInitialized) {
       throw VoiceException(
@@ -83,7 +84,7 @@ class FlutterSTTService implements STTService {
       },
       localeId: localeId,
       listenFor: listenDuration ?? const Duration(seconds: 60),
-      pauseFor: const Duration(seconds: 10),
+      pauseFor: pauseFor ?? const Duration(seconds: 3),
       listenOptions: stt.SpeechListenOptions(
         partialResults: true,
         cancelOnError: true,
