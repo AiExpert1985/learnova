@@ -15,6 +15,7 @@ import '../services/voice/state/voice_state.dart';
 import '../../features/qa/services/qa_service.dart';
 import '../../features/qa/state/qa_notifier.dart';
 import '../../features/qa/state/qa_state.dart';
+import '../../features/history/providers/history_providers.dart';
 
 /// Provider for OpenAI API key from environment
 final apiKeyProvider = Provider<String>((ref) {
@@ -47,9 +48,11 @@ final youtubeServiceProvider = Provider<YouTubeService>((ref) {
 final qaNotifierProvider = StateNotifierProvider<QANotifier, QAState>((ref) {
   final qaService = ref.watch(qaServiceProvider);
   final youtubeService = ref.watch(youtubeServiceProvider);
+  final historyService = ref.watch(historyServiceProvider);
   return QANotifier(
     qaService: qaService,
     youtubeService: youtubeService,
+    historyService: historyService,
   );
 });
 

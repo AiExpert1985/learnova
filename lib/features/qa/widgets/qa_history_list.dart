@@ -36,8 +36,9 @@ class _QAHistoryListState extends ConsumerState<QAHistoryList> {
     final history = ref.watch(qaNotifierProvider.select((s) => s.history));
 
     // Listen for history changes to scroll to bottom
+    // Scrolls when new items are added OR when conversation is loaded from history
     ref.listen(qaNotifierProvider.select((s) => s.history), (previous, next) {
-      if (next.length > (previous?.length ?? 0)) {
+      if (next.isNotEmpty) {
         _scrollToBottom();
       }
     });

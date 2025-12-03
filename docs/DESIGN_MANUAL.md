@@ -11,9 +11,9 @@
 **Platform:** Flutter (iOS, Android, Web).
 
 ### Current Status
-**Phase:** Step 4 - Voice I/O Integration (Complete)
-- **Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A, Voice input (STT), Voice output (TTS).
-- **Pending:** Auth, Persistence, History management, Continuous listening mode.
+**Phase:** Step 5 - Voice I/O & Persistence (Complete)
+- **Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A, Voice input (STT), Voice output (TTS), Auto-save conversations, History retrieval, Auto-restore previous conversations, Clear all history.
+- **Pending:** Auth, Multi-turn conversation context, Continuous listening mode.
 
 ---
 
@@ -39,6 +39,11 @@
 ### 5. Result Pattern for Error Handling
 **Decision:** Return `Result<Success, Failure>` instead of throwing exceptions.
 **Why:** Explicit error handling, fail-fast principle.
+**Implementation:** `isSuccess` checks `failure == null` (not `data != null`) to support void operations returning `success(null)`.
+
+### 6. Storage Abstraction via Repository Pattern
+**Decision:** Abstract storage behind `Repository` interface (e.g., `HistoryRepository` → `HiveHistoryRepository`).
+**Why:** Swap storage implementations (Hive → SQLite → Cloud), testability (mock repository), DB-agnostic domain models.
 
 ---
 
@@ -56,6 +61,7 @@
 | **speech_to_text** | Speech-to-Text | Native platform APIs, offline support (iOS), battle-tested |
 | **flutter_tts** | Text-to-Speech | Native platform voices, offline, free |
 | **permission_handler** | Permissions | Microphone/speech recognition permissions |
+| **Hive** | Local Storage | NoSQL, zero setup, fast, cross-platform |
 
 ### State Management
 **Decision:** `StateNotifier` for logic, widgets call `ref.read(notifier).method()`.
@@ -141,9 +147,50 @@
 - **Provider Pattern:** Voice controller exposed via `youtubeControllerProvider` for cross-widget coordination
 - **Future Upgrades:** Easy to swap to cloud providers (Google Cloud STT/TTS, ElevenLabs) by implementing interfaces
 
+### Persistence & History Storage
+- **Decision:** Separate history feature (`features/history/`), not coupled to QA. Hive for storage, abstracted via Repository pattern.
+- **Why:** Clear boundaries, reusable across features, future flexibility (cloud sync, SQLite).
+- **Architecture:** QA feature → HistoryService (public API) → HistoryRepository (abstraction) → HiveHistoryRepository (implementation).
+- **Auto-Save:** After each successful Q&A, save conversation (one per video, append entries if same video). Silent failure (don't disrupt UX).
+- **Models:** DB-agnostic domain models (`ConversationHistory`, `QAEntry`). Hive adapters in separate layer for serialization.
+- **UI:** Bottom sheet with conversation list (video title, date, Q&A count). Tap row → load video + restore history. Delete individual/clear all with confirmation.
+- **Auto-scroll:** Q&A history list scrolls to bottom when loading conversation from history or adding new entries.
+- **Smart Loading:** When URL is pasted, check if conversation exists for that video. If yes, restore previous conversation; if no, start fresh.
+- **Manual Loading:** `loadConversationFromHistory()` in QANotifier loads video via URL, then restores Q&A history in state.
+- **Automatic Restoration:** `loadVideo()` checks `loadConversationByVideoId()` → if exists, restore history automatically. Preserves timestamps and video positions.
+- **Initialization Pattern:** Use `ConsumerStatefulWidget` with `Future.microtask()` to initialize history after widget tree is ready, preventing race conditions.
+- **Timestamp Accuracy:** Capture timestamp when question is asked (not when saved), ensuring historical data reflects actual Q&A time.
+- **Position Accuracy:** Store video position at time of question (not current position), enabling accurate context restoration.
+- **Debug Handling:** Wrap debug prints in `if (kDebugMode)` checks for production performance.
+
 ### Development
 - **Extract when painful:** Don't premature optimize.
 - **Standard over clever:** Simple solutions are better.
 - **Package versions:** Always verify dependency compatibility (e.g., youtube_player_iframe v5.2.2 requires webview ^4.x, not ^3.x).
 - **Step-by-step approach:** Validate each iteration before building on it (hybrid approach for timestamps validated Q&A first).
 - **Abstraction criteria:** Only abstract external services/libraries to enable provider switching and testing.
+
+---
+
+## Future Features
+
+### Voice Enhancements
+- Continuous listening mode
+- Wake word detection
+- Multi-language support
+
+### History Enhancements
+- Search conversations
+- Export conversation as text/PDF
+- Group by date (Today, Yesterday, Last Week)
+- Cloud sync (requires auth)
+
+### Context & Conversation
+- Multi-turn conversations with context
+- Reference previous questions
+- Conversation summarization
+
+### Authentication
+- User accounts
+- Cross-device sync
+- Usage tracking
