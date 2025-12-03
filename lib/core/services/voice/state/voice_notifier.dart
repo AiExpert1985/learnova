@@ -76,6 +76,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
       );
 
       String? finalText;
+      final completer = Completer<String?>();
       final stream = _voiceService.startListening();
 
       _recognitionSubscription = stream.listen(
@@ -91,16 +92,22 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
             error: error.toString(),
             recognitionState: SpeechRecognitionState.error,
           );
+          if (!completer.isCompleted) {
+            completer.complete(null);
+          }
         },
         onDone: () {
           state = state.copyWith(
             isListening: false,
             recognitionState: SpeechRecognitionState.idle,
           );
+          if (!completer.isCompleted) {
+            completer.complete(finalText);
+          }
         },
       );
 
-      return finalText;
+      return await completer.future;
     } catch (e) {
       state = state.copyWith(
         isListening: false,

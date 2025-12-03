@@ -53,8 +53,9 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
       }
 
       // Send recognized text if available
-      if (voiceState.recognizedText.isNotEmpty) {
-        widget.onTextRecognized(voiceState.recognizedText);
+      final recognizedText = ref.read(voiceNotifierProvider).recognizedText;
+      if (recognizedText.isNotEmpty) {
+        widget.onTextRecognized(recognizedText);
       }
     } else {
       // Pause video before listening
@@ -70,8 +71,18 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
         }
       }
 
-      // Start listening
-      await voiceNotifier.startListening();
+      // Start listening and get the final text
+      final recognizedText = await voiceNotifier.startListening();
+
+      // Resume video if it was playing before
+      if (_wasVideoPlaying && videoController != null) {
+        await videoController.playVideo();
+      }
+
+      // Send recognized text if available
+      if (recognizedText != null && recognizedText.isNotEmpty) {
+        widget.onTextRecognized(recognizedText);
+      }
     }
   }
 
