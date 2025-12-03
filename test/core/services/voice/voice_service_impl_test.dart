@@ -18,6 +18,7 @@ class MockSTTService implements STTService {
   Stream<SpeechRecognitionResult> startListening({
     String? localeId,
     Duration? listenDuration,
+    Duration? pauseFor,
   }) {
     _isListening = true;
     return Stream.value(
