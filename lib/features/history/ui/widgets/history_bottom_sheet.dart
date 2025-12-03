@@ -10,6 +10,34 @@ import '../../../../core/providers/app_providers.dart';
 class HistoryBottomSheet extends ConsumerWidget {
   const HistoryBottomSheet({super.key});
 
+  void _showClearAllDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All History'),
+        content: const Text(
+          'Are you sure you want to delete all conversation history? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(historyNotifierProvider.notifier).clearAllHistory();
+            },
+            child: const Text(
+              'Clear All',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyState = ref.watch(historyNotifierProvider);
@@ -30,9 +58,19 @@ class HistoryBottomSheet extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                     ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
+              Row(
+                children: [
+                  if (historyState.hasConversations)
+                    IconButton(
+                      icon: const Icon(Icons.delete_sweep),
+                      tooltip: 'Clear All History',
+                      onPressed: () => _showClearAllDialog(context, ref),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
             ],
           ),
