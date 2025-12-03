@@ -145,14 +145,20 @@ void main() {
       expect(voiceNotifier.state.error, null);
     });
 
-    test('startListening updates state with recognized text', () async {
-      await voiceNotifier.startListening();
+    test(
+      'startListening waits for stream completion and returns final text',
+      () async {
+        // Wait for initialization
+        await Future.delayed(const Duration(milliseconds: 100));
 
-      // Give time for stream to emit values
-      await Future.delayed(const Duration(milliseconds: 100));
+        final result = await voiceNotifier.startListening();
 
-      expect(voiceNotifier.state.recognizedText, isNotEmpty);
-    });
+        // Should return the final recognized text
+        expect(result, 'final recognized text');
+        expect(voiceNotifier.state.recognizedText, 'final recognized text');
+        expect(voiceNotifier.state.isListening, false);
+      },
+    );
 
     test('startListening requests permission if needed', () async {
       mockPermissionService.setMicPermission(false);

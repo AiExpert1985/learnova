@@ -11,9 +11,9 @@
 **Platform:** Flutter (iOS, Android, Web).
 
 ### Current Status
-**Phase:** Step 5 - Voice I/O & Persistence (Complete)
-- **Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A, Voice input (STT), Voice output (TTS), Auto-save conversations, History retrieval, Auto-restore previous conversations, Clear all history.
-- **Pending:** Auth, Multi-turn conversation context, Continuous listening mode.
+**Phase:** Step 6 - Continuous Listening Mode (Complete)
+- **Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A, Voice input (STT), Voice output (TTS), Continuous hands-free listening (headphones-only MVP), Auto-save conversations, History retrieval, Auto-restore previous conversations, Clear all history.
+- **Pending:** Auth, Multi-turn conversation context, Video auto-pause option.
 
 ---
 
@@ -97,7 +97,9 @@
 ### Strategy
 - **Unit Tests:** Business logic, Services, Edge cases.
 - **No Widget Tests:** Manual testing preferred for MVP UI.
-- **Mocking:** Mock external dependencies (API, DB).
+- **No Widget Tests:** Manual testing preferred for MVP UI.
+- **Mocking:** Prefer manual mocks over external packages (e.g., Mockito) unless absolutely necessary.
+- **External Dependencies:** Avoid adding testing dependencies to keep the project lightweight.
 
 ---
 
@@ -147,6 +149,67 @@
 - **Provider Pattern:** Voice controller exposed via `youtubeControllerProvider` for cross-widget coordination
 - **Future Upgrades:** Easy to swap to cloud providers (Google Cloud STT/TTS, ElevenLabs) by implementing interfaces
 
+### Continuous Listening Mode & Video Audio Interference
+**Problem:** In continuous listening mode, microphone picks up video audio from device speakers, causing speech recognition to transcribe video content instead of user questions.
+
+**Decision:** Headphones-only MVP approach.
+
+**Why:**
+- **Zero implementation cost** - Documentation only, no code needed
+- **100% reliable** - Completely prevents video audio interference
+- **Better learning experience** - Immersive, private, focused
+- **Industry standard** - Duolingo, Rosetta Stone, language learning apps require headphones for speaking exercises
+- **Ships immediately** - No technical risk, validates core value proposition (voice-powered learning)
+- **MVP-appropriate** - Solves problem with simplest constraint rather than complex engineering
+
+**Options Considered & Rejected:**
+
+1. **Echo Cancellation (EC)**
+   - **Why rejected:** Unreliable (hardware-dependent), only reduces volume 50-80% (not 100%), STT still picks up quieter video audio
+   - **Complexity:** Medium, requires platform-specific tuning
+   - **Result:** Unpredictable UX across devices
+
+2. **Transcript-Based Filtering**
+   - **Concept:** Match recognized words against video transcript to filter out video audio
+   - **Why rejected:**
+     - **Fatal flaw:** Microphone receives mixed audio (user + video) as single stream; impossible to separate at application level
+     - **False positives:** User asks "What is machine learning?" → exact phrase in transcript → algorithm ignores legitimate question
+     - **Timing synchronization:** Requires perfect real-time sync with video position (pause, seek, rewind breaks matching)
+     - **STT variability:** "you're" vs "you are", "4" vs "four" breaks exact matching
+   - **Complexity:** Very high
+   - **Result:** Unreliable, poor UX (ignores real questions)
+
+3. **EC + Transcript Filtering + Smart Pause Detection**
+   - **Concept:** Use EC to reduce video volume, detect "different" words, pause video for 1 second to verify
+   - **Why rejected:**
+     - **False positives ruin UX:** Background noise, coughs, nearby conversations trigger random video pausing
+     - **Still has mixed audio problem:** Even with EC, need transcript matching (still unreliable)
+     - **Video stuttering:** Constant interruptions destroy learning flow
+   - **Complexity:** Very high (40-60 hours implementation)
+   - **Result:** Bad UX, unreliable detection
+
+4. **Wake Word Detection ("Hey Learnova...")**
+   - **Concept:** Only listen after detecting keyword
+   - **Why rejected:**
+     - **Not truly hands-free:** Must remember keyword, adds friction
+     - **Unnatural for learning:** Command-based vs conversational
+     - **Implementation cost:** 10-15 hours, new dependency
+   - **Valid solution but wrong for learning context**
+
+**Silence Detection Timeout:**
+- **Decision:** 3-second pause threshold (configurable via `pauseFor` parameter)
+- **Why:** Balance between responsiveness and false triggers
+- **Implementation:** Pass `pauseFor` through `VoiceService` → `STTService` → platform STT
+- **Lesson learned:** Initially hardcoded to 10 seconds, caused poor UX (long wait after speaking). Fixed by making configurable.
+
+**Future Enhancement (Phase 2 - Post-MVP):**
+- **Video Auto-Pause Option:** Add settings toggle to pause video during listening for speaker mode
+- **Implementation:** 2-3 hours (pause/resume video player when entering/exiting listening state)
+- **User value:** Enables speaker mode without headphones in quiet environments
+- **Decision criteria:** Only implement if users request it; expect most prefer headphones for focused learning
+
+**Key Principle:** For MVP, solve problems with simplest constraint (headphones) rather than complex engineering (EC + filtering). Ship fast, validate core hypothesis, iterate based on real user feedback.
+
 ### Persistence & History Storage
 - **Decision:** Separate history feature (`features/history/`), not coupled to QA. Hive for storage, abstracted via Repository pattern.
 - **Why:** Clear boundaries, reusable across features, future flexibility (cloud sync, SQLite).
@@ -175,8 +238,9 @@
 ## Future Features
 
 ### Voice Enhancements
-- Continuous listening mode
-- Wake word detection
+- ✅ Continuous listening mode (Complete - headphones-only MVP)
+- Video auto-pause option for speaker mode (Phase 2 - post-MVP)
+- Wake word detection (deferred - adds friction to learning UX)
 - Multi-language support
 
 ### History Enhancements
