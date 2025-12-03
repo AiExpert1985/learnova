@@ -17,7 +17,7 @@ class HistoryResult<T> {
     return HistoryResult._(failure: failure);
   }
 
-  bool get isSuccess => data != null;
+  bool get isSuccess => failure == null;
   bool get isFailure => failure != null;
 
   /// Execute callback based on success or failure
