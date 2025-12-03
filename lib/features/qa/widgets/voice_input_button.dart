@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../../core/providers/app_providers.dart';
 import 'video_player.dart';
 
@@ -11,10 +12,7 @@ import 'video_player.dart';
 class VoiceInputButton extends ConsumerStatefulWidget {
   final Function(String) onTextRecognized;
 
-  const VoiceInputButton({
-    super.key,
-    required this.onTextRecognized,
-  });
+  const VoiceInputButton({super.key, required this.onTextRecognized});
 
   @override
   ConsumerState<VoiceInputButton> createState() => _VoiceInputButtonState();
@@ -93,9 +91,7 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
                       label: 'Settings',
                       onPressed: () {
                         // Open app settings
-                        ref
-                            .read(permissionServiceProvider)
-                            .openAppSettings();
+                        ref.read(permissionServiceProvider).openAppSettings();
                       },
                     )
                   : null,

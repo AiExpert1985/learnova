@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learnova/core/services/voice/state/voice_notifier.dart';
-import 'package:learnova/core/services/voice/state/voice_state.dart';
 import 'package:learnova/core/services/voice/voice_service.dart';
 import 'package:learnova/core/services/voice/permission_service.dart';
 import 'package:learnova/core/services/voice/voice_models.dart';
@@ -115,10 +114,7 @@ void main() {
     setUp(() {
       mockVoiceService = MockVoiceService();
       mockPermissionService = MockPermissionService();
-      voiceNotifier = VoiceNotifier(
-        mockVoiceService,
-        mockPermissionService,
-      );
+      voiceNotifier = VoiceNotifier(mockVoiceService, mockPermissionService);
     });
 
     tearDown(() {
@@ -173,10 +169,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(voiceNotifier.state.isSpeaking, false);
-      expect(
-        voiceNotifier.state.synthesisState,
-        SpeechSynthesisState.idle,
-      );
+      expect(voiceNotifier.state.synthesisState, SpeechSynthesisState.idle);
     });
 
     test('stopSpeaking updates state', () async {
@@ -187,9 +180,7 @@ void main() {
     });
 
     test('clearError removes error from state', () {
-      voiceNotifier.state = voiceNotifier.state.copyWith(
-        error: 'test error',
-      );
+      voiceNotifier.state = voiceNotifier.state.copyWith(error: 'test error');
 
       voiceNotifier.clearError();
 
