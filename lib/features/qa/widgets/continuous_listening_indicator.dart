@@ -20,11 +20,14 @@ class ContinuousListeningIndicator extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: _getBackgroundColor(context, voiceState.continuousListeningState),
+        color: _getBackgroundColor(
+          context,
+          voiceState.continuousListeningState,
+        ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -57,7 +60,7 @@ class ContinuousListeningIndicator extends ConsumerWidget {
                 Text(
                   voiceState.recognizedText,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 12,
                   ),
                   maxLines: 1,
@@ -71,7 +74,9 @@ class ContinuousListeningIndicator extends ConsumerWidget {
   }
 
   Color _getBackgroundColor(
-      BuildContext context, ContinuousListeningState state) {
+    BuildContext context,
+    ContinuousListeningState state,
+  ) {
     switch (state) {
       case ContinuousListeningState.listening:
         return Colors.blue.shade600;
@@ -100,11 +105,7 @@ class ContinuousListeningIndicator extends ConsumerWidget {
       case ContinuousListeningState.speaking:
         return const _SpeakingWaveIcon();
       case ContinuousListeningState.idle:
-        return const Icon(
-          Icons.mic_off,
-          color: Colors.white,
-          size: 20,
-        );
+        return const Icon(Icons.mic_off, color: Colors.white, size: 20);
     }
   }
 
@@ -143,9 +144,10 @@ class _PulsingMicIconState extends State<_PulsingMicIcon>
       vsync: this,
     )..repeat(reverse: true);
 
-    _animation = Tween<double>(begin: 0.7, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0.7,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -161,11 +163,7 @@ class _PulsingMicIconState extends State<_PulsingMicIcon>
       builder: (context, child) {
         return Opacity(
           opacity: _animation.value,
-          child: const Icon(
-            Icons.mic,
-            color: Colors.white,
-            size: 20,
-          ),
+          child: const Icon(Icons.mic, color: Colors.white, size: 20),
         );
       },
     );
@@ -209,7 +207,8 @@ class _SpeakingWaveIconState extends State<_SpeakingWaveIcon>
           children: List.generate(3, (index) {
             final delay = index * 0.2;
             final value = ((_controller.value + delay) % 1.0);
-            final height = 4 + (12 * (0.5 + 0.5 * (1 - (value - 0.5).abs() * 2)));
+            final height =
+                4 + (12 * (0.5 + 0.5 * (1 - (value - 0.5).abs() * 2)));
 
             return Container(
               width: 3,

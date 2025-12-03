@@ -82,6 +82,23 @@ class MockVoiceService implements VoiceService {
   }) async {}
 
   @override
+  void startContinuousListening({
+    required Function(String recognizedText) onQuestionDetected,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    // Mock implementation - no-op for basic tests
+  }
+
+  @override
+  Future<void> stopContinuousListening() async {
+    // Mock implementation - no-op for basic tests
+  }
+
+  @override
+  bool get isContinuousListening => false;
+
+  @override
   Future<void> dispose() async {
     // Mock disposal - no state to clean up
   }

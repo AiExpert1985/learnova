@@ -8,10 +8,7 @@ import '../../../core/providers/app_providers.dart';
 class ContinuousModeToggle extends ConsumerWidget {
   final VoidCallback onToggle;
 
-  const ContinuousModeToggle({
-    super.key,
-    required this.onToggle,
-  });
+  const ContinuousModeToggle({super.key, required this.onToggle});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,7 +18,7 @@ class ContinuousModeToggle extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: isEnabled
-            ? Theme.of(context).primaryColor.withOpacity(0.1)
+            ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
             : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(

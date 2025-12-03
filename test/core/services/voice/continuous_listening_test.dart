@@ -3,7 +3,6 @@ library;
 
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:learnova/core/services/voice/voice_service.dart';
 import 'package:learnova/core/services/voice/voice_service_impl.dart';
 import 'package:learnova/core/services/voice/stt_service.dart';
@@ -12,13 +11,259 @@ import 'package:learnova/core/services/voice/voice_models.dart';
 import 'package:learnova/core/services/voice/state/voice_notifier.dart';
 import 'package:learnova/core/services/voice/state/voice_state.dart';
 import 'package:learnova/core/services/voice/permission_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-// Mocks
-class MockSTTService extends Mock implements STTService {}
+// Manual Mocks
+class MockSTTService implements STTService {
+  bool _isListening = false;
+  StreamController<SpeechRecognitionResult>? _streamController;
+  Function(Duration?)? onStartListening;
+  int startListeningCallCount = 0;
 
-class MockTTSService extends Mock implements TTSService {}
+  @override
+  Future<void> initialize() async {}
 
-class MockPermissionService extends Mock implements PermissionService {}
+  @override
+  Stream<SpeechRecognitionResult> startListening({
+    String? localeId,
+    Duration? listenDuration,
+  }) {
+    _isListening = true;
+    startListeningCallCount++;
+    onStartListening?.call(listenDuration);
+    _streamController = StreamController<SpeechRecognitionResult>();
+    return _streamController!.stream;
+  }
+
+  @override
+  Future<void> stopListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<void> cancelListening() async {
+    _isListening = false;
+  }
+
+  @override
+  bool get isListening => _isListening;
+
+  @override
+  Future<bool> isAvailable() async => true;
+
+  @override
+  Future<void> dispose() async {}
+
+  @override
+  Future<List<String>> getSupportedLocales() async => ['en-US'];
+
+  void simulateResult(SpeechRecognitionResult result) {
+    _streamController?.add(result);
+  }
+
+  void simulateError(VoiceException error) {
+    _streamController?.addError(error);
+  }
+
+  void closeStream() {
+    _streamController?.close();
+  }
+}
+
+class MockTTSService implements TTSService {
+  bool _isSpeaking = false;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Stream<SpeechSynthesisState> speak(String text) {
+    _isSpeaking = true;
+    return Stream.fromIterable([
+      SpeechSynthesisState.speaking,
+      SpeechSynthesisState.idle,
+    ]);
+  }
+
+  @override
+  Future<void> stop() async {
+    _isSpeaking = false;
+  }
+
+  @override
+  Future<void> pause() async {}
+
+  @override
+  Future<void> resume() async {}
+
+  @override
+  bool get isSpeaking => _isSpeaking;
+
+  @override
+  Future<void> configure({
+    double? speechRate,
+    double? volume,
+    double? pitch,
+    String? language,
+  }) async {}
+
+  @override
+  Future<void> dispose() async {}
+
+  @override
+  Future<List<String>> getLanguages() async => ['en-US'];
+
+  @override
+  Future<List<String>> getVoices() async => ['en-US-default'];
+
+  @override
+  Future<void> setLanguage(String language) async {}
+
+  @override
+  Future<void> setVoice(String voice) async {}
+
+  @override
+  Future<void> setSpeechRate(double rate) async {}
+
+  @override
+  Future<void> setVolume(double volume) async {}
+
+  @override
+  Future<void> setPitch(double pitch) async {}
+}
+
+class MockPermissionService implements PermissionService {
+  bool _hasMicPermission = true;
+
+  @override
+  Future<bool> hasMicrophonePermission() async => _hasMicPermission;
+
+  @override
+  Future<bool> requestMicrophonePermission() async => _hasMicPermission;
+
+  @override
+  Future<bool> isMicrophonePermissionPermanentlyDenied() async => false;
+
+  @override
+  Future<bool> openAppSettings() async => true;
+
+  @override
+  Future<PermissionStatus> getMicrophonePermissionStatus() async =>
+      _hasMicPermission ? PermissionStatus.granted : PermissionStatus.denied;
+
+  @override
+  Future<bool> hasSpeechRecognitionPermission() async => true;
+
+  @override
+  Future<bool> requestSpeechRecognitionPermission() async => true;
+
+  @override
+  Future<bool> requestVoicePermissions() async => _hasMicPermission;
+
+  void setMicPermission(bool value) {
+    _hasMicPermission = value;
+  }
+}
+
+class MockVoiceService implements VoiceService {
+  bool _isListening = false;
+  bool _isSpeaking = false;
+  bool _isContinuousListening = false;
+  Function(String)? _onQuestionDetected;
+  int startContinuousListeningCallCount = 0;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Stream<SpeechRecognitionResult> startListening({
+    String? localeId,
+    Duration? listenDuration,
+  }) {
+    _isListening = true;
+    return Stream.fromIterable([
+      SpeechRecognitionResult(
+        recognizedText: 'test',
+        confidence: 0.9,
+        isFinal: true,
+      ),
+    ]);
+  }
+
+  @override
+  Future<void> stopListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<void> cancelListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Stream<SpeechSynthesisState> speak(String text) {
+    _isSpeaking = true;
+    return Stream.fromIterable([
+      SpeechSynthesisState.speaking,
+      SpeechSynthesisState.idle,
+    ]);
+  }
+
+  @override
+  Future<void> stopSpeaking() async {
+    _isSpeaking = false;
+  }
+
+  @override
+  Future<void> pauseSpeaking() async {}
+
+  @override
+  Future<void> resumeSpeaking() async {}
+
+  @override
+  bool get isListening => _isListening;
+
+  @override
+  bool get isSpeaking => _isSpeaking;
+
+  @override
+  Future<bool> isSpeechRecognitionAvailable() async => true;
+
+  @override
+  Future<void> configureTTS({
+    double? speechRate,
+    double? volume,
+    double? pitch,
+    String? language,
+  }) async {}
+
+  @override
+  void startContinuousListening({
+    required Function(String recognizedText) onQuestionDetected,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    _isContinuousListening = true;
+    _onQuestionDetected = onQuestionDetected;
+    startContinuousListeningCallCount++;
+  }
+
+  @override
+  Future<void> stopContinuousListening() async {
+    _isContinuousListening = false;
+  }
+
+  @override
+  bool get isContinuousListening => _isContinuousListening;
+
+  @override
+  Future<void> dispose() async {}
+
+  // Test helper to simulate question detection
+  void simulateQuestionDetected(String question) {
+    _onQuestionDetected?.call(question);
+  }
+}
 
 void main() {
   late MockSTTService mockSTT;
@@ -30,25 +275,12 @@ void main() {
     mockSTT = MockSTTService();
     mockTTS = MockTTSService();
     mockPermissionService = MockPermissionService();
-    voiceService = VoiceServiceImpl(
-      sttService: mockSTT,
-      ttsService: mockTTS,
-    );
-
-    // Default mocks
-    when(() => mockSTT.initialize()).thenAnswer((_) async {});
-    when(() => mockTTS.initialize()).thenAnswer((_) async {});
-    when(() => mockSTT.isListening).thenReturn(false);
-    when(() => mockTTS.isSpeaking).thenReturn(false);
+    voiceService = VoiceServiceImpl(sttService: mockSTT, ttsService: mockTTS);
   });
 
   group('VoiceService Continuous Listening', () {
     test('startContinuousListening enables continuous mode', () async {
       await voiceService.initialize();
-
-      final streamController = StreamController<SpeechRecognitionResult>();
-      when(() => mockSTT.startListening(listenDuration: any(named: 'listenDuration')))
-          .thenAnswer((_) => streamController.stream);
 
       final questions = <String>[];
       voiceService.startContinuousListening(
@@ -57,92 +289,81 @@ void main() {
 
       expect(voiceService.isContinuousListening, true);
 
-      await streamController.close();
-    });
-
-    test('stops continuous listening when stopContinuousListening called', () async {
-      await voiceService.initialize();
-
-      final streamController = StreamController<SpeechRecognitionResult>();
-      when(() => mockSTT.startListening(listenDuration: any(named: 'listenDuration')))
-          .thenAnswer((_) => streamController.stream);
-      when(() => mockSTT.stopListening()).thenAnswer((_) async {});
-
-      voiceService.startContinuousListening(
-        onQuestionDetected: (_) {},
-      );
-
       await voiceService.stopContinuousListening();
-
-      expect(voiceService.isContinuousListening, false);
-      await streamController.close();
     });
+
+    test(
+      'stops continuous listening when stopContinuousListening called',
+      () async {
+        await voiceService.initialize();
+
+        voiceService.startContinuousListening(onQuestionDetected: (_) {});
+
+        await voiceService.stopContinuousListening();
+
+        expect(voiceService.isContinuousListening, false);
+      },
+    );
 
     test('calls onQuestionDetected with recognized text', () async {
       await voiceService.initialize();
-
-      final streamController = StreamController<SpeechRecognitionResult>();
-      when(() => mockSTT.startListening(listenDuration: any(named: 'listenDuration')))
-          .thenAnswer((_) => streamController.stream);
 
       final questions = <String>[];
       voiceService.startContinuousListening(
         onQuestionDetected: (q) => questions.add(q),
       );
 
-      // Simulate speech recognition
-      streamController.add(SpeechRecognitionResult(
-        recognizedText: 'What is AI?',
-        confidence: 0.9,
-        isFinal: true,
-      ));
+      // Give time for listening to start
+      await Future.delayed(const Duration(milliseconds: 100));
 
-      await streamController.close();
+      // Simulate speech recognition
+      mockSTT.simulateResult(
+        SpeechRecognitionResult(
+          recognizedText: 'What is AI?',
+          confidence: 0.9,
+          isFinal: true,
+        ),
+      );
+
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(questions, contains('What is AI?'));
+
+      await voiceService.stopContinuousListening();
+      mockSTT.closeStream();
     });
 
     test('handles errors and retries listening', () async {
       await voiceService.initialize();
 
-      final streamController = StreamController<SpeechRecognitionResult>();
-      var callCount = 0;
-      when(() => mockSTT.startListening(listenDuration: any(named: 'listenDuration')))
-          .thenAnswer((_) {
-        callCount++;
-        return streamController.stream;
-      });
+      voiceService.startContinuousListening(onQuestionDetected: (_) {});
 
-      voiceService.startContinuousListening(
-        onQuestionDetected: (_) {},
-      );
+      // Give time for listening to start
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      final initialCallCount = mockSTT.startListeningCallCount;
 
       // Simulate error
-      streamController.addError(VoiceException('Test error', VoiceErrorType.unknown));
+      mockSTT.simulateError(
+        VoiceException('Test error', VoiceErrorType.unknown),
+      );
+      mockSTT.closeStream();
 
       await Future.delayed(const Duration(seconds: 3));
 
       // Should retry after error
-      expect(callCount, greaterThan(1));
+      expect(mockSTT.startListeningCallCount, greaterThan(initialCallCount));
 
       await voiceService.stopContinuousListening();
-      await streamController.close();
     });
   });
 
   group('VoiceNotifier Continuous Mode State Machine', () {
     late VoiceNotifier voiceNotifier;
-    late VoiceService mockVoiceService;
+    late MockVoiceService mockVoiceService;
 
     setUp(() {
       mockVoiceService = MockVoiceService();
-      when(() => mockVoiceService.initialize()).thenAnswer((_) async {});
-      when(() => mockVoiceService.isListening).thenReturn(false);
-      when(() => mockVoiceService.isSpeaking).thenReturn(false);
-      when(() => mockPermissionService.hasMicrophonePermission())
-          .thenAnswer((_) async => true);
-
       voiceNotifier = VoiceNotifier(mockVoiceService, mockPermissionService);
     });
 
@@ -151,13 +372,9 @@ void main() {
     });
 
     test('toggleContinuousMode enables mode', () async {
-      when(() => mockVoiceService.startContinuousListening(
-            onQuestionDetected: any(named: 'onQuestionDetected'),
-            pauseFor: any(named: 'pauseFor'),
-            listenFor: any(named: 'listenFor'),
-          )).thenReturn(null);
-
-      await Future.delayed(const Duration(milliseconds: 100)); // Wait for initialization
+      await Future.delayed(
+        const Duration(milliseconds: 100),
+      ); // Wait for initialization
 
       await voiceNotifier.toggleContinuousMode(
         onQuestion: (_) {},
@@ -165,17 +382,13 @@ void main() {
       );
 
       expect(voiceNotifier.state.isContinuousModeEnabled, true);
-      expect(voiceNotifier.state.continuousListeningState, ContinuousListeningState.listening);
+      expect(
+        voiceNotifier.state.continuousListeningState,
+        ContinuousListeningState.listening,
+      );
     });
 
     test('toggleContinuousMode disables when already enabled', () async {
-      when(() => mockVoiceService.startContinuousListening(
-            onQuestionDetected: any(named: 'onQuestionDetected'),
-            pauseFor: any(named: 'pauseFor'),
-            listenFor: any(named: 'listenFor'),
-          )).thenReturn(null);
-      when(() => mockVoiceService.stopContinuousListening()).thenAnswer((_) async {});
-
       await Future.delayed(const Duration(milliseconds: 100));
 
       // Enable
@@ -191,16 +404,13 @@ void main() {
       );
 
       expect(voiceNotifier.state.isContinuousModeEnabled, false);
-      expect(voiceNotifier.state.continuousListeningState, ContinuousListeningState.idle);
+      expect(
+        voiceNotifier.state.continuousListeningState,
+        ContinuousListeningState.idle,
+      );
     });
 
     test('transitions to processing state when question detected', () async {
-      when(() => mockVoiceService.startContinuousListening(
-            onQuestionDetected: any(named: 'onQuestionDetected'),
-            pauseFor: any(named: 'pauseFor'),
-            listenFor: any(named: 'listenFor'),
-          )).thenReturn(null);
-
       await Future.delayed(const Duration(milliseconds: 100));
 
       String? detectedQuestion;
@@ -210,30 +420,16 @@ void main() {
       );
 
       // Simulate question detection
-      final capturedCallback = verify(
-        () => mockVoiceService.startContinuousListening(
-          onQuestionDetected: captureAny(named: 'onQuestionDetected'),
-          pauseFor: any(named: 'pauseFor'),
-          listenFor: any(named: 'listenFor'),
-        ),
-      ).captured.first as Function(String);
+      mockVoiceService.simulateQuestionDetected('What is machine learning?');
 
-      capturedCallback('What is machine learning?');
-
-      expect(voiceNotifier.state.continuousListeningState, ContinuousListeningState.processing);
+      expect(
+        voiceNotifier.state.continuousListeningState,
+        ContinuousListeningState.processing,
+      );
       expect(detectedQuestion, 'What is machine learning?');
     });
 
     test('transitions to speaking state when answer ready', () async {
-      when(() => mockVoiceService.startContinuousListening(
-            onQuestionDetected: any(named: 'onQuestionDetected'),
-            pauseFor: any(named: 'pauseFor'),
-            listenFor: any(named: 'listenFor'),
-          )).thenReturn(null);
-
-      final streamController = StreamController<SpeechSynthesisState>();
-      when(() => mockVoiceService.speak(any())).thenAnswer((_) => streamController.stream);
-
       await Future.delayed(const Duration(milliseconds: 100));
 
       await voiceNotifier.startContinuousMode(
@@ -243,19 +439,13 @@ void main() {
 
       await voiceNotifier.speakAnswerAndResume('Machine learning is...');
 
-      expect(voiceNotifier.state.continuousListeningState, ContinuousListeningState.speaking);
-
-      await streamController.close();
+      expect(
+        voiceNotifier.state.continuousListeningState,
+        ContinuousListeningState.speaking,
+      );
     });
 
     test('auto-disables after 5 minutes of inactivity', () async {
-      when(() => mockVoiceService.startContinuousListening(
-            onQuestionDetected: any(named: 'onQuestionDetected'),
-            pauseFor: any(named: 'pauseFor'),
-            listenFor: any(named: 'listenFor'),
-          )).thenReturn(null);
-      when(() => mockVoiceService.stopContinuousListening()).thenAnswer((_) async {});
-
       await Future.delayed(const Duration(milliseconds: 100));
 
       await voiceNotifier.startContinuousMode(
@@ -278,7 +468,10 @@ void main() {
       );
 
       expect(updatedState.isContinuousModeEnabled, true);
-      expect(updatedState.continuousListeningState, ContinuousListeningState.listening);
+      expect(
+        updatedState.continuousListeningState,
+        ContinuousListeningState.listening,
+      );
     });
 
     test('equality checks include continuous fields', () {
@@ -300,5 +493,3 @@ void main() {
     });
   });
 }
-
-class MockVoiceService extends Mock implements VoiceService {}
