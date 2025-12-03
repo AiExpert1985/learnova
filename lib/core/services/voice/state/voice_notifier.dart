@@ -130,13 +130,14 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
   /// Cancel listening
   Future<void> cancelListening() async {
-    if (!state.isListening) return;
-
     try {
-      await _voiceService.cancelListening();
-      await _recognitionSubscription?.cancel();
-      _recognitionSubscription = null;
+      if (state.isListening) {
+        await _voiceService.cancelListening();
+        await _recognitionSubscription?.cancel();
+        _recognitionSubscription = null;
+      }
 
+      // Always clear recognized text when cancelling
       state = state.copyWith(
         isListening: false,
         recognizedText: '',
@@ -145,6 +146,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     } catch (e) {
       state = state.copyWith(
         isListening: false,
+        recognizedText: '',
         error: e.toString(),
         recognitionState: SpeechRecognitionState.error,
       );

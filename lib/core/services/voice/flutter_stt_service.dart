@@ -87,8 +87,10 @@ class FlutterSTTService implements STTService {
       localeId: localeId,
       listenFor: listenDuration ?? const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 3),
-      partialResults: true,
-      cancelOnError: true,
+      listenOptions: stt.SpeechListenOptions(
+        partialResults: true,
+        cancelOnError: true,
+      ),
     );
 
     return _resultController!.stream;

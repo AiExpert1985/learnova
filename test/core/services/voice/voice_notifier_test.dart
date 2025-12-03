@@ -9,11 +9,10 @@ import 'package:learnova/core/services/voice/voice_models.dart';
 class MockVoiceService implements VoiceService {
   bool _isListening = false;
   bool _isSpeaking = false;
-  bool _isInitialized = false;
 
   @override
   Future<void> initialize() async {
-    _isInitialized = true;
+    // Mock initialization - no state to track
   }
 
   @override
@@ -85,7 +84,7 @@ class MockVoiceService implements VoiceService {
 
   @override
   Future<void> dispose() async {
-    _isInitialized = false;
+    // Mock disposal - no state to clean up
   }
 }
 
