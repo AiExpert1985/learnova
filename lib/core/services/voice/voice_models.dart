@@ -30,6 +30,14 @@ enum SpeechSynthesisState {
   error,
 }
 
+/// Represents the state of continuous listening mode
+enum ContinuousListeningState {
+  idle,
+  listening,
+  processing,
+  speaking,
+}
+
 /// Exception thrown by voice services
 class VoiceException implements Exception {
   final String message;

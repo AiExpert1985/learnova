@@ -14,6 +14,12 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   StreamSubscription<SpeechRecognitionResult>? _recognitionSubscription;
   StreamSubscription<SpeechSynthesisState>? _synthesisSubscription;
 
+  // Continuous mode fields
+  Function(String question)? _onQuestionCallback;
+  Function(String answer)? _onAnswerCallback;
+  DateTime? _lastActivityTime;
+  Timer? _inactivityTimer;
+
   VoiceNotifier(this._voiceService, this._permissionService)
       : super(const VoiceState()) {
     _initialize();
@@ -228,8 +234,169 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     state = state.clearError();
   }
 
+  /// Toggle continuous listening mode
+  Future<void> toggleContinuousMode({
+    required Function(String question) onQuestion,
+    required Function(String answer) onAnswerReady,
+  }) async {
+    if (state.isContinuousModeEnabled) {
+      // Disable continuous mode
+      await stopContinuousMode();
+    } else {
+      // Enable continuous mode
+      await startContinuousMode(
+        onQuestion: onQuestion,
+        onAnswerReady: onAnswerReady,
+      );
+    }
+  }
+
+  /// Start continuous listening mode
+  Future<void> startContinuousMode({
+    required Function(String question) onQuestion,
+    required Function(String answer) onAnswerReady,
+  }) async {
+    if (!state.isInitialized) {
+      state = state.copyWith(error: 'Voice service not initialized');
+      return;
+    }
+
+    // Check permissions
+    final hasPermission = await _permissionService.hasMicrophonePermission();
+    if (!hasPermission) {
+      final granted = await _permissionService.requestMicrophonePermission();
+      if (!granted) {
+        final isPermanentlyDenied =
+            await _permissionService.isMicrophonePermissionPermanentlyDenied();
+        if (isPermanentlyDenied) {
+          state = state.copyWith(
+            error:
+                'Microphone permission denied. Please enable it in settings.',
+          );
+        } else {
+          state = state.copyWith(error: 'Microphone permission denied');
+        }
+        return;
+      }
+    }
+
+    _onQuestionCallback = onQuestion;
+    _onAnswerCallback = onAnswerReady;
+    _lastActivityTime = DateTime.now();
+
+    state = state.copyWith(
+      isContinuousModeEnabled: true,
+      continuousListeningState: ContinuousListeningState.listening,
+      error: null,
+    );
+
+    // Start inactivity timer (5 minutes)
+    _startInactivityTimer();
+
+    // Start continuous listening
+    _voiceService.startContinuousListening(
+      onQuestionDetected: _handleQuestionDetected,
+      pauseFor: const Duration(seconds: 3),
+      listenFor: const Duration(seconds: 60),
+    );
+  }
+
+  /// Stop continuous listening mode
+  Future<void> stopContinuousMode() async {
+    await _voiceService.stopContinuousListening();
+    _inactivityTimer?.cancel();
+    _inactivityTimer = null;
+    _onQuestionCallback = null;
+    _onAnswerCallback = null;
+
+    state = state.copyWith(
+      isContinuousModeEnabled: false,
+      continuousListeningState: ContinuousListeningState.idle,
+    );
+  }
+
+  /// Handle question detected in continuous mode
+  void _handleQuestionDetected(String recognizedText) {
+    if (!state.isContinuousModeEnabled) return;
+
+    _lastActivityTime = DateTime.now();
+    _resetInactivityTimer();
+
+    // Update state to processing
+    state = state.copyWith(
+      continuousListeningState: ContinuousListeningState.processing,
+      recognizedText: recognizedText,
+    );
+
+    // Notify the QA feature to process the question
+    _onQuestionCallback?.call(recognizedText);
+  }
+
+  /// Speak answer in continuous mode and resume listening
+  Future<void> speakAnswerAndResume(String answer) async {
+    if (!state.isContinuousModeEnabled) return;
+
+    _lastActivityTime = DateTime.now();
+    _resetInactivityTimer();
+
+    state = state.copyWith(
+      continuousListeningState: ContinuousListeningState.speaking,
+    );
+
+    // Speak the answer
+    final stream = _voiceService.speak(answer);
+
+    _synthesisSubscription = stream.listen(
+      (synthesisState) {
+        // Update synthesis state
+        state = state.copyWith(synthesisState: synthesisState);
+      },
+      onError: (error) {
+        // On TTS error, show answer as text and resume listening
+        _onAnswerCallback?.call(answer);
+        _resumeListening();
+      },
+      onDone: () {
+        // When speaking completes, resume listening
+        _resumeListening();
+      },
+    );
+  }
+
+  /// Resume listening after speaking
+  void _resumeListening() {
+    if (!state.isContinuousModeEnabled) return;
+
+    state = state.copyWith(
+      continuousListeningState: ContinuousListeningState.listening,
+      recognizedText: '',
+    );
+
+    // Restart listening cycle
+    _voiceService.startContinuousListening(
+      onQuestionDetected: _handleQuestionDetected,
+      pauseFor: const Duration(seconds: 3),
+      listenFor: const Duration(seconds: 60),
+    );
+  }
+
+  /// Start inactivity timer
+  void _startInactivityTimer() {
+    _inactivityTimer?.cancel();
+    _inactivityTimer = Timer(const Duration(minutes: 5), () {
+      // Auto-disable after 5 minutes of inactivity
+      stopContinuousMode();
+    });
+  }
+
+  /// Reset inactivity timer
+  void _resetInactivityTimer() {
+    _startInactivityTimer();
+  }
+
   @override
   void dispose() {
+    _inactivityTimer?.cancel();
     _recognitionSubscription?.cancel();
     _synthesisSubscription?.cancel();
     _voiceService.dispose();

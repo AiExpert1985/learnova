@@ -8,14 +8,21 @@ import '../widgets/url_input.dart';
 import '../widgets/error_banner.dart';
 import '../widgets/qa_history_list.dart';
 import '../widgets/video_player.dart';
+import '../widgets/continuous_mode_toggle.dart';
+import '../widgets/continuous_listening_indicator.dart';
 import '../../history/ui/widgets/history_bottom_sheet.dart';
 import '../../history/providers/history_providers.dart';
 
 /// Main Q&A screen with YouTube integration
-class QAScreen extends ConsumerWidget {
+class QAScreen extends ConsumerStatefulWidget {
   const QAScreen({super.key});
 
-  void _showHistoryBottomSheet(BuildContext context, WidgetRef ref) {
+  @override
+  ConsumerState<QAScreen> createState() => _QAScreenState();
+}
+
+class _QAScreenState extends ConsumerState<QAScreen> {
+  void _showHistoryBottomSheet(BuildContext context) {
     // Refresh history before showing
     ref.read(historyNotifierProvider.notifier).loadHistory();
 
@@ -29,9 +36,31 @@ class QAScreen extends ConsumerWidget {
     );
   }
 
+  void _handleContinuousModeToggle() async {
+    final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
+    final qaNotifier = ref.read(qaNotifierProvider.notifier);
+
+    // Set up the callback for QA notifier to speak answers
+    qaNotifier.setContinuousModeCallback((answer) {
+      voiceNotifier.speakAnswerAndResume(answer);
+    });
+
+    await voiceNotifier.toggleContinuousMode(
+      onQuestion: (question) {
+        // Process question through QA service
+        qaNotifier.askQuestion(question, isContinuousMode: true);
+      },
+      onAnswerReady: (answer) {
+        // This is called if TTS fails, to display answer as text
+        // The answer is already in the QA history, so nothing to do here
+      },
+    );
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final qaState = ref.watch(qaNotifierProvider);
+    final voiceState = ref.watch(voiceNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +70,7 @@ class QAScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'Conversation History',
-            onPressed: () => _showHistoryBottomSheet(context, ref),
+            onPressed: () => _showHistoryBottomSheet(context),
           ),
         ],
       ),
@@ -56,6 +85,12 @@ class QAScreen extends ConsumerWidget {
                 title: qaState.videoTitle!,
                 duration: qaState.videoDuration!,
               ),
+            // Continuous listening indicator
+            if (qaState.hasVideo && voiceState.isContinuousModeEnabled)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ContinuousListeningIndicator(),
+              ),
             if (qaState.videoError != null && qaState.videoError!.isNotEmpty)
               ErrorBanner(error: qaState.videoError!),
             if (qaState.hasVideo)
@@ -67,7 +102,22 @@ class QAScreen extends ConsumerWidget {
                   message: 'Paste a YouTube URL and press play to start',
                 ),
               ),
-            if (qaState.hasVideo) const QuestionInput(),
+            if (qaState.hasVideo)
+              Column(
+                children: [
+                  // Continuous mode toggle
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: ContinuousModeToggle(
+                        onToggle: _handleContinuousModeToggle,
+                      ),
+                    ),
+                  ),
+                  const QuestionInput(),
+                ],
+              ),
           ],
         ),
       ),

@@ -12,6 +12,10 @@ class VoiceState {
   final SpeechRecognitionState recognitionState;
   final SpeechSynthesisState synthesisState;
 
+  // Continuous listening mode fields
+  final bool isContinuousModeEnabled;
+  final ContinuousListeningState continuousListeningState;
+
   const VoiceState({
     this.isListening = false,
     this.isSpeaking = false,
@@ -20,6 +24,8 @@ class VoiceState {
     this.isInitialized = false,
     this.recognitionState = SpeechRecognitionState.idle,
     this.synthesisState = SpeechSynthesisState.idle,
+    this.isContinuousModeEnabled = false,
+    this.continuousListeningState = ContinuousListeningState.idle,
   });
 
   VoiceState copyWith({
@@ -30,6 +36,8 @@ class VoiceState {
     bool? isInitialized,
     SpeechRecognitionState? recognitionState,
     SpeechSynthesisState? synthesisState,
+    bool? isContinuousModeEnabled,
+    ContinuousListeningState? continuousListeningState,
   }) {
     return VoiceState(
       isListening: isListening ?? this.isListening,
@@ -39,6 +47,8 @@ class VoiceState {
       isInitialized: isInitialized ?? this.isInitialized,
       recognitionState: recognitionState ?? this.recognitionState,
       synthesisState: synthesisState ?? this.synthesisState,
+      isContinuousModeEnabled: isContinuousModeEnabled ?? this.isContinuousModeEnabled,
+      continuousListeningState: continuousListeningState ?? this.continuousListeningState,
     );
   }
 
@@ -58,7 +68,9 @@ class VoiceState {
         other.error == error &&
         other.isInitialized == isInitialized &&
         other.recognitionState == recognitionState &&
-        other.synthesisState == synthesisState;
+        other.synthesisState == synthesisState &&
+        other.isContinuousModeEnabled == isContinuousModeEnabled &&
+        other.continuousListeningState == continuousListeningState;
   }
 
   @override
@@ -71,6 +83,8 @@ class VoiceState {
       isInitialized,
       recognitionState,
       synthesisState,
+      isContinuousModeEnabled,
+      continuousListeningState,
     );
   }
 }

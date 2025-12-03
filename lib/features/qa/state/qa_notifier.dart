@@ -14,6 +14,9 @@ class QANotifier extends StateNotifier<QAState> {
   final YouTubeService _youtubeService;
   final HistoryService _historyService;
 
+  // Callback for continuous mode to speak answers
+  Function(String answer)? _onAnswerReadyForSpeech;
+
   QANotifier({
     required QAService qaService,
     required YouTubeService youtubeService,
@@ -100,7 +103,7 @@ class QANotifier extends StateNotifier<QAState> {
 
   /// Ask a question and update state with result
   /// Uses current video position to determine context
-  Future<void> askQuestion(String questionText) async {
+  Future<void> askQuestion(String questionText, {bool isContinuousMode = false}) async {
     final trimmedQuestion = questionText.trim();
     if (trimmedQuestion.isEmpty) return;
 
@@ -143,7 +146,17 @@ class QANotifier extends StateNotifier<QAState> {
     // Auto-save conversation to history after successful Q&A
     if (newEntry.hasAnswer) {
       await _saveConversationToHistory();
+
+      // In continuous mode, trigger TTS for the answer
+      if (isContinuousMode && _onAnswerReadyForSpeech != null) {
+        _onAnswerReadyForSpeech!(newEntry.answer!);
+      }
     }
+  }
+
+  /// Set callback for continuous mode
+  void setContinuousModeCallback(Function(String answer)? callback) {
+    _onAnswerReadyForSpeech = callback;
   }
 
   /// Save current conversation to history storage

@@ -11,6 +11,8 @@ class VoiceServiceImpl implements VoiceService {
   final STTService _sttService;
   final TTSService _ttsService;
   bool _isInitialized = false;
+  bool _isContinuousListening = false;
+  StreamSubscription<SpeechRecognitionResult>? _continuousListeningSubscription;
 
   VoiceServiceImpl({
     required STTService sttService,
@@ -125,7 +127,94 @@ class VoiceServiceImpl implements VoiceService {
   }
 
   @override
+  void startContinuousListening({
+    required Function(String recognizedText) onQuestionDetected,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    if (!_isInitialized) {
+      throw VoiceException(
+        'Voice service not initialized. Call initialize() first.',
+        VoiceErrorType.initialization,
+      );
+    }
+
+    if (_isContinuousListening) {
+      return; // Already in continuous mode
+    }
+
+    _isContinuousListening = true;
+    _startListeningCycle(
+      onQuestionDetected: onQuestionDetected,
+      pauseFor: pauseFor ?? const Duration(seconds: 3),
+      listenFor: listenFor ?? const Duration(seconds: 60),
+    );
+  }
+
+  void _startListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    required Duration pauseFor,
+    required Duration listenFor,
+  }) {
+    if (!_isContinuousListening) return;
+
+    // Stop speaking before listening
+    if (_ttsService.isSpeaking) {
+      _ttsService.stop();
+    }
+
+    final stream = _sttService.startListening(
+      listenDuration: listenFor,
+    );
+
+    String? finalRecognizedText;
+
+    _continuousListeningSubscription = stream.listen(
+      (result) {
+        if (result.isFinal && result.recognizedText.trim().isNotEmpty) {
+          finalRecognizedText = result.recognizedText;
+        }
+      },
+      onError: (error) {
+        // On error, restart the cycle after a short delay
+        Future.delayed(const Duration(seconds: 2), () {
+          if (_isContinuousListening) {
+            _startListeningCycle(
+              onQuestionDetected: onQuestionDetected,
+              pauseFor: pauseFor,
+              listenFor: listenFor,
+            );
+          }
+        });
+      },
+      onDone: () {
+        // When listening completes (silence detected or timeout)
+        if (_isContinuousListening && finalRecognizedText != null) {
+          // Invoke callback with recognized text
+          onQuestionDetected(finalRecognizedText!);
+        }
+        // Note: The callback handler should resume listening when ready
+      },
+    );
+  }
+
+  @override
+  Future<void> stopContinuousListening() async {
+    _isContinuousListening = false;
+    await _continuousListeningSubscription?.cancel();
+    _continuousListeningSubscription = null;
+
+    if (_sttService.isListening) {
+      await _sttService.stopListening();
+    }
+  }
+
+  @override
+  bool get isContinuousListening => _isContinuousListening;
+
+  @override
   Future<void> dispose() async {
+    await stopContinuousListening();
     await _sttService.dispose();
     await _ttsService.dispose();
   }
