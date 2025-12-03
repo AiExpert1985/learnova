@@ -5,11 +5,13 @@ import 'package:learnova/features/history/data/models/qa_entry.dart';
 import 'package:learnova/features/history/data/repositories/hive_history_repository.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late HiveHistoryRepository repository;
 
   setUpAll(() async {
-    // Initialize Hive for testing
-    await Hive.initFlutter();
+    // Initialize Hive for testing with a test directory
+    Hive.init('./test_hive');
   });
 
   setUp(() async {

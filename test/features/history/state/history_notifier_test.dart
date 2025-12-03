@@ -6,11 +6,9 @@ import 'package:learnova/features/history/services/history_service.dart';
 import 'package:learnova/features/history/state/history_notifier.dart';
 
 /// Mock service for testing
-class MockHistoryService extends HistoryService {
+class MockHistoryService implements HistoryService {
   final List<ConversationHistory> _mockConversations = [];
   bool _shouldFail = false;
-
-  MockHistoryService() : super(null as dynamic);
 
   void setShouldFail(bool value) => _shouldFail = value;
 
