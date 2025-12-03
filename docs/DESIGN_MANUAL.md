@@ -12,8 +12,8 @@
 
 ### Current Status
 **Phase:** Step 4 - Persistence & History Storage (Complete)
-- **Features:** YouTube URL loading, Transcript fetching, Video playback, Position-aware Q&A, GPT-4o-mini Q&A, Auto-save conversations, History retrieval.
-- **Pending:** Voice I/O, Auth, Conversation context.
+- **Features:** YouTube URL loading, Transcript fetching, Video playback, Position-aware Q&A, GPT-4o-mini Q&A, Auto-save conversations, History retrieval, Auto-restore previous conversations, Clear all history.
+- **Pending:** Voice I/O, Auth, Multi-turn conversation context.
 
 ---
 
@@ -35,6 +35,7 @@
 ### 4. Result Pattern for Error Handling
 **Decision:** Return `Result<Success, Failure>` instead of throwing exceptions.
 **Why:** Explicit error handling, fail-fast principle.
+**Implementation:** `isSuccess` checks `failure == null` (not `data != null`) to support void operations returning `success(null)`.
 
 ### 5. Storage Abstraction via Repository Pattern
 **Decision:** Abstract storage behind `Repository` interface (e.g., `HistoryRepository` → `HiveHistoryRepository`).
@@ -133,8 +134,11 @@
 - **Architecture:** QA feature → HistoryService (public API) → HistoryRepository (abstraction) → HiveHistoryRepository (implementation).
 - **Auto-Save:** After each successful Q&A, save conversation (one per video, append entries if same video). Silent failure (don't disrupt UX).
 - **Models:** DB-agnostic domain models (`ConversationHistory`, `QAEntry`). Hive adapters in separate layer for serialization.
-- **UI:** Bottom sheet with conversation list (video title, date, Q&A count). Tap row → load video + restore history. Swipe/button to delete.
-- **Loading:** `loadConversationFromHistory()` in QANotifier loads video via URL, then restores Q&A history in state.
+- **UI:** Bottom sheet with conversation list (video title, date, Q&A count). Tap row → load video + restore history. Delete individual/clear all with confirmation.
+- **Auto-scroll:** Q&A history list scrolls to bottom when loading conversation from history or adding new entries.
+- **Smart Loading:** When URL is pasted, check if conversation exists for that video. If yes, restore previous conversation; if no, start fresh.
+- **Manual Loading:** `loadConversationFromHistory()` in QANotifier loads video via URL, then restores Q&A history in state.
+- **Automatic Restoration:** `loadVideo()` checks `loadConversationByVideoId()` → if exists, restore history automatically. Preserves timestamps and video positions.
 
 ### Development
 - **Extract when painful:** Don't premature optimize.

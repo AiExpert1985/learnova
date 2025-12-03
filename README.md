@@ -1,58 +1,43 @@
 # Learnova
 
-**Voice-first learning companion for YouTube videos.** Ask questions about video content and get AI-powered answers based on transcripts.
+**AI-powered learning companion for YouTube videos.** Ask questions about video content and get intelligent answers based on transcripts.
 
-**✨ Features:**
-- 🎥 YouTube video integration with transcript fetching
-- 💬 Position-aware Q&A (questions consider watched content)
-- 📝 Auto-save conversation history
-- 🔄 Load previous conversations
-- 🎯 GPT-4o-mini powered answers
+## Features
+
+- 🎥 **YouTube Integration** - Load any YouTube video with automatic transcript fetching
+- 💬 **Position-Aware Q&A** - Answers based on content you've actually watched
+- 🤖 **GPT-4o-mini Powered** - Fast, cost-effective AI responses
+- 💾 **Auto-Save Conversations** - Never lose your learning progress
+- 🔄 **Smart History** - Automatically resumes previous conversations when you paste a URL
+- 🗑️ **History Management** - View, search, delete, or clear all conversations
 
 ---
 
 ## Quick Start
 
-### 1. Prerequisites
-- **Flutter** (3.8.1+)
-- **Dart** (3.8.1+)
-- **OpenAI API Key** - Get one at [platform.openai.com](https://platform.openai.com/api-keys)
+### Prerequisites
+- Flutter 3.8.1+
+- OpenAI API Key ([Get one here](https://platform.openai.com/api-keys))
 
-### 2. Setup & Installation
+### Installation
 
 ```bash
-# 1. Get dependencies
+# 1. Install dependencies
 flutter pub get
 
-# 2. Generate Hive adapters (required for local storage)
+# 2. Generate storage adapters
 dart run build_runner build --delete-conflicting-outputs
 
-# 3. Run the app (replace with your actual API key)
+# 3. Run the app
 flutter run --dart-define=OPENAI_API_KEY=your-key-here
 ```
 
-**Platform-specific:**
-```bash
-# Windows
-flutter run -d windows --dart-define=OPENAI_API_KEY=your-key-here
+### Usage
 
-# Android
-flutter run -d android --dart-define=OPENAI_API_KEY=your-key-here
-
-# iOS
-flutter run -d ios --dart-define=OPENAI_API_KEY=your-key-here
-
-# Chrome (Web)
-flutter run -d chrome --dart-define=OPENAI_API_KEY=your-key-here
-```
-
-### 3. Usage
-
-1. **Paste a YouTube URL** in the input field and press play
-2. **Wait for the video** and transcript to load
-3. **Ask questions** about the video content
-4. **View history** by tapping the history icon (top-right)
-5. **Load previous conversations** by tapping any history entry
+1. Paste a YouTube URL and press play
+2. Wait for video and transcript to load
+3. Ask questions about the content
+4. Access previous conversations via history icon (top-right)
 
 ---
 
@@ -62,83 +47,39 @@ flutter run -d chrome --dart-define=OPENAI_API_KEY=your-key-here
 # Run all tests
 flutter test
 
-# Run specific test suite
-flutter test test/features/history/
+# Run specific feature tests
 flutter test test/features/qa/
-
-# Run with coverage
-flutter test --coverage
+flutter test test/features/history/
 ```
 
 ---
 
-## Project Structure
+## Documentation
 
-```
-lib/
-├── core/                  # Shared services & utilities
-│   ├── providers/        # App-wide Riverpod providers
-│   ├── routes/           # GoRouter configuration
-│   ├── services/         # LLM, YouTube, Config services
-│   └── widgets/          # Reusable UI components
-├── features/
-│   ├── qa/              # Q&A feature
-│   │   ├── models/      # Question, Answer, QAHistoryEntry
-│   │   ├── services/    # QA service (LLM interaction)
-│   │   ├── state/       # QANotifier (StateNotifier)
-│   │   ├── screens/     # QA screen UI
-│   │   └── widgets/     # Q&A specific widgets
-│   └── history/         # Conversation history feature
-│       ├── data/        # Models, Repository, Adapters
-│       ├── services/    # HistoryService (public API)
-│       ├── state/       # HistoryNotifier
-│       ├── providers/   # History providers
-│       └── ui/          # History UI widgets
-└── main.dart            # App entry point
-```
+For detailed information, see:
+
+- **[DESIGN_MANUAL.md](docs/DESIGN_MANUAL.md)** - Architecture, design decisions, and tech stack
+- **[AI_ASSISTANT_GUIDE.md](docs/AI_ASSISTANT_GUIDE.md)** - Development guidelines and coding standards
 
 ---
 
 ## Troubleshooting
 
-### Build Runner Issues
+**Build errors after pulling changes:**
 ```bash
-# Clean and rebuild
-dart run build_runner clean
-dart run build_runner build --delete-conflicting-outputs
-```
-
-### Hive Storage Issues
-```bash
-# Clear app data and reinstall
 flutter clean
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs
-flutter run --dart-define=OPENAI_API_KEY=your-key-here
 ```
 
-### Test Failures
+**Tests failing:**
 ```bash
-# Ensure all dependencies are installed
 flutter pub get
-
-# Run tests with verbose output
 flutter test --verbose
 ```
 
 ---
 
-## For Developers
-
-For detailed architecture, design decisions, and coding standards, please refer to:
-
-- **[Design Manual](docs/DESIGN_MANUAL.md)** - Architecture, tech stack, design decisions
-- **[AI Assistant Guide](docs/AI_ASSISTANT_GUIDE.md)** - Development guidelines and standards
-- **[Implementation Summary](IMPLEMENTATION_SUMMARY.md)** - Step-by-step implementation guide
-- **[Fixes Applied](FIXES_APPLIED.md)** - Recent critical fixes and improvements
-
----
-
 ## License
 
-This project is licensed under the MIT License.
+MIT License

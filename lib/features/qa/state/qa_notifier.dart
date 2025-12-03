@@ -24,6 +24,7 @@ class QANotifier extends StateNotifier<QAState> {
        super(const QAState());
 
   /// Load video from YouTube URL
+  /// If conversation history exists for this video, loads it instead of starting fresh
   Future<void> loadVideo(String url) async {
     final trimmedUrl = url.trim();
     if (trimmedUrl.isEmpty) return;
@@ -35,6 +36,9 @@ class QANotifier extends StateNotifier<QAState> {
 
     if (result.isSuccess) {
       final video = result.video!;
+
+      // Check if conversation history exists for this video
+      final historyResult = await _historyService.loadConversationByVideoId(video.id);
 
       // Print transcript to console for debugging (only in debug mode)
       if (kDebugMode) {
@@ -55,12 +59,34 @@ class QANotifier extends StateNotifier<QAState> {
         print('\nFull transcript content:');
         print(fullTranscript);
         print('=== End Transcript ===\n');
+
+        // Log if existing conversation was found
+        if (historyResult.isSuccess && historyResult.data != null) {
+          print('Found existing conversation with ${historyResult.data!.qaHistory.length} Q&As');
+        }
       }
 
       state = state.copyWith(
         videoInfo: video,
         isLoadingVideo: false,
       );
+
+      // Load existing conversation history if found
+      if (historyResult.isSuccess && historyResult.data != null) {
+        final conversation = historyResult.data!;
+        final qaHistoryEntries = conversation.qaHistory
+            .map((entry) => QAHistoryEntry(
+                  question: entry.question,
+                  answer: entry.answer,
+                  error: null,
+                  tokensUsed: entry.tokensUsed,
+                  timestamp: entry.timestamp,
+                  videoPosition: entry.videoPosition,
+                ))
+            .toList();
+
+        state = state.copyWith(history: qaHistoryEntries);
+      }
     } else {
       state = state.copyWith(isLoadingVideo: false, videoError: result.error);
     }
