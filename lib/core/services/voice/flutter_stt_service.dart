@@ -59,10 +59,7 @@ class FlutterSTTService implements STTService {
     }
 
     if (_isListening) {
-      throw VoiceException(
-        'Already listening',
-        VoiceErrorType.unknown,
-      );
+      throw VoiceException('Already listening', VoiceErrorType.unknown);
     }
 
     _resultController = StreamController<SpeechRecognitionResult>();
@@ -85,8 +82,8 @@ class FlutterSTTService implements STTService {
         }
       },
       localeId: localeId,
-      listenFor: listenDuration ?? const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 3),
+      listenFor: listenDuration ?? const Duration(seconds: 60),
+      pauseFor: const Duration(seconds: 10),
       listenOptions: stt.SpeechListenOptions(
         partialResults: true,
         cancelOnError: true,
