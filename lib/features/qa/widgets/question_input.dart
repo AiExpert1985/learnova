@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import 'voice_input_button.dart';
 
 /// Input field for asking questions
 /// Calls QANotifier directly without callbacks
@@ -26,6 +27,12 @@ class _QuestionInputState extends ConsumerState<QuestionInput> {
 
     ref.read(qaNotifierProvider.notifier).askQuestion(text);
     _controller.clear();
+  }
+
+  void _handleVoiceText(String text) {
+    _controller.text = text;
+    // Optionally auto-submit
+    // _handleSubmit();
   }
 
   @override
@@ -60,6 +67,7 @@ class _QuestionInputState extends ConsumerState<QuestionInput> {
             ),
           ),
           const SizedBox(width: 8),
+          VoiceInputButton(onTextRecognized: _handleVoiceText),
           IconButton(
             onPressed: isLoading ? null : _handleSubmit,
             icon: isLoading

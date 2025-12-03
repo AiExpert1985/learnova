@@ -11,9 +11,9 @@
 **Platform:** Flutter (iOS, Android, Web).
 
 ### Current Status
-**Phase:** Step 3 - Video Player Integration (Complete)
-- **Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A.
-- **Pending:** Voice I/O, Auth, Persistence, History management.
+**Phase:** Step 4 - Voice I/O Integration (Complete)
+- **Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A, Voice input (STT), Voice output (TTS).
+- **Pending:** Auth, Persistence, History management, Continuous listening mode.
 
 ---
 
@@ -32,7 +32,11 @@
 **Decision:** Abstract LLM providers behind `LLMService` interface.
 **Why:** Avoids vendor lock-in (OpenAI <-> Gemini), enables testing.
 
-### 4. Result Pattern for Error Handling
+### 4. Provider-Agnostic Voice Abstraction
+**Decision:** Abstract STT/TTS providers behind `STTService`/`TTSService` interfaces, coordinated by `VoiceService`.
+**Why:** Enables switching between providers (speech_to_text <-> Google Cloud STT, flutter_tts <-> ElevenLabs), testability.
+
+### 5. Result Pattern for Error Handling
 **Decision:** Return `Result<Success, Failure>` instead of throwing exceptions.
 **Why:** Explicit error handling, fail-fast principle.
 
@@ -49,6 +53,9 @@
 | **youtube_player_iframe** | Video Player | Official iFrame API, cross-platform |
 | **webview_flutter_android** | WebView (Android) | Required by youtube_player_iframe v5.2.2 (^4.10.9) |
 | **webview_flutter_wkwebview** | WebView (iOS) | Required by youtube_player_iframe v5.2.2 (^3.23.0) |
+| **speech_to_text** | Speech-to-Text | Native platform APIs, offline support (iOS), battle-tested |
+| **flutter_tts** | Text-to-Speech | Native platform voices, offline, free |
+| **permission_handler** | Permissions | Microphone/speech recognition permissions |
 
 ### State Management
 **Decision:** `StateNotifier` for logic, widgets call `ref.read(notifier).method()`.
@@ -122,8 +129,21 @@
 - **Constraint:** Limit answers to 2-3 sentences to control cost/hallucination.
 - **Context Filtering:** After 10s of playback, only send transcript up to current video position via `getTranscriptUpTo()`.
 
+### Voice I/O Integration
+- **Decision:** Three-layer abstraction for voice services.
+- **Structure:**
+  - `STTService` interface → `FlutterSTTService` implementation (speech_to_text)
+  - `TTSService` interface → `FlutterTTSService` implementation (flutter_tts)
+  - `VoiceService` coordinator combines STT + TTS, prevents conflicts
+- **Architecture:** `VoiceService` → `VoiceNotifier` (StateNotifier) → UI widgets
+- **Permissions:** Dedicated `PermissionService` handles microphone/speech permissions with clear error messages
+- **Video Integration:** Video pauses automatically when voice input starts, resumes when stopped
+- **Provider Pattern:** Voice controller exposed via `youtubeControllerProvider` for cross-widget coordination
+- **Future Upgrades:** Easy to swap to cloud providers (Google Cloud STT/TTS, ElevenLabs) by implementing interfaces
+
 ### Development
 - **Extract when painful:** Don't premature optimize.
 - **Standard over clever:** Simple solutions are better.
 - **Package versions:** Always verify dependency compatibility (e.g., youtube_player_iframe v5.2.2 requires webview ^4.x, not ^3.x).
 - **Step-by-step approach:** Validate each iteration before building on it (hybrid approach for timestamps validated Q&A first).
+- **Abstraction criteria:** Only abstract external services/libraries to enable provider switching and testing.

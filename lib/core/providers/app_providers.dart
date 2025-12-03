@@ -3,6 +3,15 @@ import '../services/config_service.dart';
 import '../services/llm/llm_service.dart';
 import '../services/llm/openai_llm_service.dart';
 import '../services/youtube/youtube_service.dart';
+import '../services/voice/stt_service.dart';
+import '../services/voice/tts_service.dart';
+import '../services/voice/voice_service.dart';
+import '../services/voice/flutter_stt_service.dart';
+import '../services/voice/flutter_tts_service.dart';
+import '../services/voice/voice_service_impl.dart';
+import '../services/voice/permission_service.dart';
+import '../services/voice/state/voice_notifier.dart';
+import '../services/voice/state/voice_state.dart';
 import '../../features/qa/services/qa_service.dart';
 import '../../features/qa/state/qa_notifier.dart';
 import '../../features/qa/state/qa_state.dart';
@@ -42,4 +51,41 @@ final qaNotifierProvider = StateNotifierProvider<QANotifier, QAState>((ref) {
     qaService: qaService,
     youtubeService: youtubeService,
   );
+});
+
+/// Provider for permission service
+final permissionServiceProvider = Provider<PermissionService>((ref) {
+  return PermissionService();
+});
+
+/// Provider for STT service (speech_to_text implementation)
+final sttServiceProvider = Provider<STTService>((ref) {
+  return FlutterSTTService();
+  // Future: swap to different STT providers
+  // return GoogleCloudSTTService(apiKey: key);
+});
+
+/// Provider for TTS service (flutter_tts implementation)
+final ttsServiceProvider = Provider<TTSService>((ref) {
+  return FlutterTTSService();
+  // Future: swap to different TTS providers
+  // return GoogleCloudTTSService(apiKey: key);
+});
+
+/// Provider for voice service coordinator
+final voiceServiceProvider = Provider<VoiceService>((ref) {
+  final sttService = ref.watch(sttServiceProvider);
+  final ttsService = ref.watch(ttsServiceProvider);
+  return VoiceServiceImpl(
+    sttService: sttService,
+    ttsService: ttsService,
+  );
+});
+
+/// StateNotifier provider for voice feature
+final voiceNotifierProvider =
+    StateNotifierProvider<VoiceNotifier, VoiceState>((ref) {
+  final voiceService = ref.watch(voiceServiceProvider);
+  final permissionService = ref.watch(permissionServiceProvider);
+  return VoiceNotifier(voiceService, permissionService);
 });

@@ -26,6 +26,22 @@ flutter run -d android --dart-define=OPENAI_API_KEY=your-key-here
 flutter run -d ios --dart-define=OPENAI_API_KEY=your-key-here
 ```
 
+### 3. Permissions Setup (Voice I/O)
+
+The app requires microphone and speech recognition permissions for voice features.
+
+**Android:**
+Permissions are already configured in `android/app/src/main/AndroidManifest.xml`:
+- `RECORD_AUDIO` - Microphone access for voice input
+- `BLUETOOTH` / `BLUETOOTH_CONNECT` - Bluetooth headset support
+
+**iOS:**
+Permissions are already configured in `ios/Runner/Info.plist`:
+- `NSMicrophoneUsageDescription` - Microphone access
+- `NSSpeechRecognitionUsageDescription` - Speech recognition
+
+On first use, the app will request these permissions. If denied, you'll need to manually enable them in device settings.
+
 ---
 
 ## For Developers

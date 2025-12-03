@@ -4,6 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../../core/providers/app_providers.dart';
 
+/// Provider for YouTube player controller
+/// Allows voice input widget to pause/play video
+final youtubeControllerProvider =
+    StateProvider<YoutubePlayerController?>((ref) => null);
+
 /// YouTube video player widget
 /// Plays video and tracks playback position for context-aware Q&A
 class VideoPlayer extends ConsumerStatefulWidget {
@@ -39,6 +44,11 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> {
 
     _controller.loadVideoById(videoId: widget.videoId);
 
+    // Expose controller via provider for voice input to control playback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(youtubeControllerProvider.notifier).state = _controller;
+    });
+
     // Poll playback position every second and update QA state
     _positionTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
       try {
@@ -64,6 +74,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> {
   void dispose() {
     _positionTimer?.cancel();
     _controller.close();
+    // Clear controller from provider
+    ref.read(youtubeControllerProvider.notifier).state = null;
     super.dispose();
   }
 
