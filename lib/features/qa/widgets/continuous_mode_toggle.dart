@@ -13,9 +13,13 @@ class ContinuousModeToggle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final voiceState = ref.watch(voiceNotifierProvider);
+    final qaState = ref.watch(qaNotifierProvider);
     final isEnabled = voiceState.isContinuousModeEnabled;
+    final isVideoReady = qaState.isFullyInitialized;
 
-    return Container(
+    return Opacity(
+      opacity: isVideoReady ? 1.0 : 0.5,
+      child: Container(
       decoration: BoxDecoration(
         color: isEnabled
             ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
@@ -32,22 +36,33 @@ class ContinuousModeToggle extends ConsumerWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
-          onTap: onToggle,
+          onTap: isVideoReady ? onToggle : null,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  isEnabled ? Icons.mic : Icons.mic_off,
-                  color: isEnabled
-                      ? Theme.of(context).primaryColor
-                      : Colors.grey.shade600,
-                  size: 20,
-                ),
+                if (!isVideoReady)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  Icon(
+                    isEnabled ? Icons.mic : Icons.mic_off,
+                    color: isEnabled
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey.shade600,
+                    size: 20,
+                  ),
                 const SizedBox(width: 8),
                 Text(
-                  isEnabled ? 'Always Listening' : 'Tap to Listen',
+                  !isVideoReady
+                      ? 'Loading...'
+                      : isEnabled
+                          ? 'Always Listening'
+                          : 'Tap to Listen',
                   style: TextStyle(
                     color: isEnabled
                         ? Theme.of(context).primaryColor

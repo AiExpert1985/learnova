@@ -89,6 +89,8 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
   @override
   Widget build(BuildContext context) {
     final voiceState = ref.watch(voiceNotifierProvider);
+    final qaState = ref.watch(qaNotifierProvider);
+    final isVideoReady = qaState.isFullyInitialized;
 
     // Show error as snackbar
     if (voiceState.error != null && voiceState.error!.isNotEmpty) {
@@ -113,8 +115,10 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
       });
     }
 
+    final isEnabled = voiceState.isInitialized && isVideoReady;
+
     return IconButton(
-      onPressed: voiceState.isInitialized ? _handleVoiceInput : null,
+      onPressed: isEnabled ? _handleVoiceInput : null,
       icon: voiceState.isListening
           ? AnimatedBuilder(
               animation: _animationController,
@@ -125,10 +129,20 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
                 );
               },
             )
-          : const Icon(Icons.mic_none),
+          : isVideoReady
+              ? const Icon(Icons.mic_none)
+              : const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
       color: voiceState.isListening ? Colors.red : Colors.blue,
       iconSize: 28,
-      tooltip: voiceState.isListening ? 'Stop listening' : 'Start voice input',
+      tooltip: !isVideoReady
+          ? 'Loading video...'
+          : voiceState.isListening
+              ? 'Stop listening'
+              : 'Start voice input',
     );
   }
 }

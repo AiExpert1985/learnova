@@ -17,6 +17,9 @@ class QANotifier extends StateNotifier<QAState> {
   // Callback for continuous mode to speak answers
   Function(String answer)? _onAnswerReadyForSpeech;
 
+  // Callback for auto-speaking answers from voice input
+  Function(String answer)? _onAutoSpeakCallback;
+
   QANotifier({
     required QAService qaService,
     required YouTubeService youtubeService,
@@ -25,6 +28,11 @@ class QANotifier extends StateNotifier<QAState> {
        _youtubeService = youtubeService,
        _historyService = historyService,
        super(const QAState());
+
+  /// Set video player initialization status
+  void setVideoInitialized(bool initialized) {
+    state = state.copyWith(isVideoInitialized: initialized);
+  }
 
   /// Load video from YouTube URL
   /// If conversation history exists for this video, loads it instead of starting fresh
@@ -72,6 +80,7 @@ class QANotifier extends StateNotifier<QAState> {
       state = state.copyWith(
         videoInfo: video,
         isLoadingVideo: false,
+        isTranscriptLoaded: true, // Transcript is loaded with video
       );
 
       // Load existing conversation history if found
@@ -101,9 +110,18 @@ class QANotifier extends StateNotifier<QAState> {
     state = state.copyWith(currentPosition: position);
   }
 
+  /// Toggle text input visibility
+  void toggleTextInputVisibility() {
+    state = state.copyWith(isTextInputVisible: !state.isTextInputVisible);
+  }
+
   /// Ask a question and update state with result
   /// Uses current video position to determine context
-  Future<void> askQuestion(String questionText, {bool isContinuousMode = false}) async {
+  Future<void> askQuestion(
+    String questionText, {
+    bool isContinuousMode = false,
+    InputMethod? inputMethod,
+  }) async {
     final trimmedQuestion = questionText.trim();
     if (trimmedQuestion.isEmpty) return;
 
@@ -116,7 +134,12 @@ class QANotifier extends StateNotifier<QAState> {
     final videoPositionAtQuestion = state.currentPosition.inSeconds.toDouble();
     final questionTimestamp = DateTime.now();
 
-    state = state.copyWith(isLoadingAnswer: true);
+    // Track input method
+    final method = inputMethod ?? state.lastInputMethod;
+    state = state.copyWith(
+      isLoadingAnswer: true,
+      lastInputMethod: method,
+    );
 
     // Get transcript based on current video position
     // Use position-aware transcript only if user has watched past 10 seconds
@@ -151,12 +174,23 @@ class QANotifier extends StateNotifier<QAState> {
       if (isContinuousMode && _onAnswerReadyForSpeech != null) {
         _onAnswerReadyForSpeech!(newEntry.answer!);
       }
+      // Auto-speak for voice input (not continuous mode)
+      else if (!isContinuousMode &&
+          method == InputMethod.voice &&
+          _onAutoSpeakCallback != null) {
+        _onAutoSpeakCallback!(newEntry.answer!);
+      }
     }
   }
 
   /// Set callback for continuous mode
   void setContinuousModeCallback(Function(String answer)? callback) {
     _onAnswerReadyForSpeech = callback;
+  }
+
+  /// Set callback for auto-speaking voice input answers
+  void setAutoSpeakCallback(Function(String answer)? callback) {
+    _onAutoSpeakCallback = callback;
   }
 
   /// Save current conversation to history storage

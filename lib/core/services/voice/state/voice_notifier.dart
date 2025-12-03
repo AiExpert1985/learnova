@@ -6,22 +6,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../voice_service.dart';
 import '../voice_models.dart';
 import '../permission_service.dart';
+import '../../audio/audio_device_service.dart';
 import 'voice_state.dart';
 
 class VoiceNotifier extends StateNotifier<VoiceState> {
   final VoiceService _voiceService;
   final PermissionService _permissionService;
+  final AudioDeviceService _audioDeviceService;
   StreamSubscription<SpeechRecognitionResult>? _recognitionSubscription;
   StreamSubscription<SpeechSynthesisState>? _synthesisSubscription;
+  StreamSubscription<bool>? _headphoneConnectionSubscription;
 
   // Continuous mode fields
   Function(String question)? _onQuestionCallback;
   Function(String answer)? _onAnswerCallback;
   Timer? _inactivityTimer;
+  Timer? _gracePeriodTimer;
 
-  VoiceNotifier(this._voiceService, this._permissionService)
-    : super(const VoiceState()) {
+  // Headphone requirement callback
+  Function()? _onHeadphonesRequired;
+
+  VoiceNotifier(
+    this._voiceService,
+    this._permissionService,
+    this._audioDeviceService,
+  ) : super(const VoiceState()) {
     _initialize();
+    _listenToHeadphoneChanges();
   }
 
   Future<void> _initialize() async {
@@ -34,6 +45,25 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         isInitialized: false,
       );
     }
+  }
+
+  /// Listen for headphone connection/disconnection changes
+  void _listenToHeadphoneChanges() {
+    _headphoneConnectionSubscription =
+        _audioDeviceService.headphoneConnectionStream.listen((isConnected) {
+      if (!isConnected && state.isContinuousModeEnabled) {
+        // Headphones disconnected during continuous mode - stop it
+        stopContinuousMode();
+        state = state.copyWith(
+          error: 'Headphones disconnected. Continuous mode stopped.',
+        );
+      }
+    });
+  }
+
+  /// Set callback for headphone requirement
+  void setHeadphoneRequiredCallback(Function() callback) {
+    _onHeadphonesRequired = callback;
   }
 
   /// Start listening for voice input
@@ -267,6 +297,15 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
       return;
     }
 
+    // Check if headphones are connected
+    final areHeadphonesConnected =
+        await _audioDeviceService.areHeadphonesConnected();
+    if (!areHeadphonesConnected) {
+      // Notify UI to show headphone required dialog
+      _onHeadphonesRequired?.call();
+      return;
+    }
+
     // Check permissions
     final hasPermission = await _permissionService.hasMicrophonePermission();
     if (!hasPermission) {
@@ -324,6 +363,9 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   void _handleQuestionDetected(String recognizedText) {
     if (!state.isContinuousModeEnabled) return;
 
+    // Cancel grace period timer if question detected during grace period
+    _gracePeriodTimer?.cancel();
+
     _resetInactivityTimer();
 
     // Update state to processing
@@ -366,21 +408,33 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     );
   }
 
-  /// Resume listening after speaking
+  /// Resume listening after speaking (with grace period)
   void _resumeListening() {
     if (!state.isContinuousModeEnabled) return;
 
+    // Enter grace period state
     state = state.copyWith(
-      continuousListeningState: ContinuousListeningState.listening,
+      continuousListeningState: ContinuousListeningState.waitingForNextQuestion,
       recognizedText: '',
     );
 
-    // Restart listening cycle
-    _voiceService.startContinuousListening(
-      onQuestionDetected: _handleQuestionDetected,
-      pauseFor: const Duration(seconds: 3),
-      listenFor: const Duration(seconds: 60),
-    );
+    // Start 5-second grace period timer
+    _gracePeriodTimer?.cancel();
+    _gracePeriodTimer = Timer(const Duration(seconds: 5), () {
+      // Grace period elapsed, resume listening
+      if (!state.isContinuousModeEnabled) return;
+
+      state = state.copyWith(
+        continuousListeningState: ContinuousListeningState.listening,
+      );
+
+      // Restart listening cycle
+      _voiceService.startContinuousListening(
+        onQuestionDetected: _handleQuestionDetected,
+        pauseFor: const Duration(seconds: 3),
+        listenFor: const Duration(seconds: 60),
+      );
+    });
   }
 
   /// Start inactivity timer
@@ -400,9 +454,12 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   @override
   void dispose() {
     _inactivityTimer?.cancel();
+    _gracePeriodTimer?.cancel();
     _recognitionSubscription?.cancel();
     _synthesisSubscription?.cancel();
+    _headphoneConnectionSubscription?.cancel();
     _voiceService.dispose();
+    _audioDeviceService.dispose();
     super.dispose();
   }
 }

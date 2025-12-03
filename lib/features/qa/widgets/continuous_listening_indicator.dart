@@ -84,6 +84,8 @@ class ContinuousListeningIndicator extends ConsumerWidget {
         return Colors.amber.shade700;
       case ContinuousListeningState.speaking:
         return Colors.green.shade600;
+      case ContinuousListeningState.waitingForNextQuestion:
+        return Colors.purple.shade600;
       case ContinuousListeningState.idle:
         return Colors.grey.shade600;
     }
@@ -104,6 +106,8 @@ class ContinuousListeningIndicator extends ConsumerWidget {
         );
       case ContinuousListeningState.speaking:
         return const _SpeakingWaveIcon();
+      case ContinuousListeningState.waitingForNextQuestion:
+        return const Icon(Icons.hourglass_empty, color: Colors.white, size: 20);
       case ContinuousListeningState.idle:
         return const Icon(Icons.mic_off, color: Colors.white, size: 20);
     }
@@ -117,6 +121,8 @@ class ContinuousListeningIndicator extends ConsumerWidget {
         return 'Processing...';
       case ContinuousListeningState.speaking:
         return 'Speaking...';
+      case ContinuousListeningState.waitingForNextQuestion:
+        return 'Ready for next question...';
       case ContinuousListeningState.idle:
         return 'Idle';
     }
