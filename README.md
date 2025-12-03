@@ -17,20 +17,27 @@
 
 ### Prerequisites
 - Flutter 3.8.1+
+- Dart SDK 3.8.1+
 - OpenAI API Key ([Get one here](https://platform.openai.com/api-keys))
 
 ### Installation
 
 ```bash
-# 1. Install dependencies
+# 1. Clone the repository
+git clone <repository-url>
+cd learnova
+
+# 2. Install dependencies
 flutter pub get
 
-# 2. Generate storage adapters
+# 3. Generate Hive storage adapters (REQUIRED)
 dart run build_runner build --delete-conflicting-outputs
 
-# 3. Run the app
+# 4. Run the app with your OpenAI API key
 flutter run --dart-define=OPENAI_API_KEY=your-key-here
 ```
+
+> **Note:** Step 3 is required to generate `hive_adapters.g.dart` for local storage functionality.
 
 ### Usage
 
@@ -38,6 +45,32 @@ flutter run --dart-define=OPENAI_API_KEY=your-key-here
 2. Wait for video and transcript to load
 3. Ask questions about the content
 4. Access previous conversations via history icon (top-right)
+
+---
+
+## Architecture
+
+### Feature Structure
+```
+features/
+├── qa/              # Q&A feature (main functionality)
+│   ├── models/      # Domain models
+│   ├── services/    # Business logic
+│   ├── state/       # State management (Riverpod)
+│   └── ui/          # Screens and widgets
+└── history/         # Conversation persistence
+    ├── data/        # Repository pattern + Hive adapters
+    ├── services/    # Public API for other features
+    ├── state/       # State management
+    └── ui/          # History UI components
+```
+
+### Key Technologies
+- **Flutter** - Cross-platform UI
+- **Riverpod** - State management & DI
+- **Hive** - Local NoSQL storage
+- **OpenAI GPT-4o-mini** - AI responses (~$0.0001/question)
+- **YouTube Innertube API** - Direct transcript fetching
 
 ---
 

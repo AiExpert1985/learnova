@@ -139,6 +139,10 @@
 - **Smart Loading:** When URL is pasted, check if conversation exists for that video. If yes, restore previous conversation; if no, start fresh.
 - **Manual Loading:** `loadConversationFromHistory()` in QANotifier loads video via URL, then restores Q&A history in state.
 - **Automatic Restoration:** `loadVideo()` checks `loadConversationByVideoId()` → if exists, restore history automatically. Preserves timestamps and video positions.
+- **Initialization Pattern:** Use `ConsumerStatefulWidget` with `Future.microtask()` to initialize history after widget tree is ready, preventing race conditions.
+- **Timestamp Accuracy:** Capture timestamp when question is asked (not when saved), ensuring historical data reflects actual Q&A time.
+- **Position Accuracy:** Store video position at time of question (not current position), enabling accurate context restoration.
+- **Debug Handling:** Wrap debug prints in `if (kDebugMode)` checks for production performance.
 
 ### Development
 - **Extract when painful:** Don't premature optimize.

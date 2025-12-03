@@ -7,7 +7,8 @@ import 'package:learnova/core/services/youtube/youtube_models.dart';
 import 'package:learnova/features/history/services/history_service.dart';
 import 'package:learnova/features/history/data/models/history_result.dart';
 import 'package:learnova/features/history/data/models/conversation_history.dart';
-import 'package:learnova/features/history/data/models/qa_entry.dart' as history_models;
+import 'package:learnova/features/history/data/models/qa_entry.dart'
+    as history_models;
 
 /// Mock QAService for testing
 class MockQAService implements QAService {
@@ -32,6 +33,22 @@ class MockYouTubeService implements YouTubeService {
 
   @override
   Future<YouTubeResult> fetchVideo(String url) async {
+    // Extract video ID from URL for dynamic responses
+    final uri = Uri.tryParse(url);
+    final videoId = uri?.queryParameters['v'] ?? 'test';
+
+    // If mockResult is success, create a new VideoInfo with the extracted ID
+    if (mockResult.isSuccess && mockResult.video != null) {
+      final originalVideo = mockResult.video!;
+      final newVideo = VideoInfo(
+        id: videoId,
+        title: originalVideo.title,
+        duration: originalVideo.duration,
+        transcriptSegments: originalVideo.transcriptSegments,
+      );
+      return YouTubeResult.success(newVideo);
+    }
+
     return mockResult;
   }
 
@@ -64,18 +81,25 @@ class MockHistoryService implements HistoryService {
   }
 
   @override
-  Future<HistoryResult<List<ConversationHistory>>> loadAllConversations() async {
+  Future<HistoryResult<List<ConversationHistory>>>
+  loadAllConversations() async {
     return HistoryResult.success(_conversations.values.toList());
   }
 
   @override
-  Future<HistoryResult<ConversationHistory?>> loadConversationById(String id) async {
-    final conversation = _conversations.values.where((c) => c.id == id).firstOrNull;
+  Future<HistoryResult<ConversationHistory?>> loadConversationById(
+    String id,
+  ) async {
+    final conversation = _conversations.values
+        .where((c) => c.id == id)
+        .firstOrNull;
     return HistoryResult.success(conversation);
   }
 
   @override
-  Future<HistoryResult<ConversationHistory?>> loadConversationByVideoId(String videoId) async {
+  Future<HistoryResult<ConversationHistory?>> loadConversationByVideoId(
+    String videoId,
+  ) async {
     return HistoryResult.success(_conversations[videoId]);
   }
 
@@ -573,7 +597,10 @@ void main() {
       // At position 7 seconds - should still use full transcript (< 10s threshold)
       notifier.updatePosition(const Duration(seconds: 7));
       await notifier.askQuestion('Question at 7s');
-      expect(transcriptReceived, 'Intro Middle End'); // Full transcript before 10s
+      expect(
+        transcriptReceived,
+        'Intro Middle End',
+      ); // Full transcript before 10s
 
       // At position 15 seconds - should use filtered transcript (> 10s threshold)
       notifier.updatePosition(const Duration(seconds: 15));
@@ -583,12 +610,18 @@ void main() {
       // At position 12 seconds - should filter to segments before 12s
       notifier.updatePosition(const Duration(seconds: 12));
       await notifier.askQuestion('Question at 12s');
-      expect(transcriptReceived, 'Intro Middle End'); // All three segments (last starts at 10s < 12s)
+      expect(
+        transcriptReceived,
+        'Intro Middle End',
+      ); // All three segments (last starts at 10s < 12s)
 
       // At position 11 seconds - should filter to segments before 11s
       notifier.updatePosition(const Duration(seconds: 11));
       await notifier.askQuestion('Question at 11s');
-      expect(transcriptReceived, 'Intro Middle End'); // All three segments (last starts at 10s < 11s)
+      expect(
+        transcriptReceived,
+        'Intro Middle End',
+      ); // All three segments (last starts at 10s < 11s)
     });
 
     test('loadVideo restores existing conversation from history', () async {
@@ -597,7 +630,9 @@ void main() {
         timestamp: DateTime.now(),
         tokensUsed: 100,
       );
-      final mockQAService = MockQAService(mockResult: QAResult.success(mockAnswer));
+      final mockQAService = MockQAService(
+        mockResult: QAResult.success(mockAnswer),
+      );
       final mockHistoryService = MockHistoryService();
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
@@ -656,7 +691,9 @@ void main() {
         timestamp: DateTime.now(),
         tokensUsed: 100,
       );
-      final mockQAService = MockQAService(mockResult: QAResult.success(mockAnswer));
+      final mockQAService = MockQAService(
+        mockResult: QAResult.success(mockAnswer),
+      );
       final mockHistoryService = MockHistoryService();
       final mockYouTubeService = MockYouTubeService(
         mockResult: YouTubeResult.success(
@@ -689,61 +726,66 @@ void main() {
       expect(notifier.state.history.isEmpty, true);
     });
 
-    test('loadVideo restores history with timestamps and video positions', () async {
-      final mockAnswer = Answer(
-        text: 'Test answer',
-        timestamp: DateTime.now(),
-        tokensUsed: 100,
-      );
-      final mockQAService = MockQAService(mockResult: QAResult.success(mockAnswer));
-      final mockHistoryService = MockHistoryService();
-      final mockYouTubeService = MockYouTubeService(
-        mockResult: YouTubeResult.success(
-          VideoInfo(
-            id: 'video456',
-            title: 'Test Video',
-            duration: const Duration(minutes: 10),
-            transcriptSegments: [
-              const TranscriptSegment(
-                text: 'Test transcript',
-                start: Duration.zero,
-                duration: Duration(seconds: 5),
-              ),
-            ],
+    test(
+      'loadVideo restores history with timestamps and video positions',
+      () async {
+        final mockAnswer = Answer(
+          text: 'Test answer',
+          timestamp: DateTime.now(),
+          tokensUsed: 100,
+        );
+        final mockQAService = MockQAService(
+          mockResult: QAResult.success(mockAnswer),
+        );
+        final mockHistoryService = MockHistoryService();
+        final mockYouTubeService = MockYouTubeService(
+          mockResult: YouTubeResult.success(
+            VideoInfo(
+              id: 'video456',
+              title: 'Test Video',
+              duration: const Duration(minutes: 10),
+              transcriptSegments: [
+                const TranscriptSegment(
+                  text: 'Test transcript',
+                  start: Duration.zero,
+                  duration: Duration(seconds: 5),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
+        );
 
-      final notifier = QANotifier(
-        qaService: mockQAService,
-        youtubeService: mockYouTubeService,
-        historyService: mockHistoryService,
-      );
+        final notifier = QANotifier(
+          qaService: mockQAService,
+          youtubeService: mockYouTubeService,
+          historyService: mockHistoryService,
+        );
 
-      // Load video, update position, and ask question
-      await notifier.loadVideo('https://youtube.com/watch?v=video456');
-      notifier.updatePosition(const Duration(seconds: 30));
-      await notifier.askQuestion('Question at 30s');
+        // Load video, update position, and ask question
+        await notifier.loadVideo('https://youtube.com/watch?v=video456');
+        notifier.updatePosition(const Duration(seconds: 30));
+        await notifier.askQuestion('Question at 30s');
 
-      final originalTimestamp = notifier.state.history.first.timestamp;
-      final originalPosition = notifier.state.history.first.videoPosition;
+        final originalTimestamp = notifier.state.history.first.timestamp;
+        final originalPosition = notifier.state.history.first.videoPosition;
 
-      expect(originalPosition, 30.0);
+        expect(originalPosition, 30.0);
 
-      // Create new notifier and reload same video
-      final newNotifier = QANotifier(
-        qaService: mockQAService,
-        youtubeService: mockYouTubeService,
-        historyService: mockHistoryService,
-      );
+        // Create new notifier and reload same video
+        final newNotifier = QANotifier(
+          qaService: mockQAService,
+          youtubeService: mockYouTubeService,
+          historyService: mockHistoryService,
+        );
 
-      await newNotifier.loadVideo('https://youtube.com/watch?v=video456');
+        await newNotifier.loadVideo('https://youtube.com/watch?v=video456');
 
-      // Should restore with original timestamp and position
-      expect(newNotifier.state.history.length, 1);
-      expect(newNotifier.state.history.first.timestamp, originalTimestamp);
-      expect(newNotifier.state.history.first.videoPosition, 30.0);
-    });
+        // Should restore with original timestamp and position
+        expect(newNotifier.state.history.length, 1);
+        expect(newNotifier.state.history.first.timestamp, originalTimestamp);
+        expect(newNotifier.state.history.first.videoPosition, 30.0);
+      },
+    );
   });
 }
 
@@ -752,10 +794,7 @@ class _CapturingQAService implements QAService {
   final QAResult mockResult;
   final Function(String transcript, String question) onAskQuestion;
 
-  _CapturingQAService({
-    required this.mockResult,
-    required this.onAskQuestion,
-  });
+  _CapturingQAService({required this.mockResult, required this.onAskQuestion});
 
   @override
   Future<QAResult> askQuestion({
