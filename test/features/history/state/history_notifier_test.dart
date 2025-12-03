@@ -51,6 +51,47 @@ class MockHistoryService implements HistoryService {
     _mockConversations.clear();
     return HistoryResult.success(null);
   }
+
+  @override
+  Future<HistoryResult<ConversationHistory>> saveConversation({
+    required String videoId,
+    required String videoTitle,
+    required List<dynamic> qaHistory,
+  }) async {
+    if (_shouldFail) {
+      return HistoryResult.failure(StorageFailure('Mock save failed'));
+    }
+    final conversation = ConversationHistory.create(
+      videoId: videoId,
+      videoTitle: videoTitle,
+      initialQAHistory: qaHistory,
+    );
+    _mockConversations.add(conversation);
+    return HistoryResult.success(conversation);
+  }
+
+  @override
+  Future<HistoryResult<ConversationHistory?>> loadConversationById(String id) async {
+    if (_shouldFail) {
+      return HistoryResult.failure(StorageFailure('Mock load failed'));
+    }
+    final conversation = _mockConversations.where((c) => c.id == id).firstOrNull;
+    return HistoryResult.success(conversation);
+  }
+
+  @override
+  Future<HistoryResult<ConversationHistory?>> loadConversationByVideoId(String videoId) async {
+    if (_shouldFail) {
+      return HistoryResult.failure(StorageFailure('Mock load failed'));
+    }
+    final conversation = _mockConversations.where((c) => c.videoId == videoId).firstOrNull;
+    return HistoryResult.success(conversation);
+  }
+
+  @override
+  Future<HistoryResult<void>> close() async {
+    return HistoryResult.success(null);
+  }
 }
 
 void main() {
