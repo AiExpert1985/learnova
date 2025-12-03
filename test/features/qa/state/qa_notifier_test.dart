@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learnova/features/qa/state/qa_notifier.dart';
-import 'package:learnova/features/qa/services/qa_service.dart';
-import 'package:learnova/features/qa/models/qa_models.dart';
-import 'package:learnova/core/services/youtube/youtube_service.dart';
-import 'package:learnova/core/services/youtube/youtube_models.dart';
-import 'package:learnova/features/history/services/history_service.dart';
-import 'package:learnova/features/history/data/models/history_result.dart';
-import 'package:learnova/features/history/data/models/conversation_history.dart';
-import 'package:learnova/features/history/data/models/qa_entry.dart'
+import 'package:vidorion/features/qa/state/qa_notifier.dart';
+import 'package:vidorion/features/qa/services/qa_service.dart';
+import 'package:vidorion/features/qa/models/qa_models.dart';
+import 'package:vidorion/core/services/youtube/youtube_service.dart';
+import 'package:vidorion/core/services/youtube/youtube_models.dart';
+import 'package:vidorion/features/history/services/history_service.dart';
+import 'package:vidorion/features/history/data/models/history_result.dart';
+import 'package:vidorion/features/history/data/models/conversation_history.dart';
+import 'package:vidorion/features/history/data/models/qa_entry.dart'
     as history_models;
 
 /// Mock QAService for testing

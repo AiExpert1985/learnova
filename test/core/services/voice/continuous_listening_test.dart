@@ -3,14 +3,14 @@ library;
 
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learnova/core/services/voice/voice_service.dart';
-import 'package:learnova/core/services/voice/voice_service_impl.dart';
-import 'package:learnova/core/services/voice/stt_service.dart';
-import 'package:learnova/core/services/voice/tts_service.dart';
-import 'package:learnova/core/services/voice/voice_models.dart';
-import 'package:learnova/core/services/voice/state/voice_notifier.dart';
-import 'package:learnova/core/services/voice/state/voice_state.dart';
-import 'package:learnova/core/services/voice/permission_service.dart';
+import 'package:vidorion/core/services/voice/voice_service.dart';
+import 'package:vidorion/core/services/voice/voice_service_impl.dart';
+import 'package:vidorion/core/services/voice/stt_service.dart';
+import 'package:vidorion/core/services/voice/tts_service.dart';
+import 'package:vidorion/core/services/voice/voice_models.dart';
+import 'package:vidorion/core/services/voice/state/voice_notifier.dart';
+import 'package:vidorion/core/services/voice/state/voice_state.dart';
+import 'package:vidorion/core/services/voice/permission_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 // Manual Mocks
@@ -99,7 +99,6 @@ class MockTTSService implements TTSService {
   @override
   bool get isSpeaking => _isSpeaking;
 
-  @override
   Future<void> configure({
     double? speechRate,
     double? volume,
@@ -325,12 +324,14 @@ void main() {
         ),
       );
 
+      // Close the stream to trigger onDone which calls onQuestionDetected
+      mockSTT.closeStream();
+
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(questions, contains('What is AI?'));
 
       await voiceService.stopContinuousListening();
-      mockSTT.closeStream();
     });
 
     test('handles errors and retries listening', () async {

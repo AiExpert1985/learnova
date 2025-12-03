@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:learnova/features/history/data/models/conversation_history.dart';
-import 'package:learnova/features/history/data/models/qa_entry.dart';
-import 'package:learnova/features/history/data/repositories/hive_history_repository.dart';
+import 'package:vidorion/features/history/data/models/conversation_history.dart';
+import 'package:vidorion/features/history/data/models/qa_entry.dart';
+import 'package:vidorion/features/history/data/repositories/hive_history_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

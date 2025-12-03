@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learnova/features/history/data/models/conversation_history.dart';
-import 'package:learnova/features/history/data/models/qa_entry.dart';
-import 'package:learnova/features/history/data/models/history_result.dart';
-import 'package:learnova/features/history/data/repositories/history_repository.dart';
-import 'package:learnova/features/history/services/history_service.dart';
+import 'package:vidorion/features/history/data/models/conversation_history.dart';
+import 'package:vidorion/features/history/data/models/qa_entry.dart';
+import 'package:vidorion/features/history/data/models/history_result.dart';
+import 'package:vidorion/features/history/data/repositories/history_repository.dart';
+import 'package:vidorion/features/history/services/history_service.dart';
 
 /// Mock repository for testing
 class MockHistoryRepository implements HistoryRepository {

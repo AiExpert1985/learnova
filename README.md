@@ -1,4 +1,4 @@
-# Learnova
+# Vidorion
 
 **AI-powered learning companion for YouTube videos.** Ask questions about video content and get intelligent answers based on transcripts.
 
@@ -25,7 +25,7 @@
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
-cd learnova
+cd vidorion
 
 # 2. Install dependencies
 flutter pub get

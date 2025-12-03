@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:learnova/core/services/youtube/youtube_service.dart';
+import 'package:vidorion/core/services/youtube/youtube_service.dart';
 
 /// Mock HTTP client for testing
 class MockHttpClient extends http.BaseClient {

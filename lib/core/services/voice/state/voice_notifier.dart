@@ -17,11 +17,10 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   // Continuous mode fields
   Function(String question)? _onQuestionCallback;
   Function(String answer)? _onAnswerCallback;
-  DateTime? _lastActivityTime;
   Timer? _inactivityTimer;
 
   VoiceNotifier(this._voiceService, this._permissionService)
-      : super(const VoiceState()) {
+    : super(const VoiceState()) {
     _initialize();
   }
 
@@ -54,8 +53,8 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     if (!hasPermission) {
       final granted = await _permissionService.requestMicrophonePermission();
       if (!granted) {
-        final isPermanentlyDenied =
-            await _permissionService.isMicrophonePermissionPermanentlyDenied();
+        final isPermanentlyDenied = await _permissionService
+            .isMicrophonePermissionPermanentlyDenied();
         if (isPermanentlyDenied) {
           state = state.copyWith(
             error:
@@ -266,8 +265,8 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     if (!hasPermission) {
       final granted = await _permissionService.requestMicrophonePermission();
       if (!granted) {
-        final isPermanentlyDenied =
-            await _permissionService.isMicrophonePermissionPermanentlyDenied();
+        final isPermanentlyDenied = await _permissionService
+            .isMicrophonePermissionPermanentlyDenied();
         if (isPermanentlyDenied) {
           state = state.copyWith(
             error:
@@ -282,7 +281,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
     _onQuestionCallback = onQuestion;
     _onAnswerCallback = onAnswerReady;
-    _lastActivityTime = DateTime.now();
 
     state = state.copyWith(
       isContinuousModeEnabled: true,
@@ -319,7 +317,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   void _handleQuestionDetected(String recognizedText) {
     if (!state.isContinuousModeEnabled) return;
 
-    _lastActivityTime = DateTime.now();
     _resetInactivityTimer();
 
     // Update state to processing
@@ -336,7 +333,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   Future<void> speakAnswerAndResume(String answer) async {
     if (!state.isContinuousModeEnabled) return;
 
-    _lastActivityTime = DateTime.now();
     _resetInactivityTimer();
 
     state = state.copyWith(

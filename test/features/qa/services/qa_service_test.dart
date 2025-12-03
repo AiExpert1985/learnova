@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learnova/features/qa/services/qa_service.dart';
-import 'package:learnova/core/services/llm/llm_service.dart';
+import 'package:vidorion/features/qa/services/qa_service.dart';
+import 'package:vidorion/core/services/llm/llm_service.dart';
 
 /// Mock LLM service for testing
 class MockLLMService implements LLMService {

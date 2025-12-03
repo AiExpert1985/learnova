@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:learnova/core/services/llm/openai_llm_service.dart';
-import 'package:learnova/core/services/llm/llm_service.dart';
+import 'package:vidorion/core/services/llm/openai_llm_service.dart';
+import 'package:vidorion/core/services/llm/llm_service.dart';
 
 /// Mock HTTP client for testing
 class MockHttpClient extends http.BaseClient {

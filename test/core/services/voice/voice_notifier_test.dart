@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learnova/core/services/voice/state/voice_notifier.dart';
-import 'package:learnova/core/services/voice/voice_service.dart';
-import 'package:learnova/core/services/voice/permission_service.dart';
-import 'package:learnova/core/services/voice/voice_models.dart';
+import 'package:vidorion/core/services/voice/state/voice_notifier.dart';
+import 'package:vidorion/core/services/voice/voice_service.dart';
+import 'package:vidorion/core/services/voice/permission_service.dart';
+import 'package:vidorion/core/services/voice/voice_models.dart';
 
 /// Mock Voice Service for testing
 class MockVoiceService implements VoiceService {

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learnova/core/services/voice/voice_service_impl.dart';
-import 'package:learnova/core/services/voice/stt_service.dart';
-import 'package:learnova/core/services/voice/tts_service.dart';
-import 'package:learnova/core/services/voice/voice_models.dart';
+import 'package:vidorion/core/services/voice/voice_service_impl.dart';
+import 'package:vidorion/core/services/voice/stt_service.dart';
+import 'package:vidorion/core/services/voice/tts_service.dart';
+import 'package:vidorion/core/services/voice/voice_models.dart';
 
 /// Mock STT Service for testing
 class MockSTTService implements STTService {
