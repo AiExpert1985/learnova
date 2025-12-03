@@ -7,7 +7,6 @@ import 'package:learnova/features/history/data/models/history_result.dart';
 import 'package:learnova/features/history/data/models/qa_entry.dart';
 import 'package:learnova/features/history/providers/history_providers.dart';
 import 'package:learnova/features/history/services/history_service.dart';
-import 'package:learnova/features/history/state/history_notifier.dart';
 import 'package:learnova/features/history/ui/widgets/history_bottom_sheet.dart';
 
 /// Mock history service for testing
