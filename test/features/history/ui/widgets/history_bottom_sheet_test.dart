@@ -27,7 +27,8 @@ class MockHistoryService implements HistoryService {
   }
 
   @override
-  Future<HistoryResult<List<ConversationHistory>>> loadAllConversations() async {
+  Future<HistoryResult<List<ConversationHistory>>>
+  loadAllConversations() async {
     if (_shouldFail) {
       return HistoryResult.failure(StorageFailure('Mock load failed'));
     }
@@ -71,20 +72,28 @@ class MockHistoryService implements HistoryService {
   }
 
   @override
-  Future<HistoryResult<ConversationHistory?>> loadConversationById(String id) async {
+  Future<HistoryResult<ConversationHistory?>> loadConversationById(
+    String id,
+  ) async {
     if (_shouldFail) {
       return HistoryResult.failure(StorageFailure('Mock load failed'));
     }
-    final conversation = _mockConversations.where((c) => c.id == id).firstOrNull;
+    final conversation = _mockConversations
+        .where((c) => c.id == id)
+        .firstOrNull;
     return HistoryResult.success(conversation);
   }
 
   @override
-  Future<HistoryResult<ConversationHistory?>> loadConversationByVideoId(String videoId) async {
+  Future<HistoryResult<ConversationHistory?>> loadConversationByVideoId(
+    String videoId,
+  ) async {
     if (_shouldFail) {
       return HistoryResult.failure(StorageFailure('Mock load failed'));
     }
-    final conversation = _mockConversations.where((c) => c.videoId == videoId).firstOrNull;
+    final conversation = _mockConversations
+        .where((c) => c.videoId == videoId)
+        .firstOrNull;
     return HistoryResult.success(conversation);
   }
 
@@ -103,23 +112,23 @@ void main() {
 
   Widget createTestWidget() {
     return ProviderScope(
-      overrides: [
-        historyServiceProvider.overrideWithValue(mockService),
-      ],
-      child: MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) {
-              return ElevatedButton(
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (context) => const HistoryBottomSheet(),
-                  );
-                },
-                child: const Text('Show History'),
-              );
-            },
+      overrides: [historyServiceProvider.overrideWithValue(mockService)],
+      child: InitHistoryWidget(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return ElevatedButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (context) => const HistoryBottomSheet(),
+                    );
+                  },
+                  child: const Text('Show History'),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -127,13 +136,12 @@ void main() {
   }
 
   group('HistoryBottomSheet', () {
-    testWidgets('should show clear all button when conversations exist', (tester) async {
+    testWidgets('should show clear all button when conversations exist', (
+      tester,
+    ) async {
       // Add mock conversations
       mockService.addMockConversation(
-        ConversationHistory.create(
-          videoId: 'video1',
-          videoTitle: 'Video 1',
-        ),
+        ConversationHistory.create(videoId: 'video1', videoTitle: 'Video 1'),
       );
 
       await tester.pumpWidget(createTestWidget());
@@ -147,7 +155,9 @@ void main() {
       expect(find.byTooltip('Clear All History'), findsOneWidget);
     });
 
-    testWidgets('should not show clear all button when no conversations', (tester) async {
+    testWidgets('should not show clear all button when no conversations', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
 
       // Open bottom sheet
@@ -158,13 +168,12 @@ void main() {
       expect(find.byIcon(Icons.delete_sweep), findsNothing);
     });
 
-    testWidgets('should show confirmation dialog when clear all is tapped', (tester) async {
+    testWidgets('should show confirmation dialog when clear all is tapped', (
+      tester,
+    ) async {
       // Add mock conversations
       mockService.addMockConversation(
-        ConversationHistory.create(
-          videoId: 'video1',
-          videoTitle: 'Video 1',
-        ),
+        ConversationHistory.create(videoId: 'video1', videoTitle: 'Video 1'),
       );
 
       await tester.pumpWidget(createTestWidget());
@@ -180,20 +189,21 @@ void main() {
       // Verify confirmation dialog appears
       expect(find.text('Clear All History'), findsOneWidget);
       expect(
-        find.text('Are you sure you want to delete all conversation history? This action cannot be undone.'),
+        find.text(
+          'Are you sure you want to delete all conversation history? This action cannot be undone.',
+        ),
         findsOneWidget,
       );
       expect(find.text('Cancel'), findsOneWidget);
       expect(find.text('Clear All'), findsOneWidget);
     });
 
-    testWidgets('should cancel clear all when cancel is tapped', (tester) async {
+    testWidgets('should cancel clear all when cancel is tapped', (
+      tester,
+    ) async {
       // Add mock conversations
       mockService.addMockConversation(
-        ConversationHistory.create(
-          videoId: 'video1',
-          videoTitle: 'Video 1',
-        ),
+        ConversationHistory.create(videoId: 'video1', videoTitle: 'Video 1'),
       );
 
       await tester.pumpWidget(createTestWidget());
@@ -215,19 +225,15 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
     });
 
-    testWidgets('should clear all conversations when confirmed', (tester) async {
+    testWidgets('should clear all conversations when confirmed', (
+      tester,
+    ) async {
       // Add mock conversations
       mockService.addMockConversation(
-        ConversationHistory.create(
-          videoId: 'video1',
-          videoTitle: 'Video 1',
-        ),
+        ConversationHistory.create(videoId: 'video1', videoTitle: 'Video 1'),
       );
       mockService.addMockConversation(
-        ConversationHistory.create(
-          videoId: 'video2',
-          videoTitle: 'Video 2',
-        ),
+        ConversationHistory.create(videoId: 'video2', videoTitle: 'Video 2'),
       );
 
       await tester.pumpWidget(createTestWidget());
@@ -252,10 +258,7 @@ void main() {
     testWidgets('should show empty state after clearing all', (tester) async {
       // Add mock conversations
       mockService.addMockConversation(
-        ConversationHistory.create(
-          videoId: 'video1',
-          videoTitle: 'Video 1',
-        ),
+        ConversationHistory.create(videoId: 'video1', videoTitle: 'Video 1'),
       );
 
       await tester.pumpWidget(createTestWidget());
@@ -275,7 +278,34 @@ void main() {
       // Verify empty state is shown
       expect(find.text('No history yet'), findsOneWidget);
       expect(find.text('Your conversations will appear here'), findsOneWidget);
-      expect(find.byIcon(Icons.delete_sweep), findsNothing); // Clear button should be hidden
+      expect(
+        find.byIcon(Icons.delete_sweep),
+        findsNothing,
+      ); // Clear button should be hidden
     });
   });
+}
+
+class InitHistoryWidget extends ConsumerStatefulWidget {
+  final Widget child;
+  const InitHistoryWidget({required this.child, super.key});
+
+  @override
+  ConsumerState<InitHistoryWidget> createState() => _InitHistoryWidgetState();
+}
+
+class _InitHistoryWidgetState extends ConsumerState<InitHistoryWidget> {
+  @override
+  void initState() {
+    super.initState();
+    // Trigger load history when widget is mounted
+    Future.microtask(
+      () => ref.read(historyNotifierProvider.notifier).loadHistory(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
 }

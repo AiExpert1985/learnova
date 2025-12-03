@@ -31,7 +31,11 @@ class HistoryState {
   }
 
   HistoryState setLoading() {
-    return copyWith(isLoading: true, error: null);
+    return HistoryState(
+      conversations: conversations,
+      isLoading: true,
+      error: null,
+    );
   }
 
   HistoryState setError(HistoryFailure failure) {
@@ -39,7 +43,7 @@ class HistoryState {
   }
 
   HistoryState setConversations(List<ConversationHistory> conversations) {
-    return copyWith(
+    return HistoryState(
       conversations: conversations,
       isLoading: false,
       error: null,
@@ -47,6 +51,10 @@ class HistoryState {
   }
 
   HistoryState clearError() {
-    return copyWith(error: null);
+    return HistoryState(
+      conversations: conversations,
+      isLoading: isLoading,
+      error: null,
+    );
   }
 }

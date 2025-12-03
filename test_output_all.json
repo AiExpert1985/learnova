@@ -1,0 +1,308 @@
+﻿{"protocolVersion":"0.1.1","runnerVersion":null,"pid":22000,"type":"start","time":0}
+{"suite":{"id":0,"platform":"vm","path":"E:/App dev/My Apps/learnova/test/core/services/openai_llm_service_test.dart"},"type":"suite","time":0}
+{"test":{"id":1,"name":"loading E:/App dev/My Apps/learnova/test/core/services/openai_llm_service_test.dart","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":1}
+{"suite":{"id":2,"platform":"vm","path":"E:/App dev/My Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"suite","time":3}
+{"test":{"id":3,"name":"loading E:/App dev/My Apps/learnova/test/core/services/youtube_service_test.dart","suiteID":2,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":3}
+{"suite":{"id":4,"platform":"vm","path":"E:/App dev/My Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"suite","time":3}
+{"test":{"id":5,"name":"loading E:/App dev/My Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart","suiteID":4,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":4}
+{"suite":{"id":6,"platform":"vm","path":"E:/App dev/My Apps/learnova/test/features/history/services/history_service_test.dart"},"type":"suite","time":4}
+{"test":{"id":7,"name":"loading E:/App dev/My Apps/learnova/test/features/history/services/history_service_test.dart","suiteID":6,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":4}
+{"suite":{"id":8,"platform":"vm","path":"E:/App dev/My Apps/learnova/test/features/history/state/history_notifier_test.dart"},"type":"suite","time":4}
+{"test":{"id":9,"name":"loading E:/App dev/My Apps/learnova/test/features/history/state/history_notifier_test.dart","suiteID":8,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":4}
+{"suite":{"id":10,"platform":"vm","path":"E:/App dev/My Apps/learnova/test/features/history/ui/widgets/history_bottom_sheet_test.dart"},"type":"suite","time":4}
+{"test":{"id":11,"name":"loading E:/App dev/My Apps/learnova/test/features/history/ui/widgets/history_bottom_sheet_test.dart","suiteID":10,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":4}
+{"suite":{"id":12,"platform":"vm","path":"E:/App dev/My Apps/learnova/test/features/qa/services/qa_service_test.dart"},"type":"suite","time":4}
+{"test":{"id":13,"name":"loading E:/App dev/My Apps/learnova/test/features/qa/services/qa_service_test.dart","suiteID":12,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":4}
+{"suite":{"id":14,"platform":"vm","path":"E:/App dev/My Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"suite","time":5}
+{"test":{"id":15,"name":"loading E:/App dev/My Apps/learnova/test/features/qa/state/qa_notifier_test.dart","suiteID":14,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":5}
+{"count":8,"time":5,"type":"allSuites"}
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]
+{"testID":1,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":1201}
+{"group":{"id":16,"suiteID":0,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":5,"line":null,"column":null,"url":null},"type":"group","time":1204}
+{"group":{"id":17,"suiteID":0,"parentID":16,"name":"OpenAILLMService","metadata":{"skip":false,"skipReason":null},"testCount":5,"line":29,"column":3,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/openai_llm_service_test.dart"},"type":"group","time":1204}
+{"test":{"id":18,"name":"OpenAILLMService returns response for successful API call","suiteID":0,"groupIDs":[16,17],"metadata":{"skip":false,"skipReason":null},"line":30,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/openai_llm_service_test.dart"},"type":"testStart","time":1205}
+{"testID":18,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1242}
+{"test":{"id":19,"name":"OpenAILLMService throws exception for empty API key","suiteID":0,"groupIDs":[16,17],"metadata":{"skip":false,"skipReason":null},"line":59,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/openai_llm_service_test.dart"},"type":"testStart","time":1243}
+{"testID":19,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1249}
+{"test":{"id":20,"name":"OpenAILLMService throws exception for 401 unauthorized","suiteID":0,"groupIDs":[16,17],"metadata":{"skip":false,"skipReason":null},"line":71,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/openai_llm_service_test.dart"},"type":"testStart","time":1250}
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]
+{"testID":20,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1260}
+{"test":{"id":21,"name":"OpenAILLMService throws exception for 429 rate limit","suiteID":0,"groupIDs":[16,17],"metadata":{"skip":false,"skipReason":null},"line":96,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/openai_llm_service_test.dart"},"type":"testStart","time":1260}
+{"testID":21,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1266}
+{"test":{"id":22,"name":"OpenAILLMService builds correct request body","suiteID":0,"groupIDs":[16,17],"metadata":{"skip":false,"skipReason":null},"line":121,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/openai_llm_service_test.dart"},"type":"testStart","time":1266}
+{"testID":22,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1272}
+{"testID":3,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":1389}
+{"group":{"id":23,"suiteID":2,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":10,"line":null,"column":null,"url":null},"type":"group","time":1390}
+{"group":{"id":24,"suiteID":2,"parentID":23,"name":"YouTubeService","metadata":{"skip":false,"skipReason":null},"testCount":10,"line":43,"column":3,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"group","time":1390}
+{"test":{"id":25,"name":"YouTubeService extracts video ID from standard YouTube URL","suiteID":2,"groupIDs":[23,24],"metadata":{"skip":false,"skipReason":null},"line":44,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"testStart","time":1390}
+{"testID":25,"messageType":"print","message":"Fetching captions...","type":"print","time":1423}
+{"testID":25,"messageType":"print","message":"Found 1 tracks","type":"print","time":1423}
+{"testID":25,"messageType":"print","message":"Using manual English track","type":"print","time":1423}
+{"testID":25,"messageType":"print","message":"Γ£ô Transcript: 1 segments","type":"print","time":1424}
+{"testID":25,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1425}
+{"test":{"id":26,"name":"YouTubeService extracts video ID from short YouTube URL","suiteID":2,"groupIDs":[23,24],"metadata":{"skip":false,"skipReason":null},"line":71,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"testStart","time":1425}
+{"testID":26,"messageType":"print","message":"Fetching captions...","type":"print","time":1430}
+{"testID":26,"messageType":"print","message":"Found 1 tracks","type":"print","time":1430}
+{"testID":26,"messageType":"print","message":"Using manual English track","type":"print","time":1431}
+{"testID":26,"messageType":"print","message":"Γ£ô Transcript: 1 segments","type":"print","time":1431}
+{"testID":26,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1432}
+{"test":{"id":27,"name":"YouTubeService returns failure for invalid URL","suiteID":2,"groupIDs":[23,24],"metadata":{"skip":false,"skipReason":null},"line":96,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"testStart","time":1432}
+{"testID":27,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1436}
+{"test":{"id":28,"name":"YouTubeService fetches video metadata successfully","suiteID":2,"groupIDs":[23,24],"metadata":{"skip":false,"skipReason":null},"line":107,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"testStart","time":1437}
+{"testID":28,"messageType":"print","message":"Fetching captions...","type":"print","time":1443}
+{"testID":28,"messageType":"print","message":"Found 1 tracks","type":"print","time":1443}
+{"testID":28,"messageType":"print","message":"Using manual English track","type":"print","time":1443}
+{"testID":28,"messageType":"print","message":"Γ£ô Transcript: 2 segments","type":"print","time":1443}
+{"testID":28,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1444}
+{"test":{"id":29,"name":"YouTubeService returns failure when no captions available","suiteID":2,"groupIDs":[23,24],"metadata":{"skip":false,"skipReason":null},"line":139,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"testStart","time":1444}
+{"testID":29,"messageType":"print","message":"Fetching captions...","type":"print","time":1448}
+{"testID":29,"messageType":"print","message":"No captions available","type":"print","time":1449}
+{"testID":29,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1449}
+{"test":{"id":30,"name":"YouTubeService handles HTTP errors gracefully","suiteID":2,"groupIDs":[23,24],"metadata":{"skip":false,"skipReason":null},"line":157,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"testStart","time":1450}
+{"testID":30,"messageType":"print","message":"Metadata fetch failed: 400","type":"print","time":1454}
+{"testID":30,"messageType":"print","message":"Response body: {}","type":"print","time":1454}
+{"testID":30,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1455}
+{"test":{"id":31,"name":"YouTubeService decodes HTML entities in transcript","suiteID":2,"groupIDs":[23,24],"metadata":{"skip":false,"skipReason":null},"line":170,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"testStart","time":1456}
+{"testID":31,"messageType":"print","message":"Fetching captions...","type":"print","time":1461}
+{"testID":31,"messageType":"print","message":"Found 1 tracks","type":"print","time":1462}
+{"testID":31,"messageType":"print","message":"Using manual English track","type":"print","time":1462}
+{"testID":31,"messageType":"print","message":"Γ£ô Transcript: 2 segments","type":"print","time":1462}
+{"testID":31,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1463}
+{"test":{"id":32,"name":"YouTubeService parses timestamps correctly from XML","suiteID":2,"groupIDs":[23,24],"metadata":{"skip":false,"skipReason":null},"line":201,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"testStart","time":1463}
+{"testID":32,"messageType":"print","message":"Fetching captions...","type":"print","time":1469}
+{"testID":32,"messageType":"print","message":"Found 1 tracks","type":"print","time":1470}
+{"testID":32,"messageType":"print","message":"Using manual English track","type":"print","time":1470}
+{"testID":32,"messageType":"print","message":"Γ£ô Transcript: 2 segments","type":"print","time":1470}
+{"testID":32,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1471}
+{"test":{"id":33,"name":"YouTubeService getTranscriptUpTo filters segments by timestamp","suiteID":2,"groupIDs":[23,24],"metadata":{"skip":false,"skipReason":null},"line":244,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"testStart","time":1472}
+{"testID":33,"messageType":"print","message":"Fetching captions...","type":"print","time":1476}
+{"testID":33,"messageType":"print","message":"Found 1 tracks","type":"print","time":1477}
+{"testID":33,"messageType":"print","message":"Using manual English track","type":"print","time":1477}
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]
+{"testID":33,"messageType":"print","message":"Γ£ô Transcript: 3 segments","type":"print","time":1488}
+{"testID":33,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1488}
+{"test":{"id":34,"name":"YouTubeService getTranscriptUpTo returns empty string when position is before first segment","suiteID":2,"groupIDs":[23,24],"metadata":{"skip":false,"skipReason":null},"line":285,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/core/services/youtube_service_test.dart"},"type":"testStart","time":1489}
+{"testID":34,"messageType":"print","message":"Fetching captions...","type":"print","time":1493}
+{"testID":34,"messageType":"print","message":"Found 1 tracks","type":"print","time":1494}
+{"testID":34,"messageType":"print","message":"Using manual English track","type":"print","time":1494}
+{"testID":34,"messageType":"print","message":"Γ£ô Transcript: 2 segments","type":"print","time":1494}
+{"testID":34,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1495}
+{"testID":5,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":1640}
+{"group":{"id":35,"suiteID":4,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":8,"line":null,"column":null,"url":null},"type":"group","time":1640}
+{"test":{"id":36,"name":"(setUpAll)","suiteID":4,"groupIDs":[35],"metadata":{"skip":false,"skipReason":null},"line":12,"column":3,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"testStart","time":1640}
+{"testID":36,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":1666}
+{"group":{"id":37,"suiteID":4,"parentID":35,"name":"HiveHistoryRepository","metadata":{"skip":false,"skipReason":null},"testCount":8,"line":27,"column":3,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"group","time":1667}
+{"test":{"id":38,"name":"HiveHistoryRepository initialize should open storage successfully","suiteID":4,"groupIDs":[35,37],"metadata":{"skip":false,"skipReason":null},"line":28,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"testStart","time":1667}
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]
+{"testID":38,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1698}
+{"test":{"id":39,"name":"HiveHistoryRepository save should persist conversation to storage","suiteID":4,"groupIDs":[35,37],"metadata":{"skip":false,"skipReason":null},"line":36,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"testStart","time":1698}
+{"testID":39,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1718}
+{"test":{"id":40,"name":"HiveHistoryRepository getAll should return conversations sorted by lastUpdated","suiteID":4,"groupIDs":[35,37],"metadata":{"skip":false,"skipReason":null},"line":61,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"testStart","time":1718}
+{"testID":40,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1751}
+{"test":{"id":41,"name":"HiveHistoryRepository getByVideoId should return most recent conversation for video","suiteID":4,"groupIDs":[35,37],"metadata":{"skip":false,"skipReason":null},"line":85,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"testStart","time":1751}
+{"testID":41,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1772}
+{"test":{"id":42,"name":"HiveHistoryRepository delete should remove conversation from storage","suiteID":4,"groupIDs":[35,37],"metadata":{"skip":false,"skipReason":null},"line":105,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"testStart","time":1773}
+{"testID":42,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1785}
+{"test":{"id":43,"name":"HiveHistoryRepository clear should remove all conversations","suiteID":4,"groupIDs":[35,37],"metadata":{"skip":false,"skipReason":null},"line":120,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"testStart","time":1785}
+{"testID":43,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1795}
+{"test":{"id":44,"name":"HiveHistoryRepository getById should return null for non-existent conversation","suiteID":4,"groupIDs":[35,37],"metadata":{"skip":false,"skipReason":null},"line":142,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"testStart","time":1796}
+{"testID":44,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1805}
+{"test":{"id":45,"name":"HiveHistoryRepository operations should fail when storage not initialized","suiteID":4,"groupIDs":[35,37],"metadata":{"skip":false,"skipReason":null},"line":148,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/data/repositories/hive_history_repository_test.dart"},"type":"testStart","time":1805}
+{"testID":45,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1813}
+{"test":{"id":46,"name":"(tearDownAll)","suiteID":4,"groupIDs":[35],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":1814}
+{"testID":46,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":1818}
+{"testID":7,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":1858}
+{"group":{"id":47,"suiteID":6,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":6,"line":null,"column":null,"url":null},"type":"group","time":1859}
+{"group":{"id":48,"suiteID":6,"parentID":47,"name":"HistoryService","metadata":{"skip":false,"skipReason":null},"testCount":6,"line":76,"column":3,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/services/history_service_test.dart"},"type":"group","time":1859}
+{"test":{"id":49,"name":"HistoryService saveConversation should create new conversation for new video","suiteID":6,"groupIDs":[47,48],"metadata":{"skip":false,"skipReason":null},"line":77,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/services/history_service_test.dart"},"type":"testStart","time":1859}
+{"testID":49,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1884}
+{"test":{"id":50,"name":"HistoryService saveConversation should update existing conversation for same video","suiteID":6,"groupIDs":[47,48],"metadata":{"skip":false,"skipReason":null},"line":99,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/services/history_service_test.dart"},"type":"testStart","time":1884}
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]
+{"testID":50,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1900}
+{"test":{"id":51,"name":"HistoryService loadAllConversations should return sorted conversations","suiteID":6,"groupIDs":[47,48],"metadata":{"skip":false,"skipReason":null},"line":142,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/services/history_service_test.dart"},"type":"testStart","time":1901}
+{"testID":51,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1916}
+{"test":{"id":52,"name":"HistoryService loadConversationById should return specific conversation","suiteID":6,"groupIDs":[47,48],"metadata":{"skip":false,"skipReason":null},"line":163,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/services/history_service_test.dart"},"type":"testStart","time":1916}
+{"testID":52,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1919}
+{"test":{"id":53,"name":"HistoryService deleteConversation should remove conversation","suiteID":6,"groupIDs":[47,48],"metadata":{"skip":false,"skipReason":null},"line":178,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/services/history_service_test.dart"},"type":"testStart","time":1920}
+{"testID":53,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1924}
+{"test":{"id":54,"name":"HistoryService clearAllHistory should remove all conversations","suiteID":6,"groupIDs":[47,48],"metadata":{"skip":false,"skipReason":null},"line":194,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/services/history_service_test.dart"},"type":"testStart","time":1924}
+{"testID":54,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":1927}
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]
+{"testID":9,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":2059}
+{"group":{"id":55,"suiteID":8,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":8,"line":null,"column":null,"url":null},"type":"group","time":2060}
+{"group":{"id":56,"suiteID":8,"parentID":55,"name":"HistoryNotifier","metadata":{"skip":false,"skipReason":null},"testCount":8,"line":107,"column":3,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/state/history_notifier_test.dart"},"type":"group","time":2060}
+{"test":{"id":57,"name":"HistoryNotifier initialize should load conversations on success","suiteID":8,"groupIDs":[55,56],"metadata":{"skip":false,"skipReason":null},"line":108,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/state/history_notifier_test.dart"},"type":"testStart","time":2060}
+{"testID":57,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2082}
+{"test":{"id":58,"name":"HistoryNotifier initialize should set error on failure","suiteID":8,"groupIDs":[55,56],"metadata":{"skip":false,"skipReason":null},"line":123,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/state/history_notifier_test.dart"},"type":"testStart","time":2082}
+{"testID":58,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2086}
+{"test":{"id":59,"name":"HistoryNotifier loadHistory should update state with conversations","suiteID":8,"groupIDs":[55,56],"metadata":{"skip":false,"skipReason":null},"line":132,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/state/history_notifier_test.dart"},"type":"testStart","time":2086}
+{"testID":59,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2088}
+{"test":{"id":60,"name":"HistoryNotifier loadHistory should set error on failure","suiteID":8,"groupIDs":[55,56],"metadata":{"skip":false,"skipReason":null},"line":155,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/state/history_notifier_test.dart"},"type":"testStart","time":2089}
+{"testID":60,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2092}
+{"test":{"id":61,"name":"HistoryNotifier deleteConversation should remove conversation and reload","suiteID":8,"groupIDs":[55,56],"metadata":{"skip":false,"skipReason":null},"line":164,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/state/history_notifier_test.dart"},"type":"testStart","time":2092}
+{"testID":61,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2096}
+{"test":{"id":62,"name":"HistoryNotifier deleteConversation should set error on failure","suiteID":8,"groupIDs":[55,56],"metadata":{"skip":false,"skipReason":null},"line":185,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/state/history_notifier_test.dart"},"type":"testStart","time":2096}
+{"testID":62,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2099}
+{"test":{"id":63,"name":"HistoryNotifier clearAllHistory should remove all conversations","suiteID":8,"groupIDs":[55,56],"metadata":{"skip":false,"skipReason":null},"line":193,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/state/history_notifier_test.dart"},"type":"testStart","time":2099}
+{"testID":63,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2103}
+{"test":{"id":64,"name":"HistoryNotifier clearError should remove error from state","suiteID":8,"groupIDs":[55,56],"metadata":{"skip":false,"skipReason":null},"line":208,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/state/history_notifier_test.dart"},"type":"testStart","time":2103}
+{"testID":64,"error":"Expected: <false>\n  Actual: <true>\n","stackTrace":"package:matcher                                               expect\npackage:flutter_test/src/widget_tester.dart 473:18            expect\ntest\\features\\history\\state\\history_notifier_test.dart 214:7  main.<fn>.<fn>\n","isFailure":true,"type":"error","time":2119}
+{"testID":64,"result":"failure","skipped":false,"hidden":false,"type":"testDone","time":2119}
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]
+{"testID":11,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":2293}
+{"group":{"id":65,"suiteID":10,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":6,"line":null,"column":null,"url":null},"type":"group","time":2293}
+{"group":{"id":66,"suiteID":10,"parentID":65,"name":"HistoryBottomSheet","metadata":{"skip":false,"skipReason":null},"testCount":6,"line":138,"column":3,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/ui/widgets/history_bottom_sheet_test.dart"},"type":"group","time":2293}
+{"test":{"id":67,"name":"HistoryBottomSheet should show clear all button when conversations exist","suiteID":10,"groupIDs":[65,66],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":139,"root_column":5,"root_url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/ui/widgets/history_bottom_sheet_test.dart"},"type":"testStart","time":2293}
+{"testID":13,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":2389}
+{"group":{"id":68,"suiteID":12,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":5,"line":null,"column":null,"url":null},"type":"group","time":2390}
+{"group":{"id":69,"suiteID":12,"parentID":68,"name":"QAService","metadata":{"skip":false,"skipReason":null},"testCount":5,"line":26,"column":3,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/services/qa_service_test.dart"},"type":"group","time":2390}
+{"test":{"id":70,"name":"QAService returns success with valid question and transcript","suiteID":12,"groupIDs":[68,69],"metadata":{"skip":false,"skipReason":null},"line":27,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/services/qa_service_test.dart"},"type":"testStart","time":2390}
+{"testID":70,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2408}
+{"test":{"id":71,"name":"QAService returns error for empty question","suiteID":12,"groupIDs":[68,69],"metadata":{"skip":false,"skipReason":null},"line":41,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/services/qa_service_test.dart"},"type":"testStart","time":2409}
+{"testID":71,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2411}
+{"test":{"id":72,"name":"QAService returns error for empty transcript","suiteID":12,"groupIDs":[68,69],"metadata":{"skip":false,"skipReason":null},"line":54,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/services/qa_service_test.dart"},"type":"testStart","time":2412}
+{"testID":72,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2415}
+{"test":{"id":73,"name":"QAService handles LLM exceptions gracefully","suiteID":12,"groupIDs":[68,69],"metadata":{"skip":false,"skipReason":null},"line":67,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/services/qa_service_test.dart"},"type":"testStart","time":2415}
+{"testID":73,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2419}
+{"test":{"id":74,"name":"QAService handles unexpected exceptions","suiteID":12,"groupIDs":[68,69],"metadata":{"skip":false,"skipReason":null},"line":82,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/services/qa_service_test.dart"},"type":"testStart","time":2420}
+{"testID":74,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2422}
+{"testID":15,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":2584}
+{"group":{"id":75,"suiteID":14,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":12,"line":null,"column":null,"url":null},"type":"group","time":2585}
+{"group":{"id":76,"suiteID":14,"parentID":75,"name":"QANotifier","metadata":{"skip":false,"skipReason":null},"testCount":12,"line":97,"column":3,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"group","time":2585}
+{"test":{"id":77,"name":"QANotifier initial state is empty","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":98,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2585}
+{"testID":77,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2603}
+{"test":{"id":78,"name":"QANotifier loadVideo updates state with video info","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":132,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2604}
+{"testID":78,"messageType":"print","message":"=== YouTube Transcript ===","type":"print","time":2610}
+{"testID":78,"messageType":"print","message":"Video: How to Code","type":"print","time":2610}
+{"testID":78,"messageType":"print","message":"Duration: 0:10:00.000000","type":"print","time":2610}
+{"testID":78,"messageType":"print","message":"Segments: 1","type":"print","time":2610}
+{"testID":78,"messageType":"print","message":"Transcript length: 33 characters","type":"print","time":2611}
+{"testID":78,"messageType":"print","message":"\nFirst 3 segments with timestamps:","type":"print","time":2611}
+{"testID":78,"messageType":"print","message":"  [0s - 10s] This is a transcript about coding","type":"print","time":2611}
+{"testID":78,"messageType":"print","message":"\nFull transcript content:","type":"print","time":2611}
+{"testID":78,"messageType":"print","message":"This is a transcript about coding","type":"print","time":2611}
+{"testID":78,"messageType":"print","message":"=== End Transcript ===\n","type":"print","time":2611}
+{"testID":78,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2612}
+{"test":{"id":79,"name":"QANotifier loadVideo handles errors gracefully","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":169,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2612}
+{"testID":79,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2615}
+{"test":{"id":80,"name":"QANotifier askQuestion updates state with successful result","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":191,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2615}
+{"testID":80,"messageType":"print","message":"=== YouTube Transcript ===","type":"print","time":2619}
+{"testID":80,"messageType":"print","message":"Video: Test Video","type":"print","time":2619}
+{"testID":80,"messageType":"print","message":"Duration: 0:05:00.000000","type":"print","time":2620}
+{"testID":80,"messageType":"print","message":"Segments: 1","type":"print","time":2620}
+{"testID":80,"messageType":"print","message":"Transcript length: 15 characters","type":"print","time":2621}
+{"testID":80,"messageType":"print","message":"\nFirst 3 segments with timestamps:","type":"print","time":2621}
+{"testID":80,"messageType":"print","message":"  [0s - 5s] Test transcript","type":"print","time":2621}
+{"testID":80,"messageType":"print","message":"\nFull transcript content:","type":"print","time":2621}
+{"testID":80,"messageType":"print","message":"Test transcript","type":"print","time":2621}
+{"testID":80,"messageType":"print","message":"=== End Transcript ===\n","type":"print","time":2621}
+{"testID":80,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2622}
+{"test":{"id":81,"name":"QANotifier askQuestion updates state with error result","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":236,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2622}
+{"testID":81,"messageType":"print","message":"=== YouTube Transcript ===","type":"print","time":2625}
+{"testID":81,"messageType":"print","message":"Video: Test Video","type":"print","time":2625}
+{"testID":81,"messageType":"print","message":"Duration: 0:05:00.000000","type":"print","time":2626}
+{"testID":81,"messageType":"print","message":"Segments: 1","type":"print","time":2626}
+{"testID":81,"messageType":"print","message":"Transcript length: 15 characters","type":"print","time":2626}
+{"testID":81,"messageType":"print","message":"\nFirst 3 segments with timestamps:","type":"print","time":2627}
+{"testID":81,"messageType":"print","message":"  [0s - 5s] Test transcript","type":"print","time":2627}
+{"testID":81,"messageType":"print","message":"\nFull transcript content:","type":"print","time":2627}
+{"testID":81,"messageType":"print","message":"Test transcript","type":"print","time":2627}
+{"testID":81,"messageType":"print","message":"=== End Transcript ===\n","type":"print","time":2627}
+{"testID":81,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2628}
+{"test":{"id":82,"name":"QANotifier askQuestion does nothing when no video loaded","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":275,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2628}
+{"testID":82,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2630}
+{"test":{"id":83,"name":"QANotifier askQuestion ignores empty or whitespace questions","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":310,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2630}
+{"testID":83,"messageType":"print","message":"=== YouTube Transcript ===","type":"print","time":2633}
+{"testID":83,"messageType":"print","message":"Video: Test Video","type":"print","time":2633}
+{"testID":83,"messageType":"print","message":"Duration: 0:05:00.000000","type":"print","time":2633}
+{"testID":83,"messageType":"print","message":"Segments: 1","type":"print","time":2633}
+{"testID":83,"messageType":"print","message":"Transcript length: 15 characters","type":"print","time":2634}
+{"testID":83,"messageType":"print","message":"\nFirst 3 segments with timestamps:","type":"print","time":2634}
+{"testID":83,"messageType":"print","message":"  [0s - 5s] Test transcript","type":"print","time":2634}
+{"testID":83,"messageType":"print","message":"\nFull transcript content:","type":"print","time":2634}
+{"testID":83,"messageType":"print","message":"Test transcript","type":"print","time":2635}
+{"testID":83,"messageType":"print","message":"=== End Transcript ===\n","type":"print","time":2635}
+{"testID":83,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2635}
+{"test":{"id":84,"name":"QANotifier askQuestion trims whitespace from questions","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":348,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2636}
+{"testID":84,"messageType":"print","message":"=== YouTube Transcript ===","type":"print","time":2638}
+{"testID":84,"messageType":"print","message":"Video: Test Video","type":"print","time":2638}
+{"testID":84,"messageType":"print","message":"Duration: 0:05:00.000000","type":"print","time":2638}
+{"testID":84,"messageType":"print","message":"Segments: 1","type":"print","time":2638}
+{"testID":84,"messageType":"print","message":"Transcript length: 15 characters","type":"print","time":2639}
+{"testID":84,"messageType":"print","message":"\nFirst 3 segments with timestamps:","type":"print","time":2639}
+{"testID":84,"messageType":"print","message":"  [0s - 5s] Test transcript","type":"print","time":2639}
+{"testID":84,"messageType":"print","message":"\nFull transcript content:","type":"print","time":2639}
+{"testID":84,"messageType":"print","message":"Test transcript","type":"print","time":2639}
+{"testID":84,"messageType":"print","message":"=== End Transcript ===\n","type":"print","time":2639}
+{"testID":84,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2640}
+{"test":{"id":85,"name":"QANotifier multiple questions accumulate in history","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":388,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2640}
+{"testID":85,"messageType":"print","message":"=== YouTube Transcript ===","type":"print","time":2642}
+{"testID":85,"messageType":"print","message":"Video: Test Video","type":"print","time":2642}
+{"testID":85,"messageType":"print","message":"Duration: 0:05:00.000000","type":"print","time":2642}
+{"testID":85,"messageType":"print","message":"Segments: 1","type":"print","time":2642}
+{"testID":85,"messageType":"print","message":"Transcript length: 15 characters","type":"print","time":2642}
+{"testID":85,"messageType":"print","message":"\nFirst 3 segments with timestamps:","type":"print","time":2643}
+{"testID":85,"messageType":"print","message":"  [0s - 5s] Test transcript","type":"print","time":2643}
+{"testID":85,"messageType":"print","message":"\nFull transcript content:","type":"print","time":2643}
+{"testID":85,"messageType":"print","message":"Test transcript","type":"print","time":2643}
+{"testID":85,"messageType":"print","message":"=== End Transcript ===\n","type":"print","time":2643}
+{"testID":85,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2644}
+{"test":{"id":86,"name":"QANotifier loading new video clears previous history","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":432,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2644}
+{"testID":86,"messageType":"print","message":"=== YouTube Transcript ===","type":"print","time":2646}
+{"testID":86,"messageType":"print","message":"Video: Test Video","type":"print","time":2646}
+{"testID":86,"messageType":"print","message":"Duration: 0:05:00.000000","type":"print","time":2646}
+{"testID":86,"messageType":"print","message":"Segments: 1","type":"print","time":2646}
+{"testID":86,"messageType":"print","message":"Transcript length: 15 characters","type":"print","time":2647}
+{"testID":86,"messageType":"print","message":"\nFirst 3 segments with timestamps:","type":"print","time":2647}
+{"testID":86,"messageType":"print","message":"  [0s - 5s] Test transcript","type":"print","time":2647}
+{"testID":86,"messageType":"print","message":"\nFull transcript content:","type":"print","time":2647}
+{"testID":86,"messageType":"print","message":"Test transcript","type":"print","time":2647}
+{"testID":86,"messageType":"print","message":"=== End Transcript ===\n","type":"print","time":2648}
+{"testID":86,"messageType":"print","message":"=== YouTube Transcript ===","type":"print","time":2648}
+{"testID":86,"messageType":"print","message":"Video: Test Video","type":"print","time":2648}
+{"testID":86,"messageType":"print","message":"Duration: 0:05:00.000000","type":"print","time":2648}
+{"testID":86,"messageType":"print","message":"Segments: 1","type":"print","time":2648}
+{"testID":86,"messageType":"print","message":"Transcript length: 15 characters","type":"print","time":2649}
+{"testID":86,"messageType":"print","message":"\nFirst 3 segments with timestamps:","type":"print","time":2649}
+{"testID":86,"messageType":"print","message":"  [0s - 5s] Test transcript","type":"print","time":2649}
+{"testID":86,"messageType":"print","message":"\nFull transcript content:","type":"print","time":2649}
+{"testID":86,"messageType":"print","message":"Test transcript","type":"print","time":2650}
+{"testID":86,"messageType":"print","message":"=== End Transcript ===\n","type":"print","time":2650}
+{"testID":86,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2651}
+{"test":{"id":87,"name":"QANotifier updatePosition updates current position in state","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":476,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2651}
+{"testID":87,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2655}
+{"test":{"id":88,"name":"QANotifier askQuestion uses position-aware transcript after 10 seconds","suiteID":14,"groupIDs":[75,76],"metadata":{"skip":false,"skipReason":null},"line":516,"column":5,"url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/qa/state/qa_notifier_test.dart"},"type":"testStart","time":2655}
+{"testID":88,"messageType":"print","message":"=== YouTube Transcript ===","type":"print","time":2658}
+{"testID":88,"messageType":"print","message":"Video: Test Video","type":"print","time":2658}
+{"testID":88,"messageType":"print","message":"Duration: 0:01:00.000000","type":"print","time":2659}
+{"testID":88,"messageType":"print","message":"Segments: 3","type":"print","time":2659}
+{"testID":88,"messageType":"print","message":"Transcript length: 16 characters","type":"print","time":2659}
+{"testID":88,"messageType":"print","message":"\nFirst 3 segments with timestamps:","type":"print","time":2659}
+{"testID":88,"messageType":"print","message":"  [0s - 5s] Intro","type":"print","time":2660}
+{"testID":88,"messageType":"print","message":"  [5s - 10s] Middle","type":"print","time":2660}
+{"testID":88,"messageType":"print","message":"  [10s - 15s] End","type":"print","time":2660}
+{"testID":88,"messageType":"print","message":"\nFull transcript content:","type":"print","time":2660}
+{"testID":88,"messageType":"print","message":"Intro Middle End","type":"print","time":2661}
+{"testID":88,"messageType":"print","message":"=== End Transcript ===\n","type":"print","time":2661}
+{"testID":88,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2661}
+{"testID":67,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2918}
+{"test":{"id":89,"name":"HistoryBottomSheet should not show clear all button when no conversations","suiteID":10,"groupIDs":[65,66],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":158,"root_column":5,"root_url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/ui/widgets/history_bottom_sheet_test.dart"},"type":"testStart","time":2918}
+{"testID":89,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":2965}
+{"test":{"id":90,"name":"HistoryBottomSheet should show confirmation dialog when clear all is tapped","suiteID":10,"groupIDs":[65,66],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":171,"root_column":5,"root_url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/ui/widgets/history_bottom_sheet_test.dart"},"type":"testStart","time":2966}
+{"testID":90,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":3080}
+{"test":{"id":91,"name":"HistoryBottomSheet should cancel clear all when cancel is tapped","suiteID":10,"groupIDs":[65,66],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":201,"root_column":5,"root_url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/ui/widgets/history_bottom_sheet_test.dart"},"type":"testStart","time":3080}
+{"testID":91,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":3165}
+{"test":{"id":92,"name":"HistoryBottomSheet should clear all conversations when confirmed","suiteID":10,"groupIDs":[65,66],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":228,"root_column":5,"root_url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/ui/widgets/history_bottom_sheet_test.dart"},"type":"testStart","time":3165}
+{"testID":92,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":3267}
+{"test":{"id":93,"name":"HistoryBottomSheet should show empty state after clearing all","suiteID":10,"groupIDs":[65,66],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":258,"root_column":5,"root_url":"file:///E:/App%20dev/My%20Apps/learnova/test/features/history/ui/widgets/history_bottom_sheet_test.dart"},"type":"testStart","time":3267}
+{"testID":93,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":3353}
+{"success":false,"type":"done","time":3375}
