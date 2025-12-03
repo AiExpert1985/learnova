@@ -97,7 +97,9 @@
 ### Strategy
 - **Unit Tests:** Business logic, Services, Edge cases.
 - **No Widget Tests:** Manual testing preferred for MVP UI.
-- **Mocking:** Mock external dependencies (API, DB).
+- **No Widget Tests:** Manual testing preferred for MVP UI.
+- **Mocking:** Prefer manual mocks over external packages (e.g., Mockito) unless absolutely necessary.
+- **External Dependencies:** Avoid adding testing dependencies to keep the project lightweight.
 
 ---
 
