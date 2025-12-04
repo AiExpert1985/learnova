@@ -240,15 +240,22 @@ listening → processing → speaking → waitingForNextQuestion → listening (
 
 **Why:**
 - One-off voice input (mic button) and continuous listening both need configurable silence detection
-- Default 3 seconds balances quick response vs. giving user time to complete thought
-- Consistent timeout behavior across all voice input methods
-- Prevents premature recognition cutoff during longer questions
+- Balanced timeout: 3 seconds for one-off input, 5 seconds for continuous mode
+- One-off mode (3s): Quick response for deliberate mic button press
+- Continuous mode (5s): Extra time for users to think mid-sentence without premature cutoff
+- Prevents recognition cutoff during longer questions or thinking pauses
 
 **Implementation:**
 - `VoiceService.startListening()` accepts optional `pauseFor` parameter
-- `VoiceNotifier.startListening()` passes 3-second default
-- Continuous mode uses same 3-second default for consistency
+- `VoiceNotifier.startListening()` passes 3-second default for one-off input
+- Continuous mode uses 5-second threshold for more natural speech patterns
 - STT service logs show actual timeout value for debugging
+
+**Continuous Mode Async Flow Fix:**
+- **Problem:** `speakAnswerAndResume()` returned immediately after setting up TTS stream, causing video to resume before answer was spoken
+- **Solution:** Added `Completer<void>` to make function properly awaitable - now waits for TTS to complete before returning
+- **Video Resume Timing:** Waits for TTS completion + grace period (5s) + buffer (2s) = 7s total before resuming video
+- **Impact:** Video stays paused during entire answer cycle, ensuring user hears complete answer without interference
 
 **Emulator Testing Note:** Android emulator requires "Virtual microphone uses host audio input" setting enabled in AVD configuration. Speech recognition timeout (`error_speech_timeout`) without this setting is configuration issue, not code defect.
 

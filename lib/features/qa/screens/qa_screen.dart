@@ -206,12 +206,14 @@ class _QAScreenState extends ConsumerState<QAScreen>
 
     // Set up the callback for QA notifier to speak answers
     qaNotifier.setContinuousModeCallback((answer) async {
-      // Speak answer (video remains paused during TTS)
+      // Speak answer and start grace period (video remains paused)
+      // This waits for TTS to complete
       await voiceNotifier.speakAnswerAndResume(answer);
 
-      // Resume video after TTS completes and grace period
-      // Add 2 second buffer after grace period to ensure user has time to respond
-      await Future.delayed(const Duration(seconds: 2));
+      // Wait for grace period (5s) + buffer (2s) = 7s total
+      // This ensures listening has resumed before we resume video
+      await Future.delayed(const Duration(seconds: 7));
+
       if (videoController != null) {
         final voiceState = ref.read(voiceNotifierProvider);
         // Only resume if still in continuous mode and listening state

@@ -338,10 +338,10 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     // Start inactivity timer (5 minutes)
     _startInactivityTimer();
 
-    // Start continuous listening
+    // Start continuous listening with 5-second pause threshold
     _voiceService.startContinuousListening(
       onQuestionDetected: _handleQuestionDetected,
-      pauseFor: const Duration(seconds: 3),
+      pauseFor: const Duration(seconds: 5),
       listenFor: const Duration(seconds: 60),
     );
   }
@@ -380,6 +380,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   }
 
   /// Speak answer in continuous mode and resume listening
+  /// Returns a Future that completes when TTS finishes and grace period starts
   Future<void> speakAnswerAndResume(String answer) async {
     if (!state.isContinuousModeEnabled) return;
 
@@ -388,6 +389,9 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     state = state.copyWith(
       continuousListeningState: ContinuousListeningState.speaking,
     );
+
+    // Create completer to make this properly awaitable
+    final completer = Completer<void>();
 
     // Speak the answer
     final stream = _voiceService.speak(answer);
@@ -401,12 +405,21 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         // On TTS error, show answer as text and resume listening
         _onAnswerCallback?.call(answer);
         _resumeListening();
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
       },
       onDone: () {
         // When speaking completes, resume listening
         _resumeListening();
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
       },
     );
+
+    // Wait for TTS to complete before returning
+    await completer.future;
   }
 
   /// Resume listening after speaking (with grace period)
@@ -429,10 +442,10 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         continuousListeningState: ContinuousListeningState.listening,
       );
 
-      // Restart listening cycle
+      // Restart listening cycle with 5-second pause threshold
       _voiceService.startContinuousListening(
         onQuestionDetected: _handleQuestionDetected,
-        pauseFor: const Duration(seconds: 3),
+        pauseFor: const Duration(seconds: 5),
         listenFor: const Duration(seconds: 60),
       );
     });
