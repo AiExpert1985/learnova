@@ -154,13 +154,21 @@
 - **Future Upgrades:** Easy to swap to cloud providers (Google Cloud STT/TTS, ElevenLabs) by implementing interfaces
 
 ### Voice Recognition Text Capture Fix
-- **Problem:** Speech recognition wasn't reliably marking results as "final", causing recognized text to be lost
+- **Problem:** Speech recognition wasn't reliably marking results as "final", causing recognized text to be lost in both one-off and continuous listening modes
 - **Root Cause:** `finalText` only updated when `result.isFinal == true`, but STT service sometimes completes without final flag
-- **Solution:** Always update `finalText` with latest `recognizedText` on every stream event
-  - Before: `if (result.isFinal) { finalText = result.recognizedText; }`
-  - After: `finalText = result.recognizedText; // Always update with latest`
-- **Impact:** Voice input now reliably captures and sends text to LLM even when final flag not set
-- **Testing:** Added test `startListening captures last text even without isFinal flag` to verify fix
+- **Solution:** Always update `finalText` with latest `recognizedText` on every stream event (regardless of `isFinal` flag)
+  - **One-off mode** (`voice_notifier.dart:116`):
+    - Before: `if (result.isFinal) { finalText = result.recognizedText; }`
+    - After: `finalText = result.recognizedText; // Always update with latest`
+  - **Continuous mode** (`voice_service_impl.dart:177`):
+    - Before: `if (result.isFinal && result.recognizedText.trim().isNotEmpty) { finalRecognizedText = result.recognizedText; }`
+    - After: `if (result.recognizedText.trim().isNotEmpty) { finalRecognizedText = result.recognizedText; } // Always update with latest`
+- **Impact:** Both voice input modes now reliably capture and send text to LLM even when final flag not set
+- **Testing:** Added comprehensive tests for continuous listening mode:
+  - `captures recognized text even without isFinal flag` - Verifies text captured when STT doesn't set final flag
+  - `captures latest text when multiple results received` - Ensures latest partial result is used
+  - `does not capture empty or whitespace-only text` - Prevents triggering on silence/noise
+  - `stops continuous listening and cancels subscription` - Validates cleanup
 
 ### Voice-First Hands-Free UX
 **Philosophy:** Voice is primary interface, text is fallback for edge cases (accessibility, quiet environments).
@@ -232,15 +240,31 @@ listening → processing → speaking → waitingForNextQuestion → listening (
 
 **Why:**
 - One-off voice input (mic button) and continuous listening both need configurable silence detection
-- Default 3 seconds balances quick response vs. giving user time to complete thought
-- Consistent timeout behavior across all voice input methods
-- Prevents premature recognition cutoff during longer questions
+- Balanced timeout: 3 seconds for one-off input, 5 seconds for continuous mode
+- One-off mode (3s): Quick response for deliberate mic button press
+- Continuous mode (5s): Extra time for users to think mid-sentence without premature cutoff
+- Prevents recognition cutoff during longer questions or thinking pauses
 
 **Implementation:**
 - `VoiceService.startListening()` accepts optional `pauseFor` parameter
-- `VoiceNotifier.startListening()` passes 3-second default
-- Continuous mode uses same 3-second default for consistency
+- `VoiceNotifier.startListening()` passes 3-second default for one-off input
+- Continuous mode uses 5-second threshold for more natural speech patterns
 - STT service logs show actual timeout value for debugging
+
+**Continuous Mode Critical Fixes:**
+- **Async Flow Fix:**
+  - Problem: `speakAnswerAndResume()` returned immediately, breaking flow and causing premature video resume
+  - Solution: Added `Completer<void>` to await TTS completion
+  - Video timing: Waits TTS + grace period (5s) + buffer (2s) = 7s before resuming
+- **Cycle Restart Fix:**
+  - Problem: Listening stopped after silence or first question - never restarted
+  - Root cause: `onDone` handler only restarted cycle when text detected, not on silence
+  - Solution: Restart listening cycle on silence (500ms delay) to maintain continuous operation
+  - Impact: Truly continuous listening - works indefinitely across silence and multiple questions
+- **Callback Setup:**
+  - Callbacks (continuous mode, auto-speak, headphone) set up once in `initState()` via `_setupCallbacks()`
+  - Ensures callbacks ready before auto-enable or manual toggle
+- **Testing:** Added tests for silence handling, multiple question cycles, and state transitions
 
 **Emulator Testing Note:** Android emulator requires "Virtual microphone uses host audio input" setting enabled in AVD configuration. Speech recognition timeout (`error_speech_timeout`) without this setting is configuration issue, not code defect.
 
