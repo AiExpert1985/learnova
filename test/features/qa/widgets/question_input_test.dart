@@ -162,7 +162,13 @@ class FakeQANotifier extends QANotifier {
         qaService: FakeQAService(),
         youtubeService: FakeYouTubeService(),
         historyService: FakeHistoryService(),
-      );
+      ) {
+    // Initialize with video ready state to enable mic button in tests
+    state = state.copyWith(
+      isVideoInitialized: true,
+      isTranscriptLoaded: true,
+    );
+  }
 
   @override
   Future<void> askQuestion(
