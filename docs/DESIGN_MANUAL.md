@@ -13,8 +13,8 @@
 ### Current Status
 **Phase:** Step 8 - Clean Minimal UI (Complete)
 - **Core Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A
-- **Voice Features:** Voice-first UI with text fallback, Auto-speak answers for voice input, Continuous hands-free listening (auto-enabled by default), Headphone detection & enforcement, Video initialization safety controls
-- **UI/UX:** Bottom action bar with expandable states (URL/Ask/Chat), Large listening toggle button (ear icon, 100dp circular), Collapsible session history drawer (85% height), Clean minimal interface with video focus, Teal color scheme (Colors.teal.shade600)
+- **Voice Features:** Voice-first UI with text fallback, Auto-speak answers for voice input, Continuous hands-free listening (auto-enabled by default), Headphone detection & enforcement, Video initialization safety controls, Configurable silence detection (3s pauseFor)
+- **UI/UX:** Bottom action bar with expandable states (URL/Ask/Chat), Large listening toggle button with color-coded states (green=on, red=off, grey=disabled), Collapsible session history drawer (85% height), Skeletonizer loading shimmer for video, Clean minimal interface with video focus
 - **Storage:** Auto-save conversations, History retrieval, Auto-restore previous conversations, Clear all history, State persistence via Hive (preferences + history)
 - **Lifecycle:** App background handling, Resume dialog with preferences, Headphone disconnect auto-stop, State restoration on app resume
 - **Pending:** Auth, Multi-turn conversation context
@@ -202,6 +202,23 @@ listening → processing → speaking → waitingForNextQuestion → listening (
 - Clear visual feedback for each state
 - Maintains hands-free flow without awkward pauses
 
+### Voice Service Architecture
+**Decision:** Pass `pauseFor` parameter (silence detection timeout) through entire voice service stack.
+
+**Why:**
+- One-off voice input (mic button) and continuous listening both need configurable silence detection
+- Default 3 seconds balances quick response vs. giving user time to complete thought
+- Consistent timeout behavior across all voice input methods
+- Prevents premature recognition cutoff during longer questions
+
+**Implementation:**
+- `VoiceService.startListening()` accepts optional `pauseFor` parameter
+- `VoiceNotifier.startListening()` passes 3-second default
+- Continuous mode uses same 3-second default for consistency
+- STT service logs show actual timeout value for debugging
+
+**Emulator Testing Note:** Android emulator requires "Virtual microphone uses host audio input" setting enabled in AVD configuration. Speech recognition timeout (`error_speech_timeout`) without this setting is configuration issue, not code defect.
+
 ### Continuous Listening Mode & Video Audio Interference
 **Problem:** In continuous listening mode, microphone picks up video audio from device speakers, causing speech recognition to transcribe video content instead of user questions.
 
@@ -300,11 +317,17 @@ listening → processing → speaking → waitingForNextQuestion → listening (
   - Icons: `Icons.hearing` (active) / `Icons.hearing_disabled` (off)
   - Text: "Listening" / "Off" with state indicator below (Ready/Processing/Speaking/Waiting)
   - Auto-enabled when video fully initializes (both player ready + transcript loaded)
-  - Single teal color scheme (Colors.teal.shade600), disabled state uses grey
+  - Color-coded states for instant visual feedback:
+    - Green (Colors.green.shade600) when listening is ON
+    - Red (Colors.red.shade600) when listening is OFF
+    - Grey (Colors.grey.shade400) when disabled (no video)
   - Disabled with visual feedback until `isFullyInitialized` is true
+- **Video Loading Feedback:**
+  - Skeletonizer shimmer effect (16:9 aspect ratio) during `isLoadingVideo`
+  - Hides TranscriptHeader until video fully loads
+  - Smooth visual transition from loading to ready state
 - **Empty State:** "Add YouTube URL to Start the Learning Journey" centered in body when no video
 - **Auto-Enable Pattern:** Uses `didChangeDependencies` with flag (`_autoEnabledContinuousMode`) to detect when video becomes ready, auto-enables continuous mode once per video load
-- **Color Scheme:** Consistent teal (Colors.teal.shade600) throughout UI for cohesive visual identity
 - **Session History:** Only accessible via Chat button (bottom sheet), removed from main body to reduce clutter
 
 ### Development
