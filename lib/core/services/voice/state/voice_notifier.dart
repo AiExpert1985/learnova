@@ -113,10 +113,9 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
       _recognitionSubscription = stream.listen(
         (result) {
+          // Always update with latest recognized text
+          finalText = result.recognizedText;
           state = state.copyWith(recognizedText: result.recognizedText);
-          if (result.isFinal) {
-            finalText = result.recognizedText;
-          }
         },
         onError: (error) {
           state = state.copyWith(
