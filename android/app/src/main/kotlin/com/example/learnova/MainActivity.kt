@@ -1,5 +1,6 @@
 package com.example.learnova
 
+import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -69,8 +70,8 @@ class MainActivity : FlutterActivity() {
                         )
                     }
                     AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED,
-                    AudioManager.ACTION_ACL_CONNECTED,
-                    AudioManager.ACTION_ACL_DISCONNECTED -> {
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                    BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
                         val isConnected = checkHeadphonesConnected()
                         methodChannel?.invokeMethod(
                             "onHeadphoneConnectionChanged",
@@ -84,8 +85,8 @@ class MainActivity : FlutterActivity() {
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_HEADSET_PLUG)
             addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED)
-            addAction(AudioManager.ACTION_ACL_CONNECTED)
-            addAction(AudioManager.ACTION_ACL_DISCONNECTED)
+            addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+            addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
         }
 
         registerReceiver(headphoneReceiver, filter)
