@@ -14,6 +14,7 @@ import '../services/voice/state/voice_notifier.dart';
 import '../services/voice/state/voice_state.dart';
 import '../services/audio/audio_device_service.dart';
 import '../services/audio/audio_device_service_impl.dart';
+import '../services/storage/preferences_service.dart';
 import '../../features/qa/services/qa_service.dart';
 import '../../features/qa/state/qa_notifier.dart';
 import '../../features/qa/state/qa_state.dart';
@@ -99,4 +100,9 @@ final voiceNotifierProvider =
   final permissionService = ref.watch(permissionServiceProvider);
   final audioDeviceService = ref.watch(audioDeviceServiceProvider);
   return VoiceNotifier(voiceService, permissionService, audioDeviceService);
+});
+
+/// Provider for preferences service (state persistence)
+final preferencesServiceProvider = FutureProvider<PreferencesService>((ref) async {
+  return await PreferencesService.create();
 });

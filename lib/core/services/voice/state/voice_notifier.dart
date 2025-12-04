@@ -107,7 +107,9 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
       String? finalText;
       final completer = Completer<String?>();
-      final stream = _voiceService.startListening();
+      final stream = _voiceService.startListening(
+        pauseFor: const Duration(seconds: 3),
+      );
 
       _recognitionSubscription = stream.listen(
         (result) {

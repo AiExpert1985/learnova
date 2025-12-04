@@ -29,7 +29,7 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
-    )..repeat();
+    );
   }
 
   @override
@@ -39,11 +39,13 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
   }
 
   Future<void> _handleVoiceInput() async {
+    debugPrint('[VoiceButton] 🎤 Handle voice input triggered');
     final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
     final voiceState = ref.read(voiceNotifierProvider);
     final videoController = ref.read(youtubeControllerProvider);
 
     if (voiceState.isListening) {
+      debugPrint('[VoiceButton] 🛑 Stopping listening...');
       // Stop listening
       await voiceNotifier.stopListening();
 
@@ -54,16 +56,21 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
 
       // Send recognized text if available
       final recognizedText = ref.read(voiceNotifierProvider).recognizedText;
+      debugPrint('[VoiceButton] 📤 Sending recognized text: "$recognizedText"');
       if (recognizedText.isNotEmpty) {
         widget.onTextRecognized(recognizedText);
+      } else {
+        debugPrint('[VoiceButton] ⚠️  No text recognized');
       }
     } else {
+      debugPrint('[VoiceButton] ▶️  Starting listening...');
       // Pause video before listening
       if (videoController != null) {
         try {
           final playerState = await videoController.playerState;
           _wasVideoPlaying = playerState == PlayerState.playing;
           if (_wasVideoPlaying) {
+            debugPrint('[VoiceButton] ⏸️  Pausing video');
             await videoController.pauseVideo();
           }
         } catch (_) {
@@ -72,16 +79,24 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
       }
 
       // Start listening and get the final text
+      debugPrint('[VoiceButton] 👂 Awaiting recognition result...');
       final recognizedText = await voiceNotifier.startListening();
+      debugPrint('[VoiceButton] 📝 Recognition result: "$recognizedText"');
 
       // Resume video if it was playing before
       if (_wasVideoPlaying && videoController != null) {
+        debugPrint('[VoiceButton] ▶️  Resuming video');
         await videoController.playVideo();
       }
 
       // Send recognized text if available
       if (recognizedText != null && recognizedText.isNotEmpty) {
+        debugPrint(
+          '[VoiceButton] 📤 Sending recognized text to callback: "$recognizedText"',
+        );
         widget.onTextRecognized(recognizedText);
+      } else {
+        debugPrint('[VoiceButton] ⚠️  No text recognized or empty');
       }
     }
   }
@@ -91,6 +106,14 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
     final voiceState = ref.watch(voiceNotifierProvider);
     final qaState = ref.watch(qaNotifierProvider);
     final isVideoReady = qaState.isFullyInitialized;
+
+    // Control animation based on listening state
+    if (voiceState.isListening && !_animationController.isAnimating) {
+      _animationController.repeat();
+    } else if (!voiceState.isListening && _animationController.isAnimating) {
+      _animationController.stop();
+      _animationController.reset();
+    }
 
     // Show error as snackbar
     if (voiceState.error != null && voiceState.error!.isNotEmpty) {
@@ -130,19 +153,19 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
               },
             )
           : isVideoReady
-              ? const Icon(Icons.mic_none)
-              : const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+          ? const Icon(Icons.mic_none)
+          : const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
       color: voiceState.isListening ? Colors.red : Colors.blue,
       iconSize: 28,
       tooltip: !isVideoReady
           ? 'Loading video...'
           : voiceState.isListening
-              ? 'Stop listening'
-              : 'Start voice input',
+          ? 'Stop listening'
+          : 'Start voice input',
     );
   }
 }

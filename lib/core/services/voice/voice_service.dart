@@ -11,9 +11,11 @@ abstract class VoiceService {
   /// Start listening for voice input
   /// Automatically stops speaking if active
   /// Returns stream of recognition results
+  /// [pauseFor] Duration of silence to wait before finalizing (defaults to 3 seconds)
   Stream<SpeechRecognitionResult> startListening({
     String? localeId,
     Duration? listenDuration,
+    Duration? pauseFor,
   });
 
   /// Stop listening

@@ -4,6 +4,13 @@ import '../../../core/services/youtube/youtube_models.dart';
 /// Input method for questions
 enum InputMethod { voice, text }
 
+/// Bottom action bar state
+enum BottomBarState {
+  collapsed, // Shows 3 buttons: URL, Ask, Chat
+  urlExpanded, // Shows URL input field
+  askExpanded, // Shows Ask input field with mic
+}
+
 /// State for Q&A feature
 /// Manages video info, question history, and loading status
 class QAState {
@@ -17,6 +24,7 @@ class QAState {
   final bool isTranscriptLoaded;
   final bool isTextInputVisible;
   final InputMethod lastInputMethod;
+  final BottomBarState bottomBarState;
 
   const QAState({
     this.videoInfo,
@@ -29,6 +37,7 @@ class QAState {
     this.isTranscriptLoaded = false,
     this.isTextInputVisible = false,
     this.lastInputMethod = InputMethod.voice,
+    this.bottomBarState = BottomBarState.collapsed,
   });
 
   // Computed properties for backward compatibility
@@ -53,6 +62,7 @@ class QAState {
     bool? isTranscriptLoaded,
     bool? isTextInputVisible,
     InputMethod? lastInputMethod,
+    BottomBarState? bottomBarState,
   }) {
     return QAState(
       videoInfo: videoInfo ?? this.videoInfo,
@@ -65,6 +75,7 @@ class QAState {
       isTranscriptLoaded: isTranscriptLoaded ?? this.isTranscriptLoaded,
       isTextInputVisible: isTextInputVisible ?? this.isTextInputVisible,
       lastInputMethod: lastInputMethod ?? this.lastInputMethod,
+      bottomBarState: bottomBarState ?? this.bottomBarState,
     );
   }
 

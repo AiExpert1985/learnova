@@ -33,6 +33,7 @@ class VoiceServiceImpl implements VoiceService {
   Stream<SpeechRecognitionResult> startListening({
     String? localeId,
     Duration? listenDuration,
+    Duration? pauseFor,
   }) {
     if (!_isInitialized) {
       throw VoiceException(
@@ -49,6 +50,7 @@ class VoiceServiceImpl implements VoiceService {
     return _sttService.startListening(
       localeId: localeId,
       listenDuration: listenDuration,
+      pauseFor: pauseFor,
     );
   }
 

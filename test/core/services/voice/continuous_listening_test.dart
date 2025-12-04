@@ -202,6 +202,7 @@ class MockVoiceService implements VoiceService {
   Stream<SpeechRecognitionResult> startListening({
     String? localeId,
     Duration? listenDuration,
+    Duration? pauseFor,
   }) {
     _isListening = true;
     return Stream.fromIterable([
