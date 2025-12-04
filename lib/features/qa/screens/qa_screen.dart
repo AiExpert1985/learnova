@@ -66,7 +66,7 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
         // App going to background - pause continuous mode
         if (voiceState.isContinuousModeEnabled) {
           _wasInContinuousMode = true;
-          voiceNotifier.toggleContinuousMode();
+          voiceNotifier.stopContinuousMode();
         }
         break;
       case AppLifecycleState.resumed:
