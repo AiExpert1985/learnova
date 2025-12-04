@@ -1,7 +1,6 @@
 /// Voice input button for speech-to-text
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -92,7 +91,9 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
 
       // Send recognized text if available
       if (recognizedText != null && recognizedText.isNotEmpty) {
-        debugPrint('[VoiceButton] 📤 Sending recognized text to callback: "$recognizedText"');
+        debugPrint(
+          '[VoiceButton] 📤 Sending recognized text to callback: "$recognizedText"',
+        );
         widget.onTextRecognized(recognizedText);
       } else {
         debugPrint('[VoiceButton] ⚠️  No text recognized or empty');
@@ -152,19 +153,19 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
               },
             )
           : isVideoReady
-              ? const Icon(Icons.mic_none)
-              : const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+          ? const Icon(Icons.mic_none)
+          : const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
       color: voiceState.isListening ? Colors.red : Colors.blue,
       iconSize: 28,
       tooltip: !isVideoReady
           ? 'Loading video...'
           : voiceState.isListening
-              ? 'Stop listening'
-              : 'Start voice input',
+          ? 'Stop listening'
+          : 'Start voice input',
     );
   }
 }
