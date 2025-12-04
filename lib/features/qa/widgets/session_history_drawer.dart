@@ -20,7 +20,7 @@ class SessionHistoryDrawer extends ConsumerWidget {
     final history = qaState.history;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
+      height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
