@@ -29,7 +29,7 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
-    )..repeat();
+    );
   }
 
   @override
@@ -91,6 +91,14 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
     final voiceState = ref.watch(voiceNotifierProvider);
     final qaState = ref.watch(qaNotifierProvider);
     final isVideoReady = qaState.isFullyInitialized;
+
+    // Control animation based on listening state
+    if (voiceState.isListening && !_animationController.isAnimating) {
+      _animationController.repeat();
+    } else if (!voiceState.isListening && _animationController.isAnimating) {
+      _animationController.stop();
+      _animationController.reset();
+    }
 
     // Show error as snackbar
     if (voiceState.error != null && voiceState.error!.isNotEmpty) {

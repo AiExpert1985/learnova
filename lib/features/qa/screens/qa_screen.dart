@@ -11,6 +11,7 @@ import '../widgets/video_player.dart';
 import '../widgets/continuous_mode_toggle.dart';
 import '../widgets/continuous_listening_indicator.dart';
 import '../widgets/headphone_required_dialog.dart';
+import '../widgets/session_history_drawer.dart';
 import '../../history/ui/widgets/history_bottom_sheet.dart';
 import '../../history/providers/history_providers.dart';
 
@@ -22,10 +23,14 @@ class QAScreen extends ConsumerStatefulWidget {
   ConsumerState<QAScreen> createState() => _QAScreenState();
 }
 
-class _QAScreenState extends ConsumerState<QAScreen> {
+class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver {
+  bool _wasInContinuousMode = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
     // Set up callbacks
     Future.microtask(() {
       final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
@@ -43,6 +48,65 @@ class _QAScreenState extends ConsumerState<QAScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
+    final voiceState = ref.read(voiceNotifierProvider);
+
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        // App going to background - pause continuous mode
+        if (voiceState.isContinuousModeEnabled) {
+          _wasInContinuousMode = true;
+          voiceNotifier.toggleContinuousMode();
+        }
+        break;
+      case AppLifecycleState.resumed:
+        // App returning to foreground - optionally resume
+        if (_wasInContinuousMode && mounted) {
+          _wasInContinuousMode = false;
+          _showResumeDialog();
+        }
+        break;
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        break;
+    }
+  }
+
+  void _showResumeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Resume Continuous Mode?'),
+        content: const Text(
+          'Continuous listening was paused when you left the app. Would you like to resume?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('No'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _handleContinuousModeToggle();
+            },
+            child: const Text('Resume'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showHistoryBottomSheet(BuildContext context) {
     // Refresh history before showing
     ref.read(historyNotifierProvider.notifier).loadHistory();
@@ -54,6 +118,20 @@ class _QAScreenState extends ConsumerState<QAScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => const HistoryBottomSheet(),
+    );
+  }
+
+  void _showSessionHistoryDrawer(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.transparent,
+      builder: (context) => SessionHistoryDrawer(
+        onClose: () => Navigator.of(context).pop(),
+      ),
     );
   }
 
@@ -95,6 +173,16 @@ class _QAScreenState extends ConsumerState<QAScreen> {
           ),
         ],
       ),
+      floatingActionButton: qaState.hasVideo && qaState.history.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: () => _showSessionHistoryDrawer(context),
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: Text('${qaState.history.length}'),
+              tooltip: 'View Session History',
+              backgroundColor: Colors.blue.shade700,
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
         bottom: true,
         child: Column(
