@@ -11,9 +11,11 @@
 **Platform:** Flutter (iOS, Android, Web).
 
 ### Current Status
-**Phase:** Step 6 - Continuous Listening Mode (Complete)
-- **Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A, Voice input (STT), Voice output (TTS), Continuous hands-free listening (headphones-only MVP), Auto-save conversations, History retrieval, Auto-restore previous conversations, Clear all history.
-- **Pending:** Auth, Multi-turn conversation context, Video auto-pause option.
+**Phase:** Step 7 - Voice-First Hands-Free Experience (Complete)
+- **Core Features:** YouTube URL loading, Transcript fetching with timestamps, Video playback, Position-aware Q&A, GPT-4o-mini Q&A
+- **Voice Features:** Voice-first UI with text fallback, Auto-speak answers for voice input, Continuous hands-free listening with grace period, Headphone detection & enforcement, Video initialization safety controls
+- **Storage:** Auto-save conversations, History retrieval, Auto-restore previous conversations, Clear all history
+- **Pending:** Collapsible session history drawer, Lifecycle management, Auth, Multi-turn conversation context
 
 ---
 
@@ -149,6 +151,55 @@
 - **Provider Pattern:** Voice controller exposed via `youtubeControllerProvider` for cross-widget coordination
 - **Future Upgrades:** Easy to swap to cloud providers (Google Cloud STT/TTS, ElevenLabs) by implementing interfaces
 
+### Voice-First Hands-Free UX
+**Philosophy:** Voice is primary interface, text is fallback for edge cases (accessibility, quiet environments).
+
+**Implementation:**
+
+1. **Voice-First UI Design**
+   - Text input hidden by default, prominent mic button displayed
+   - "Type instead?" reveals text input on demand with smooth animation
+   - Input method tracking (`InputMethod.voice` vs `InputMethod.text`) in state
+
+2. **Auto-Speak for Voice Questions**
+   - Answers automatically spoken when question asked via voice (tap-to-listen or continuous mode)
+   - Text input answers NOT auto-spoken (respects user environment constraints)
+   - Uses existing TTS completion handlers for lifecycle management
+
+3. **Headphone Detection & Enforcement**
+   - Platform-specific implementation: `AudioDeviceService` interface
+   - **Android:** `AudioManager.getDevices()` checks wired/Bluetooth headphones (API 23+)
+   - **iOS:** `AVAudioSession.currentRoute.outputs` checks audio routes
+   - Continuous mode blocked without headphones (shows clear dialog explaining why)
+   - Auto-stops continuous mode if headphones disconnect during session
+   - Monitors connection changes via broadcast receivers (Android) / notifications (iOS)
+
+4. **Video Initialization Safety**
+   - Tracks `isVideoInitialized` (player ready) + `isTranscriptLoaded` separately
+   - Mic button and continuous mode toggle disabled until both ready (`isFullyInitialized`)
+   - Shows loading indicators on disabled controls with tooltips
+   - Prevents errors from premature user interaction
+
+5. **Grace Period Auto-Resume**
+   - New state: `ContinuousListeningState.waitingForNextQuestion` (purple indicator)
+   - After TTS completes → 5-second grace period → auto-resume listening + video playback
+   - Grace period cancellable: User speaks during waiting → processes new question immediately
+   - Timer cleanup on mode exit prevents memory leaks
+   - Visual feedback: "Ready for next question..." with hourglass icon
+
+**State Flow:**
+```
+listening → processing → speaking → waitingForNextQuestion → listening (cycle repeats)
+                                    ↑ (5s grace period)
+```
+
+**Why This Design:**
+- Solves TTS-variable duration problem (answers vary in length)
+- Natural interaction rhythm (no arbitrary fixed delays)
+- Allows rapid-fire questions (cancel timer during grace period)
+- Clear visual feedback for each state
+- Maintains hands-free flow without awkward pauses
+
 ### Continuous Listening Mode & Video Audio Interference
 **Problem:** In continuous listening mode, microphone picks up video audio from device speakers, causing speech recognition to transcribe video content instead of user questions.
 
@@ -238,8 +289,12 @@
 ## Future Features
 
 ### Voice Enhancements
-- ✅ Continuous listening mode (Complete - headphones-only MVP)
-- Video auto-pause option for speaker mode (Phase 2 - post-MVP)
+- ✅ Voice-first UI with text fallback (Complete)
+- ✅ Auto-speak for voice questions (Complete)
+- ✅ Continuous listening with grace period (Complete)
+- ✅ Headphone detection & enforcement (Complete)
+- Collapsible current session history drawer (In Progress)
+- Lifecycle management (app background, interruptions)
 - Wake word detection (deferred - adds friction to learning UX)
 - Multi-language support
 
