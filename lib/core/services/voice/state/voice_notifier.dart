@@ -123,12 +123,13 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
       _recognitionSubscription = stream.listen(
         (result) {
+          // Always update with latest recognized text
+          finalText = result.recognizedText;
           state = state.copyWith(recognizedText: result.recognizedText);
           if (result.recognizedText.isNotEmpty) {
             _onDebugMessage?.call('🗣️ Voice detected: "${result.recognizedText}"');
           }
           if (result.isFinal) {
-            finalText = result.recognizedText;
             _onDebugMessage?.call('✅ Voice-to-text complete: "$finalText"');
           }
         },
@@ -144,6 +145,10 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
           }
         },
         onDone: () {
+          // Show completion message with the final recognized text
+          if (finalText != null && finalText!.isNotEmpty) {
+            _onDebugMessage?.call('✅ Voice-to-text complete: "$finalText"');
+          }
           state = state.copyWith(
             isListening: false,
             recognitionState: SpeechRecognitionState.idle,

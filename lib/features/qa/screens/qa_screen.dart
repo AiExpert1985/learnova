@@ -183,6 +183,12 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
   }
 
   void _showSessionHistoryDrawer(BuildContext context) async {
+    // Stop continuous listening mode if active
+    final voiceState = ref.read(voiceNotifierProvider);
+    if (voiceState.isContinuousModeEnabled) {
+      await ref.read(voiceNotifierProvider.notifier).stopContinuousMode();
+    }
+
     // Pause video when chat opens
     final videoController = ref.read(youtubeControllerProvider);
     bool wasPlaying = false;
@@ -193,6 +199,9 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
         await videoController.pauseVideo();
       }
     }
+
+    // Check if widget is still mounted before using context
+    if (!mounted) return;
 
     await showModalBottomSheet(
       context: context,
