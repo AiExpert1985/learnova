@@ -2,6 +2,7 @@
 library;
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'stt_service.dart';
 import 'voice_models.dart';
@@ -14,14 +15,20 @@ class FlutterSTTService implements STTService {
 
   @override
   Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized) {
+      debugPrint('[STT] Already initialized');
+      return;
+    }
 
+    debugPrint('[STT] Initializing speech recognition...');
     try {
       final available = await _speech.initialize(
         onError: (error) {
+          debugPrint('[STT] Error during recognition: ${error.errorMsg}');
           _handleError(error.errorMsg);
         },
         onStatus: (status) {
+          debugPrint('[STT] Status changed: $status');
           if (status == 'done' || status == 'notListening') {
             _isListening = false;
             _resultController?.close();
@@ -31,6 +38,7 @@ class FlutterSTTService implements STTService {
       );
 
       if (!available) {
+        debugPrint('[STT] Speech recognition not available on device');
         throw VoiceException(
           'Speech recognition not available on this device',
           VoiceErrorType.notAvailable,
@@ -38,7 +46,9 @@ class FlutterSTTService implements STTService {
       }
 
       _isInitialized = true;
+      debugPrint('[STT] ✅ Initialization successful');
     } catch (e) {
+      debugPrint('[STT] ❌ Initialization failed: $e');
       throw VoiceException(
         'Failed to initialize speech recognition: $e',
         VoiceErrorType.initialization,
@@ -52,7 +62,10 @@ class FlutterSTTService implements STTService {
     Duration? listenDuration,
     Duration? pauseFor,
   }) {
+    debugPrint('[STT] 🎤 Start listening requested (locale: $localeId, pauseFor: ${pauseFor?.inSeconds}s)');
+
     if (!_isInitialized) {
+      debugPrint('[STT] ❌ Cannot start - not initialized');
       throw VoiceException(
         'STT service not initialized. Call initialize() first.',
         VoiceErrorType.initialization,
@@ -60,14 +73,18 @@ class FlutterSTTService implements STTService {
     }
 
     if (_isListening) {
+      debugPrint('[STT] ⚠️  Already listening');
       throw VoiceException('Already listening', VoiceErrorType.unknown);
     }
 
     _resultController = StreamController<SpeechRecognitionResult>();
     _isListening = true;
+    debugPrint('[STT] ✅ Listening started');
 
     _speech.listen(
       onResult: (result) {
+        debugPrint('[STT] 📝 Result: "${result.recognizedWords}" (confidence: ${result.confidence}, final: ${result.finalResult})');
+
         final recognitionResult = SpeechRecognitionResult(
           recognizedText: result.recognizedWords,
           confidence: result.confidence,
@@ -78,6 +95,7 @@ class FlutterSTTService implements STTService {
 
         // Close stream on final result
         if (result.finalResult) {
+          debugPrint('[STT] ✅ Final result received, closing stream');
           _isListening = false;
           _resultController?.close();
         }

@@ -202,15 +202,15 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
               ),
             if (qaState.videoError != null && qaState.videoError!.isNotEmpty)
               ErrorBanner(error: qaState.videoError!),
-            if (qaState.hasVideo)
-              const Expanded(child: QAHistoryList())
-            else
-              Expanded(
-                child: EmptyState(
-                  icon: Icons.video_library_outlined,
-                  message: 'Paste a YouTube URL and press play to start',
-                ),
-              ),
+            // Empty space for clean UI - history accessed via bottom bar
+            Expanded(
+              child: qaState.hasVideo
+                  ? const SizedBox() // Clean empty space when video loaded
+                  : EmptyState(
+                      icon: Icons.video_library_outlined,
+                      message: 'Add YouTube URL to Start the Learning Journey',
+                    ),
+            ),
             if (qaState.hasVideo)
               Column(
                 children: [

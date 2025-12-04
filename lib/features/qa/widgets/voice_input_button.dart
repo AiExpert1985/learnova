@@ -1,6 +1,7 @@
 /// Voice input button for speech-to-text
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -39,11 +40,13 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
   }
 
   Future<void> _handleVoiceInput() async {
+    debugPrint('[VoiceButton] 🎤 Handle voice input triggered');
     final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
     final voiceState = ref.read(voiceNotifierProvider);
     final videoController = ref.read(youtubeControllerProvider);
 
     if (voiceState.isListening) {
+      debugPrint('[VoiceButton] 🛑 Stopping listening...');
       // Stop listening
       await voiceNotifier.stopListening();
 
@@ -54,16 +57,21 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
 
       // Send recognized text if available
       final recognizedText = ref.read(voiceNotifierProvider).recognizedText;
+      debugPrint('[VoiceButton] 📤 Sending recognized text: "$recognizedText"');
       if (recognizedText.isNotEmpty) {
         widget.onTextRecognized(recognizedText);
+      } else {
+        debugPrint('[VoiceButton] ⚠️  No text recognized');
       }
     } else {
+      debugPrint('[VoiceButton] ▶️  Starting listening...');
       // Pause video before listening
       if (videoController != null) {
         try {
           final playerState = await videoController.playerState;
           _wasVideoPlaying = playerState == PlayerState.playing;
           if (_wasVideoPlaying) {
+            debugPrint('[VoiceButton] ⏸️  Pausing video');
             await videoController.pauseVideo();
           }
         } catch (_) {
@@ -72,16 +80,22 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton>
       }
 
       // Start listening and get the final text
+      debugPrint('[VoiceButton] 👂 Awaiting recognition result...');
       final recognizedText = await voiceNotifier.startListening();
+      debugPrint('[VoiceButton] 📝 Recognition result: "$recognizedText"');
 
       // Resume video if it was playing before
       if (_wasVideoPlaying && videoController != null) {
+        debugPrint('[VoiceButton] ▶️  Resuming video');
         await videoController.playVideo();
       }
 
       // Send recognized text if available
       if (recognizedText != null && recognizedText.isNotEmpty) {
+        debugPrint('[VoiceButton] 📤 Sending recognized text to callback: "$recognizedText"');
         widget.onTextRecognized(recognizedText);
+      } else {
+        debugPrint('[VoiceButton] ⚠️  No text recognized or empty');
       }
     }
   }

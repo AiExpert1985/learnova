@@ -122,17 +122,28 @@ class QANotifier extends StateNotifier<QAState> {
     bool isContinuousMode = false,
     InputMethod? inputMethod,
   }) async {
+    debugPrint('[QANotifier] 🎯 askQuestion called with: "$questionText"');
+    debugPrint('[QANotifier]   - isContinuousMode: $isContinuousMode');
+    debugPrint('[QANotifier]   - inputMethod: $inputMethod');
+
     final trimmedQuestion = questionText.trim();
-    if (trimmedQuestion.isEmpty) return;
+    if (trimmedQuestion.isEmpty) {
+      debugPrint('[QANotifier] ⚠️  Question is empty, ignoring');
+      return;
+    }
 
     // Check if video is loaded
     if (!state.hasVideo) {
+      debugPrint('[QANotifier] ❌ No video loaded, cannot ask question');
       return;
     }
+
+    debugPrint('[QANotifier] ✅ Video loaded: ${state.videoTitle}');
 
     // Capture video position WHEN question is asked
     final videoPositionAtQuestion = state.currentPosition.inSeconds.toDouble();
     final questionTimestamp = DateTime.now();
+    debugPrint('[QANotifier] 📍 Video position: ${videoPositionAtQuestion}s');
 
     // Track input method
     final method = inputMethod ?? state.lastInputMethod;
@@ -146,11 +157,20 @@ class QANotifier extends StateNotifier<QAState> {
     final transcript = state.currentPosition.inSeconds > 10
         ? state.videoInfo!.getTranscriptUpTo(state.currentPosition)
         : state.videoInfo!.getFullTranscript();
+    debugPrint('[QANotifier] 📄 Using transcript length: ${transcript.length} chars');
 
+    debugPrint('[QANotifier] 🌐 Calling QA service...');
     final result = await _qaService.askQuestion(
       transcript: transcript,
       questionText: trimmedQuestion,
     );
+    debugPrint('[QANotifier] 📥 QA service response received');
+
+    if (result.answer != null) {
+      debugPrint('[QANotifier] ✅ Answer: "${result.answer!.text.substring(0, result.answer!.text.length > 50 ? 50 : result.answer!.text.length)}..."');
+    } else if (result.error != null) {
+      debugPrint('[QANotifier] ❌ Error: ${result.error}');
+    }
 
     final newEntry = QAHistoryEntry(
       question: trimmedQuestion,
@@ -165,6 +185,7 @@ class QANotifier extends StateNotifier<QAState> {
       isLoadingAnswer: false,
       history: [...state.history, newEntry],
     );
+    debugPrint('[QANotifier] 📝 Added to history (total: ${state.history.length} entries)');
 
     // Auto-save conversation to history after successful Q&A
     if (newEntry.hasAnswer) {
@@ -172,13 +193,17 @@ class QANotifier extends StateNotifier<QAState> {
 
       // In continuous mode, trigger TTS for the answer
       if (isContinuousMode && _onAnswerReadyForSpeech != null) {
+        debugPrint('[QANotifier] 🔊 Triggering TTS for continuous mode');
         _onAnswerReadyForSpeech!(newEntry.answer!);
       }
       // Auto-speak for voice input (not continuous mode)
       else if (!isContinuousMode &&
           method == InputMethod.voice &&
           _onAutoSpeakCallback != null) {
+        debugPrint('[QANotifier] 🔊 Triggering auto-speak for voice input');
         _onAutoSpeakCallback!(newEntry.answer!);
+      } else {
+        debugPrint('[QANotifier] 🔇 No TTS triggered (method: $method, callbacks set: ${_onAutoSpeakCallback != null})');
       }
     }
   }

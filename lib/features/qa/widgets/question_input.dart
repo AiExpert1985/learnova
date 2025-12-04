@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
@@ -33,8 +34,13 @@ class _QuestionInputState extends ConsumerState<QuestionInput> {
   }
 
   void _handleVoiceQuestion(String text) {
+    debugPrint('[QuestionInput] 📬 Received voice question: "$text"');
     // Voice input submits directly
-    if (text.trim().isEmpty) return;
+    if (text.trim().isEmpty) {
+      debugPrint('[QuestionInput] ⚠️  Voice question is empty, ignoring');
+      return;
+    }
+    debugPrint('[QuestionInput] ➡️  Sending to QA notifier...');
     ref
         .read(qaNotifierProvider.notifier)
         .askQuestion(text, inputMethod: InputMethod.voice);
