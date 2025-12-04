@@ -251,11 +251,20 @@ listening → processing → speaking → waitingForNextQuestion → listening (
 - Continuous mode uses 5-second threshold for more natural speech patterns
 - STT service logs show actual timeout value for debugging
 
-**Continuous Mode Async Flow Fix:**
-- **Problem:** `speakAnswerAndResume()` returned immediately after setting up TTS stream, causing video to resume before answer was spoken
-- **Solution:** Added `Completer<void>` to make function properly awaitable - now waits for TTS to complete before returning
-- **Video Resume Timing:** Waits for TTS completion + grace period (5s) + buffer (2s) = 7s total before resuming video
-- **Impact:** Video stays paused during entire answer cycle, ensuring user hears complete answer without interference
+**Continuous Mode Critical Fixes:**
+- **Async Flow Fix:**
+  - Problem: `speakAnswerAndResume()` returned immediately, breaking flow and causing premature video resume
+  - Solution: Added `Completer<void>` to await TTS completion
+  - Video timing: Waits TTS + grace period (5s) + buffer (2s) = 7s before resuming
+- **Cycle Restart Fix:**
+  - Problem: Listening stopped after silence or first question - never restarted
+  - Root cause: `onDone` handler only restarted cycle when text detected, not on silence
+  - Solution: Restart listening cycle on silence (500ms delay) to maintain continuous operation
+  - Impact: Truly continuous listening - works indefinitely across silence and multiple questions
+- **Callback Setup:**
+  - Callbacks (continuous mode, auto-speak, headphone) set up once in `initState()` via `_setupCallbacks()`
+  - Ensures callbacks ready before auto-enable or manual toggle
+- **Testing:** Added tests for silence handling, multiple question cycles, and state transitions
 
 **Emulator Testing Note:** Android emulator requires "Virtual microphone uses host audio input" setting enabled in AVD configuration. Speech recognition timeout (`error_speech_timeout`) without this setting is configuration issue, not code defect.
 

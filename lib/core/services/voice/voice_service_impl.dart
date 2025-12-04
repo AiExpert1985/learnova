@@ -193,11 +193,25 @@ class VoiceServiceImpl implements VoiceService {
       },
       onDone: () {
         // When listening completes (silence detected or timeout)
-        if (_isContinuousListening && finalRecognizedText != null) {
+        if (!_isContinuousListening) return;
+
+        if (finalRecognizedText != null) {
           // Invoke callback with recognized text
           onQuestionDetected(finalRecognizedText!);
+          // Note: The callback handler will resume listening after processing
+        } else {
+          // No text detected (silence/timeout) - restart listening immediately
+          // This keeps continuous mode truly continuous
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (_isContinuousListening) {
+              _startListeningCycle(
+                onQuestionDetected: onQuestionDetected,
+                pauseFor: pauseFor,
+                listenFor: listenFor,
+              );
+            }
+          });
         }
-        // Note: The callback handler should resume listening when ready
       },
     );
   }

@@ -36,20 +36,51 @@ class _QAScreenState extends ConsumerState<QAScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Set up callbacks
-    Future.microtask(() {
-      final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
-      final qaNotifier = ref.read(qaNotifierProvider.notifier);
+    // Set up callbacks immediately
+    Future.microtask(() => _setupCallbacks());
+  }
 
-      // Headphone required callback
-      voiceNotifier.setHeadphoneRequiredCallback(() {
-        showHeadphoneRequiredDialog(context);
-      });
+  /// Set up all voice and QA callbacks
+  void _setupCallbacks() {
+    final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
+    final qaNotifier = ref.read(qaNotifierProvider.notifier);
 
-      // Auto-speak callback for voice input answers
-      qaNotifier.setAutoSpeakCallback((answer) {
-        voiceNotifier.speak(answer);
-      });
+    // Headphone required callback
+    voiceNotifier.setHeadphoneRequiredCallback(() {
+      showHeadphoneRequiredDialog(context);
+    });
+
+    // Auto-speak callback for voice input answers
+    qaNotifier.setAutoSpeakCallback((answer) {
+      voiceNotifier.speak(answer);
+    });
+
+    // Continuous mode callback for speaking answers
+    _setupContinuousModeCallback();
+  }
+
+  /// Set up continuous mode callback (called once during init)
+  void _setupContinuousModeCallback() {
+    final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
+    final qaNotifier = ref.read(qaNotifierProvider.notifier);
+    final videoController = ref.read(youtubeControllerProvider);
+
+    qaNotifier.setContinuousModeCallback((answer) async {
+      // Speak answer and start grace period (video remains paused)
+      await voiceNotifier.speakAnswerAndResume(answer);
+
+      // Wait for grace period (5s) + buffer (2s) = 7s total
+      await Future.delayed(const Duration(seconds: 7));
+
+      if (videoController != null) {
+        final voiceState = ref.read(voiceNotifierProvider);
+        // Only resume if still in continuous mode and listening state
+        if (voiceState.isContinuousModeEnabled &&
+            voiceState.continuousListeningState ==
+                ContinuousListeningState.listening) {
+          await videoController.playVideo();
+        }
+      }
     });
   }
 
@@ -203,27 +234,6 @@ class _QAScreenState extends ConsumerState<QAScreen>
     final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
     final qaNotifier = ref.read(qaNotifierProvider.notifier);
     final videoController = ref.read(youtubeControllerProvider);
-
-    // Set up the callback for QA notifier to speak answers
-    qaNotifier.setContinuousModeCallback((answer) async {
-      // Speak answer and start grace period (video remains paused)
-      // This waits for TTS to complete
-      await voiceNotifier.speakAnswerAndResume(answer);
-
-      // Wait for grace period (5s) + buffer (2s) = 7s total
-      // This ensures listening has resumed before we resume video
-      await Future.delayed(const Duration(seconds: 7));
-
-      if (videoController != null) {
-        final voiceState = ref.read(voiceNotifierProvider);
-        // Only resume if still in continuous mode and listening state
-        if (voiceState.isContinuousModeEnabled &&
-            voiceState.continuousListeningState ==
-                ContinuousListeningState.listening) {
-          await videoController.playVideo();
-        }
-      }
-    });
 
     await voiceNotifier.toggleContinuousMode(
       onQuestion: (question) async {

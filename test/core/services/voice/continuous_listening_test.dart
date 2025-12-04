@@ -461,7 +461,7 @@ void main() {
       expect(detectedQuestion, 'What is machine learning?');
     });
 
-    test('transitions to speaking state when answer ready', () async {
+    test('transitions through speaking to grace period state', () async {
       await Future.delayed(const Duration(milliseconds: 100));
 
       await voiceNotifier.startContinuousMode(
@@ -469,11 +469,14 @@ void main() {
         onAnswerReady: (_) {},
       );
 
+      // speakAnswerAndResume now awaits TTS completion
+      // So by the time it returns, we're in grace period state
       await voiceNotifier.speakAnswerAndResume('Machine learning is...');
 
+      // After TTS completes, should be in grace period waiting for next question
       expect(
         voiceNotifier.state.continuousListeningState,
-        ContinuousListeningState.speaking,
+        ContinuousListeningState.waitingForNextQuestion,
       );
     });
 

@@ -308,8 +308,177 @@ void main() {
         expect(voiceService.isContinuousListening, false);
         expect(mockSTTService.isListening, false);
       });
+
+      test('restarts listening cycle when no text detected (silence)',
+          () async {
+        await voiceService.initialize();
+
+        // Create mock that simulates silence (no text)
+        final mockSTTSilence = MockSTTServiceWithSilence();
+        final voiceServiceWithMock = VoiceServiceImpl(
+          sttService: mockSTTSilence,
+          ttsService: mockTTSService,
+        );
+        await voiceServiceWithMock.initialize();
+
+        int questionDetectedCount = 0;
+
+        voiceServiceWithMock.startContinuousListening(
+          onQuestionDetected: (text) {
+            questionDetectedCount++;
+          },
+          pauseFor: const Duration(seconds: 3),
+          listenFor: const Duration(seconds: 60),
+        );
+
+        // Wait for first silence cycle
+        await Future.delayed(const Duration(milliseconds: 200));
+
+        // No question should be detected
+        expect(questionDetectedCount, 0);
+
+        // But listening should restart (check call count increased)
+        expect(mockSTTSilence.startListeningCallCount, greaterThan(1));
+      });
+
+      test('handles multiple question cycles correctly', () async {
+        await voiceService.initialize();
+
+        // Create mock that simulates multiple questions
+        final mockSTTMultiple = MockSTTServiceMultipleQuestions();
+        final voiceServiceWithMock = VoiceServiceImpl(
+          sttService: mockSTTMultiple,
+          ttsService: mockTTSService,
+        );
+        await voiceServiceWithMock.initialize();
+
+        final detectedQuestions = <String>[];
+
+        voiceServiceWithMock.startContinuousListening(
+          onQuestionDetected: (text) {
+            detectedQuestions.add(text);
+          },
+          pauseFor: const Duration(seconds: 3),
+          listenFor: const Duration(seconds: 60),
+        );
+
+        // Wait for multiple cycles
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        // Should detect multiple questions across cycles
+        expect(detectedQuestions.length, greaterThan(1));
+      });
     });
   });
+}
+
+/// Mock STT Service that simulates silence (empty results)
+class MockSTTServiceWithSilence implements STTService {
+  bool _isListening = false;
+  int startListeningCallCount = 0;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Stream<SpeechRecognitionResult> startListening({
+    String? localeId,
+    Duration? listenDuration,
+    Duration? pauseFor,
+  }) {
+    _isListening = true;
+    startListeningCallCount++;
+    // Return empty stream (silence - no text detected)
+    return Stream.value(
+      SpeechRecognitionResult(
+        recognizedText: '',
+        confidence: 0.0,
+        isFinal: false,
+      ),
+    );
+  }
+
+  @override
+  Future<void> stopListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<void> cancelListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<bool> isAvailable() async => true;
+
+  @override
+  bool get isListening => _isListening;
+
+  @override
+  Future<List<String>> getSupportedLocales() async => ['en-US'];
+
+  @override
+  Future<void> dispose() async {}
+}
+
+/// Mock STT Service that simulates multiple questions across cycles
+class MockSTTServiceMultipleQuestions implements STTService {
+  bool _isListening = false;
+  int _cycleCount = 0;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Stream<SpeechRecognitionResult> startListening({
+    String? localeId,
+    Duration? listenDuration,
+    Duration? pauseFor,
+  }) {
+    _isListening = true;
+    _cycleCount++;
+
+    // Alternate between questions and silence
+    if (_cycleCount % 2 == 1) {
+      return Stream.value(
+        SpeechRecognitionResult(
+          recognizedText: 'question $_cycleCount',
+          confidence: 0.9,
+          isFinal: false,
+        ),
+      );
+    } else {
+      return Stream.value(
+        SpeechRecognitionResult(
+          recognizedText: '',
+          confidence: 0.0,
+          isFinal: false,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<void> stopListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<void> cancelListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<bool> isAvailable() async => true;
+
+  @override
+  bool get isListening => _isListening;
+
+  @override
+  Future<List<String>> getSupportedLocales() async => ['en-US'];
+
+  @override
+  Future<void> dispose() async {}
 }
 
 /// Mock STT Service that emits result without isFinal flag
