@@ -8,7 +8,6 @@ import '../widgets/error_banner.dart';
 import '../widgets/video_player.dart';
 import '../widgets/continuous_listening_indicator.dart';
 import '../widgets/headphone_required_dialog.dart';
-import '../widgets/session_history_drawer.dart';
 import '../widgets/chat_bottom_sheet.dart';
 import '../widgets/bottom_action_bar.dart';
 import '../widgets/listening_toggle_button.dart';
@@ -26,7 +25,8 @@ class QAScreen extends ConsumerStatefulWidget {
   ConsumerState<QAScreen> createState() => _QAScreenState();
 }
 
-class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver {
+class _QAScreenState extends ConsumerState<QAScreen>
+    with WidgetsBindingObserver {
   bool _wasInContinuousMode = false;
 
   bool _autoEnabledContinuousMode = false;
@@ -86,7 +86,8 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
   /// Auto-enable listening mode based on headphone connection
   Future<void> _autoEnableListeningMode() async {
     final audioDeviceService = ref.read(audioDeviceServiceProvider);
-    final areHeadphonesConnected = await audioDeviceService.areHeadphonesConnected();
+    final areHeadphonesConnected = await audioDeviceService
+        .areHeadphonesConnected();
 
     if (areHeadphonesConnected) {
       // Headphones connected - enable continuous mode automatically
@@ -201,7 +202,7 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
     }
 
     // Check if widget is still mounted before using context
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     await showModalBottomSheet(
       context: context,
@@ -210,9 +211,8 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       backgroundColor: Colors.transparent,
-      builder: (context) => ChatBottomSheet(
-        onClose: () => Navigator.of(context).pop(),
-      ),
+      builder: (context) =>
+          ChatBottomSheet(onClose: () => Navigator.of(context).pop()),
     );
 
     // Video remains paused after chat closes (user can manually resume)
@@ -239,7 +239,8 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
         final voiceState = ref.read(voiceNotifierProvider);
         // Only resume if still in continuous mode and listening state
         if (voiceState.isContinuousModeEnabled &&
-            voiceState.continuousListeningState == ContinuousListeningState.listening) {
+            voiceState.continuousListeningState ==
+                ContinuousListeningState.listening) {
           await videoController.playVideo();
         }
       }
@@ -338,7 +339,8 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
             ),
             // Bottom action bar
             BottomActionBar(
-              onUrlPressed: () => _handleBottomBarAction(BottomBarState.urlExpanded),
+              onUrlPressed: () =>
+                  _handleBottomBarAction(BottomBarState.urlExpanded),
               onChatPressed: () => _showSessionHistoryDrawer(context),
             ),
           ],
