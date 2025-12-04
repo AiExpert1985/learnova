@@ -331,8 +331,9 @@ void main() {
           listenFor: const Duration(seconds: 60),
         );
 
-        // Wait for first silence cycle
-        await Future.delayed(const Duration(milliseconds: 200));
+        // Wait for first silence cycle + restart delay (500ms) + processing time
+        // Need at least 700ms for cycle to complete and restart to begin
+        await Future.delayed(const Duration(milliseconds: 800));
 
         // No question should be detected
         expect(questionDetectedCount, 0);
@@ -362,8 +363,9 @@ void main() {
           listenFor: const Duration(seconds: 60),
         );
 
-        // Wait for multiple cycles
-        await Future.delayed(const Duration(milliseconds: 300));
+        // Wait for multiple cycles: initial + silence restart (500ms) + second cycle
+        // Need ~1200ms to see multiple questions detected
+        await Future.delayed(const Duration(milliseconds: 1200));
 
         // Should detect multiple questions across cycles
         expect(detectedQuestions.length, greaterThan(1));
