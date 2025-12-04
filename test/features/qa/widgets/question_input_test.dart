@@ -9,7 +9,9 @@ import 'package:vidorion/core/services/voice/state/voice_state.dart';
 import 'package:vidorion/core/services/voice/voice_service.dart';
 import 'package:vidorion/core/services/voice/voice_models.dart';
 import 'package:vidorion/core/services/voice/permission_service.dart';
+import 'package:vidorion/core/services/audio/audio_device_service.dart';
 import 'package:vidorion/features/qa/state/qa_notifier.dart';
+import 'package:vidorion/features/qa/state/qa_state.dart';
 import 'package:vidorion/features/qa/widgets/question_input.dart';
 import 'package:vidorion/features/qa/widgets/video_player.dart';
 import 'package:vidorion/features/qa/services/qa_service.dart';
@@ -92,10 +94,26 @@ class FakePermissionService implements PermissionService {
   Future<bool> requestVoicePermissions() async => true;
 }
 
+class FakeAudioDeviceService implements AudioDeviceService {
+  @override
+  Future<bool> areHeadphonesConnected() async => true;
+
+  @override
+  Stream<bool> get headphoneConnectionStream => const Stream.empty();
+
+  @override
+  void dispose() {}
+}
+
 class FakeVoiceNotifier extends VoiceNotifier {
   String? _mockRecognizedText;
 
-  FakeVoiceNotifier() : super(FakeVoiceService(), FakePermissionService()) {
+  FakeVoiceNotifier()
+      : super(
+          FakeVoiceService(),
+          FakePermissionService(),
+          FakeAudioDeviceService(),
+        ) {
     state = const VoiceState(isInitialized: true);
   }
 
@@ -150,6 +168,7 @@ class FakeQANotifier extends QANotifier {
   Future<void> askQuestion(
     String question, {
     bool isContinuousMode = false,
+    InputMethod? inputMethod,
   }) async {
     lastAskedQuestion = question;
   }

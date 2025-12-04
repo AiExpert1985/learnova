@@ -11,6 +11,7 @@ import 'package:vidorion/core/services/voice/voice_models.dart';
 import 'package:vidorion/core/services/voice/state/voice_notifier.dart';
 import 'package:vidorion/core/services/voice/state/voice_state.dart';
 import 'package:vidorion/core/services/voice/permission_service.dart';
+import 'package:vidorion/core/services/audio/audio_device_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 // Manual Mocks
@@ -162,6 +163,28 @@ class MockPermissionService implements PermissionService {
 
   void setMicPermission(bool value) {
     _hasMicPermission = value;
+  }
+}
+
+class MockAudioDeviceService implements AudioDeviceService {
+  bool _areHeadphonesConnected = true;
+  final StreamController<bool> _connectionController =
+      StreamController<bool>.broadcast();
+
+  @override
+  Future<bool> areHeadphonesConnected() async => _areHeadphonesConnected;
+
+  @override
+  Stream<bool> get headphoneConnectionStream => _connectionController.stream;
+
+  @override
+  void dispose() {
+    _connectionController.close();
+  }
+
+  void setHeadphonesConnected(bool value) {
+    _areHeadphonesConnected = value;
+    _connectionController.add(value);
   }
 }
 
@@ -363,10 +386,16 @@ void main() {
   group('VoiceNotifier Continuous Mode State Machine', () {
     late VoiceNotifier voiceNotifier;
     late MockVoiceService mockVoiceService;
+    late MockAudioDeviceService mockAudioDeviceService;
 
     setUp(() {
       mockVoiceService = MockVoiceService();
-      voiceNotifier = VoiceNotifier(mockVoiceService, mockPermissionService);
+      mockAudioDeviceService = MockAudioDeviceService();
+      voiceNotifier = VoiceNotifier(
+        mockVoiceService,
+        mockPermissionService,
+        mockAudioDeviceService,
+      );
     });
 
     tearDown(() {
