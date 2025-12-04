@@ -247,6 +247,16 @@ class QANotifier extends StateNotifier<QAState> {
     }
   }
 
+  /// Toggle bottom bar state
+  void setBottomBarState(BottomBarState newState) {
+    state = state.copyWith(bottomBarState: newState);
+  }
+
+  /// Collapse bottom bar
+  void collapseBottomBar() {
+    state = state.copyWith(bottomBarState: BottomBarState.collapsed);
+  }
+
   /// Load conversation from history and restore state
   /// Used when user selects a conversation from history
   Future<void> loadConversationFromHistory(String conversationId) async {
