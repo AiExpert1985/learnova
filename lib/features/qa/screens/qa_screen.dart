@@ -5,11 +5,11 @@ import '../../../core/widgets/empty_state.dart';
 import '../widgets/transcript_header.dart';
 import '../widgets/error_banner.dart';
 import '../widgets/video_player.dart';
-import '../widgets/continuous_mode_toggle.dart';
 import '../widgets/continuous_listening_indicator.dart';
 import '../widgets/headphone_required_dialog.dart';
 import '../widgets/session_history_drawer.dart';
 import '../widgets/bottom_action_bar.dart';
+import '../widgets/listening_toggle_button.dart';
 import '../state/qa_state.dart';
 import '../../history/ui/widgets/history_bottom_sheet.dart';
 import '../../history/providers/history_providers.dart';
@@ -24,6 +24,8 @@ class QAScreen extends ConsumerStatefulWidget {
 
 class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver {
   bool _wasInContinuousMode = false;
+
+  bool _autoEnabledContinuousMode = false;
 
   @override
   void initState() {
@@ -45,6 +47,27 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
         voiceNotifier.speak(answer);
       });
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Auto-enable continuous mode when video becomes ready
+    final qaState = ref.watch(qaNotifierProvider);
+    final voiceState = ref.watch(voiceNotifierProvider);
+
+    if (qaState.isFullyInitialized &&
+        !voiceState.isContinuousModeEnabled &&
+        !_autoEnabledContinuousMode) {
+      _autoEnabledContinuousMode = true;
+      // Enable continuous mode automatically
+      Future.microtask(() => _handleContinuousModeToggle());
+    }
+
+    // Reset flag when video is cleared
+    if (!qaState.hasVideo) {
+      _autoEnabledContinuousMode = false;
+    }
   }
 
   @override
@@ -207,14 +230,10 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
             // Empty space for clean UI - history accessed via bottom bar
             Expanded(
               child: qaState.hasVideo
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Continuous mode toggle - will be replaced with ear button in Phase 4
-                        ContinuousModeToggle(
-                          onToggle: _handleContinuousModeToggle,
-                        ),
-                      ],
+                  ? Center(
+                      child: ListeningToggleButton(
+                        onToggle: _handleContinuousModeToggle,
+                      ),
                     )
                   : EmptyState(
                       icon: Icons.video_library_outlined,
