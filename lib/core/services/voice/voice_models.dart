@@ -36,6 +36,7 @@ enum ContinuousListeningState {
   listening,
   processing,
   speaking,
+  waitingForNextQuestion, // Grace period after speaking, before resuming listening
 }
 
 /// Exception thrown by voice services

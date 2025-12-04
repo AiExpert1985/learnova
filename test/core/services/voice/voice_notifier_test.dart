@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidorion/core/services/voice/state/voice_notifier.dart';
 import 'package:vidorion/core/services/voice/voice_service.dart';
 import 'package:vidorion/core/services/voice/permission_service.dart';
 import 'package:vidorion/core/services/voice/voice_models.dart';
+import 'package:vidorion/core/services/audio/audio_device_service.dart';
 
 /// Mock Voice Service for testing
 class MockVoiceService implements VoiceService {
@@ -122,16 +124,45 @@ class MockPermissionService extends PermissionService {
   }
 }
 
+/// Mock Audio Device Service for testing
+class MockAudioDeviceService implements AudioDeviceService {
+  bool _areHeadphonesConnected = true;
+  final StreamController<bool> _connectionController =
+      StreamController<bool>.broadcast();
+
+  @override
+  Future<bool> areHeadphonesConnected() async => _areHeadphonesConnected;
+
+  @override
+  Stream<bool> get headphoneConnectionStream => _connectionController.stream;
+
+  @override
+  void dispose() {
+    _connectionController.close();
+  }
+
+  void setHeadphonesConnected(bool value) {
+    _areHeadphonesConnected = value;
+    _connectionController.add(value);
+  }
+}
+
 void main() {
   group('VoiceNotifier', () {
     late VoiceNotifier voiceNotifier;
     late MockVoiceService mockVoiceService;
     late MockPermissionService mockPermissionService;
+    late MockAudioDeviceService mockAudioDeviceService;
 
     setUp(() {
       mockVoiceService = MockVoiceService();
       mockPermissionService = MockPermissionService();
-      voiceNotifier = VoiceNotifier(mockVoiceService, mockPermissionService);
+      mockAudioDeviceService = MockAudioDeviceService();
+      voiceNotifier = VoiceNotifier(
+        mockVoiceService,
+        mockPermissionService,
+        mockAudioDeviceService,
+      );
     });
 
     tearDown(() {

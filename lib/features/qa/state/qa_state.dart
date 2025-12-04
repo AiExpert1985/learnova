@@ -1,6 +1,9 @@
 import '../models/qa_history_entry.dart';
 import '../../../core/services/youtube/youtube_models.dart';
 
+/// Input method for questions
+enum InputMethod { voice, text }
+
 /// State for Q&A feature
 /// Manages video info, question history, and loading status
 class QAState {
@@ -10,6 +13,10 @@ class QAState {
   final bool isLoadingAnswer;
   final bool isLoadingVideo;
   final String? videoError;
+  final bool isVideoInitialized;
+  final bool isTranscriptLoaded;
+  final bool isTextInputVisible;
+  final InputMethod lastInputMethod;
 
   const QAState({
     this.videoInfo,
@@ -18,6 +25,10 @@ class QAState {
     this.isLoadingAnswer = false,
     this.isLoadingVideo = false,
     this.videoError,
+    this.isVideoInitialized = false,
+    this.isTranscriptLoaded = false,
+    this.isTextInputVisible = false,
+    this.lastInputMethod = InputMethod.voice,
   });
 
   // Computed properties for backward compatibility
@@ -28,6 +39,9 @@ class QAState {
 
   bool get hasVideo => videoInfo != null;
 
+  /// True when video player and transcript are both ready for interaction
+  bool get isFullyInitialized => isVideoInitialized && isTranscriptLoaded;
+
   QAState copyWith({
     VideoInfo? videoInfo,
     Duration? currentPosition,
@@ -35,6 +49,10 @@ class QAState {
     bool? isLoadingAnswer,
     bool? isLoadingVideo,
     String? videoError,
+    bool? isVideoInitialized,
+    bool? isTranscriptLoaded,
+    bool? isTextInputVisible,
+    InputMethod? lastInputMethod,
   }) {
     return QAState(
       videoInfo: videoInfo ?? this.videoInfo,
@@ -43,6 +61,10 @@ class QAState {
       isLoadingAnswer: isLoadingAnswer ?? this.isLoadingAnswer,
       isLoadingVideo: isLoadingVideo ?? this.isLoadingVideo,
       videoError: videoError ?? this.videoError,
+      isVideoInitialized: isVideoInitialized ?? this.isVideoInitialized,
+      isTranscriptLoaded: isTranscriptLoaded ?? this.isTranscriptLoaded,
+      isTextInputVisible: isTextInputVisible ?? this.isTextInputVisible,
+      lastInputMethod: lastInputMethod ?? this.lastInputMethod,
     );
   }
 
@@ -54,6 +76,8 @@ class QAState {
       isLoadingAnswer: isLoadingAnswer, // Keep this
       isLoadingVideo: true, // Set to true as we are about to load
       videoError: '', // Clear error
+      isVideoInitialized: false, // Reset initialization flags
+      isTranscriptLoaded: false,
     );
   }
 }

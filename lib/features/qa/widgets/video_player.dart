@@ -49,6 +49,16 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> {
       ref.read(youtubeControllerProvider.notifier).state = _controller;
     });
 
+    // Listen for when video is ready to play
+    _controller.listen((event) {
+      if (event.playerState == PlayerState.cued ||
+          event.playerState == PlayerState.playing ||
+          event.playerState == PlayerState.paused) {
+        // Video is initialized and ready
+        ref.read(qaNotifierProvider.notifier).setVideoInitialized(true);
+      }
+    });
+
     // Poll playback position every second and update QA state
     _positionTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
       try {
@@ -66,6 +76,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> {
     super.didUpdateWidget(oldWidget);
     // Reload video if videoId changes
     if (oldWidget.videoId != widget.videoId) {
+      // Reset initialization flag when loading new video
+      ref.read(qaNotifierProvider.notifier).setVideoInitialized(false);
       _controller.loadVideoById(videoId: widget.videoId);
     }
   }

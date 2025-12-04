@@ -12,6 +12,8 @@ import '../services/voice/voice_service_impl.dart';
 import '../services/voice/permission_service.dart';
 import '../services/voice/state/voice_notifier.dart';
 import '../services/voice/state/voice_state.dart';
+import '../services/audio/audio_device_service.dart';
+import '../services/audio/audio_device_service_impl.dart';
 import '../../features/qa/services/qa_service.dart';
 import '../../features/qa/state/qa_notifier.dart';
 import '../../features/qa/state/qa_state.dart';
@@ -61,6 +63,11 @@ final permissionServiceProvider = Provider<PermissionService>((ref) {
   return PermissionService();
 });
 
+/// Provider for audio device service (headphone detection)
+final audioDeviceServiceProvider = Provider<AudioDeviceService>((ref) {
+  return AudioDeviceServiceImpl();
+});
+
 /// Provider for STT service (speech_to_text implementation)
 final sttServiceProvider = Provider<STTService>((ref) {
   return FlutterSTTService();
@@ -90,5 +97,6 @@ final voiceNotifierProvider =
     StateNotifierProvider<VoiceNotifier, VoiceState>((ref) {
   final voiceService = ref.watch(voiceServiceProvider);
   final permissionService = ref.watch(permissionServiceProvider);
-  return VoiceNotifier(voiceService, permissionService);
+  final audioDeviceService = ref.watch(audioDeviceServiceProvider);
+  return VoiceNotifier(voiceService, permissionService, audioDeviceService);
 });

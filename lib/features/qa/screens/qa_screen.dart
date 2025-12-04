@@ -10,6 +10,7 @@ import '../widgets/qa_history_list.dart';
 import '../widgets/video_player.dart';
 import '../widgets/continuous_mode_toggle.dart';
 import '../widgets/continuous_listening_indicator.dart';
+import '../widgets/headphone_required_dialog.dart';
 import '../../history/ui/widgets/history_bottom_sheet.dart';
 import '../../history/providers/history_providers.dart';
 
@@ -22,6 +23,26 @@ class QAScreen extends ConsumerStatefulWidget {
 }
 
 class _QAScreenState extends ConsumerState<QAScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Set up callbacks
+    Future.microtask(() {
+      final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
+      final qaNotifier = ref.read(qaNotifierProvider.notifier);
+
+      // Headphone required callback
+      voiceNotifier.setHeadphoneRequiredCallback(() {
+        showHeadphoneRequiredDialog(context);
+      });
+
+      // Auto-speak callback for voice input answers
+      qaNotifier.setAutoSpeakCallback((answer) {
+        voiceNotifier.speak(answer);
+      });
+    });
+  }
+
   void _showHistoryBottomSheet(BuildContext context) {
     // Refresh history before showing
     ref.read(historyNotifierProvider.notifier).loadHistory();
