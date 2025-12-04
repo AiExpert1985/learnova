@@ -9,11 +9,14 @@ import '../widgets/video_player.dart';
 import '../widgets/continuous_listening_indicator.dart';
 import '../widgets/headphone_required_dialog.dart';
 import '../widgets/session_history_drawer.dart';
+import '../widgets/chat_bottom_sheet.dart';
 import '../widgets/bottom_action_bar.dart';
 import '../widgets/listening_toggle_button.dart';
 import '../state/qa_state.dart';
 import '../../history/ui/widgets/history_bottom_sheet.dart';
 import '../../history/providers/history_providers.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import '../../../core/services/voice/voice_models.dart';
 
 /// Main Q&A screen with YouTube integration
 class QAScreen extends ConsumerStatefulWidget {
@@ -47,13 +50,22 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
       qaNotifier.setAutoSpeakCallback((answer) {
         voiceNotifier.speak(answer);
       });
+
+      // Debug snackbar callbacks for troubleshooting
+      voiceNotifier.setDebugMessageCallback((message) {
+        _showDebugSnackbar(message);
+      });
+
+      qaNotifier.setDebugMessageCallback((message) {
+        _showDebugSnackbar(message);
+      });
     });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Auto-enable continuous mode when video becomes ready
+    // Auto-enable continuous mode when video becomes ready (only if headphones connected)
     final qaState = ref.watch(qaNotifierProvider);
     final voiceState = ref.watch(voiceNotifierProvider);
 
@@ -61,14 +73,40 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
         !voiceState.isContinuousModeEnabled &&
         !_autoEnabledContinuousMode) {
       _autoEnabledContinuousMode = true;
-      // Enable continuous mode automatically
-      Future.microtask(() => _handleContinuousModeToggle());
+      // Check headphones and enable continuous mode if connected
+      Future.microtask(() => _autoEnableListeningMode());
     }
 
     // Reset flag when video is cleared
     if (!qaState.hasVideo) {
       _autoEnabledContinuousMode = false;
     }
+  }
+
+  /// Auto-enable listening mode based on headphone connection
+  Future<void> _autoEnableListeningMode() async {
+    final audioDeviceService = ref.read(audioDeviceServiceProvider);
+    final areHeadphonesConnected = await audioDeviceService.areHeadphonesConnected();
+
+    if (areHeadphonesConnected) {
+      // Headphones connected - enable continuous mode automatically
+      _handleContinuousModeToggle();
+    }
+    // If no headphones, listening mode stays off (user can manually enable later)
+  }
+
+  /// Show debug snackbar for troubleshooting
+  void _showDebugSnackbar(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 100, left: 16, right: 16),
+      ),
+    );
   }
 
   @override
@@ -144,18 +182,31 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
     );
   }
 
-  void _showSessionHistoryDrawer(BuildContext context) {
-    showModalBottomSheet(
+  void _showSessionHistoryDrawer(BuildContext context) async {
+    // Pause video when chat opens
+    final videoController = ref.read(youtubeControllerProvider);
+    bool wasPlaying = false;
+    if (videoController != null) {
+      final playerState = await videoController.playerState;
+      wasPlaying = playerState == PlayerState.playing;
+      if (wasPlaying) {
+        await videoController.pauseVideo();
+      }
+    }
+
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       backgroundColor: Colors.transparent,
-      builder: (context) => SessionHistoryDrawer(
+      builder: (context) => ChatBottomSheet(
         onClose: () => Navigator.of(context).pop(),
       ),
     );
+
+    // Video remains paused after chat closes (user can manually resume)
   }
 
   void _handleBottomBarAction(BottomBarState newState) {
@@ -165,14 +216,36 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
   void _handleContinuousModeToggle() async {
     final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
     final qaNotifier = ref.read(qaNotifierProvider.notifier);
+    final videoController = ref.read(youtubeControllerProvider);
 
     // Set up the callback for QA notifier to speak answers
-    qaNotifier.setContinuousModeCallback((answer) {
-      voiceNotifier.speakAnswerAndResume(answer);
+    qaNotifier.setContinuousModeCallback((answer) async {
+      // Speak answer (video remains paused during TTS)
+      await voiceNotifier.speakAnswerAndResume(answer);
+
+      // Resume video after TTS completes and grace period
+      // Add 2 second buffer after grace period to ensure user has time to respond
+      await Future.delayed(const Duration(seconds: 2));
+      if (videoController != null) {
+        final voiceState = ref.read(voiceNotifierProvider);
+        // Only resume if still in continuous mode and listening state
+        if (voiceState.isContinuousModeEnabled &&
+            voiceState.continuousListeningState == ContinuousListeningState.listening) {
+          await videoController.playVideo();
+        }
+      }
     });
 
     await voiceNotifier.toggleContinuousMode(
-      onQuestion: (question) {
+      onQuestion: (question) async {
+        // Pause video when user speaks
+        if (videoController != null) {
+          final playerState = await videoController.playerState;
+          if (playerState == PlayerState.playing) {
+            await videoController.pauseVideo();
+          }
+        }
+
         // Process question through QA service
         qaNotifier.askQuestion(question, isContinuousMode: true);
       },
@@ -219,16 +292,6 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
           ),
         ],
       ),
-      floatingActionButton: qaState.hasVideo && qaState.history.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: () => _showSessionHistoryDrawer(context),
-              icon: const Icon(Icons.chat_bubble_outline),
-              label: Text('${qaState.history.length}'),
-              tooltip: 'View Session History',
-              backgroundColor: Colors.blue.shade700,
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
         bottom: false, // Bottom bar handles its own safe area
         child: Column(
@@ -267,7 +330,6 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
             // Bottom action bar
             BottomActionBar(
               onUrlPressed: () => _handleBottomBarAction(BottomBarState.urlExpanded),
-              onAskPressed: () => _handleBottomBarAction(BottomBarState.askExpanded),
               onChatPressed: () => _showSessionHistoryDrawer(context),
             ),
           ],

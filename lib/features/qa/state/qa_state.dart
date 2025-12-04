@@ -6,9 +6,8 @@ enum InputMethod { voice, text }
 
 /// Bottom action bar state
 enum BottomBarState {
-  collapsed, // Shows 3 buttons: URL, Ask, Chat
+  collapsed, // Shows 2 buttons: URL, Chat
   urlExpanded, // Shows URL input field
-  askExpanded, // Shows Ask input field with mic
 }
 
 /// State for Q&A feature

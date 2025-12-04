@@ -20,6 +20,9 @@ class QANotifier extends StateNotifier<QAState> {
   // Callback for auto-speaking answers from voice input
   Function(String answer)? _onAutoSpeakCallback;
 
+  // Debug snackbar callback for troubleshooting
+  Function(String message)? _onDebugMessage;
+
   QANotifier({
     required QAService qaService,
     required YouTubeService youtubeService,
@@ -28,6 +31,11 @@ class QANotifier extends StateNotifier<QAState> {
        _youtubeService = youtubeService,
        _historyService = historyService,
        super(const QAState());
+
+  /// Set callback for debug messages (snackbars)
+  void setDebugMessageCallback(Function(String message) callback) {
+    _onDebugMessage = callback;
+  }
 
   /// Set video player initialization status
   void setVideoInitialized(bool initialized) {
@@ -159,6 +167,7 @@ class QANotifier extends StateNotifier<QAState> {
         : state.videoInfo!.getFullTranscript();
     debugPrint('[QANotifier] 📄 Using transcript length: ${transcript.length} chars');
 
+    _onDebugMessage?.call('📤 Sending question to LLM API...');
     debugPrint('[QANotifier] 🌐 Calling QA service...');
     final result = await _qaService.askQuestion(
       transcript: transcript,
@@ -168,8 +177,10 @@ class QANotifier extends StateNotifier<QAState> {
 
     if (result.answer != null) {
       debugPrint('[QANotifier] ✅ Answer: "${result.answer!.text.substring(0, result.answer!.text.length > 50 ? 50 : result.answer!.text.length)}..."');
+      _onDebugMessage?.call('✅ LLM response received successfully');
     } else if (result.error != null) {
       debugPrint('[QANotifier] ❌ Error: ${result.error}');
+      _onDebugMessage?.call('❌ LLM error: ${result.error}');
     }
 
     final newEntry = QAHistoryEntry(

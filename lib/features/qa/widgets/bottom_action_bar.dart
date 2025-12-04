@@ -4,16 +4,14 @@ import '../../../core/providers/app_providers.dart';
 import '../state/qa_state.dart';
 
 /// Bottom action bar with expandable states
-/// Shows 3 buttons (collapsed) or expanded input fields
+/// Shows 2 buttons (collapsed) or expanded input fields
 class BottomActionBar extends ConsumerWidget {
   final VoidCallback onUrlPressed;
-  final VoidCallback onAskPressed;
   final VoidCallback onChatPressed;
 
   const BottomActionBar({
     super.key,
     required this.onUrlPressed,
-    required this.onAskPressed,
     required this.onChatPressed,
   });
 
@@ -41,16 +39,14 @@ class BottomActionBar extends ConsumerWidget {
           padding: const EdgeInsets.all(12),
           child: barState == BottomBarState.collapsed
               ? _buildCollapsedBar(hasVideo, isLoading)
-              : barState == BottomBarState.urlExpanded
-                  ? const UrlInputBar()
-                  : const AskInputBar(),
+              : const UrlInputBar(),
         ),
       ),
     );
   }
 
   Widget _buildCollapsedBar(bool hasVideo, bool isLoading) {
-    // All buttons disabled except URL when no video or loading
+    // Chat button disabled when no video or loading
     final buttonsEnabled = hasVideo && !isLoading;
 
     return Row(
@@ -67,15 +63,6 @@ class BottomActionBar extends ConsumerWidget {
         Expanded(
           child: _ActionButton(
             icon: Icons.chat_bubble_outline,
-            label: 'Ask',
-            enabled: buttonsEnabled,
-            onPressed: buttonsEnabled ? onAskPressed : null,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _ActionButton(
-            icon: Icons.history,
             label: 'Chat',
             enabled: buttonsEnabled,
             onPressed: buttonsEnabled ? onChatPressed : null,
@@ -218,118 +205,3 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
   }
 }
 
-/// Ask input bar (expanded state) with text and mic
-class AskInputBar extends ConsumerStatefulWidget {
-  const AskInputBar({super.key});
-
-  @override
-  ConsumerState<AskInputBar> createState() => _AskInputBarState();
-}
-
-class _AskInputBarState extends ConsumerState<AskInputBar> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _handleSubmit() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-
-    ref
-        .read(qaNotifierProvider.notifier)
-        .askQuestion(text, inputMethod: InputMethod.text);
-    _controller.clear();
-    ref.read(qaNotifierProvider.notifier).collapseBottomBar();
-  }
-
-  Future<void> _handleVoiceInput() async {
-    final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
-
-    // Start listening and get result
-    final recognizedText = await voiceNotifier.startListening();
-
-    if (recognizedText != null && recognizedText.isNotEmpty) {
-      ref
-          .read(qaNotifierProvider.notifier)
-          .askQuestion(recognizedText, inputMethod: InputMethod.voice);
-      ref.read(qaNotifierProvider.notifier).collapseBottomBar();
-    }
-  }
-
-  void _handleCollapse() {
-    _controller.clear();
-    ref.read(qaNotifierProvider.notifier).collapseBottomBar();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final qaState = ref.watch(qaNotifierProvider);
-    final voiceState = ref.watch(voiceNotifierProvider);
-    final isLoading = qaState.isLoadingAnswer;
-    final isListening = voiceState.isListening;
-
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _controller,
-            decoration: InputDecoration(
-              hintText: 'Type your question...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-            ),
-            enabled: !isLoading && !isListening,
-            onSubmitted: (_) => _handleSubmit(),
-            autofocus: true,
-          ),
-        ),
-        const SizedBox(width: 8),
-        ElevatedButton(
-          onPressed: isLoading || isListening ? null : _handleSubmit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.teal.shade600,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.all(12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: const Icon(Icons.send, size: 20),
-        ),
-        const SizedBox(width: 8),
-        ElevatedButton(
-          onPressed: isLoading ? null : _handleVoiceInput,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isListening
-                ? Colors.red.shade600
-                : Colors.teal.shade600,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.all(12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: Icon(
-            isListening ? Icons.mic : Icons.mic_none,
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          onPressed: _handleCollapse,
-          icon: const Icon(Icons.close),
-          tooltip: 'Collapse',
-        ),
-      ],
-    );
-  }
-}
