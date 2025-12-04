@@ -26,9 +26,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   // Headphone requirement callback
   Function()? _onHeadphonesRequired;
 
-  // Debug snackbar callback for troubleshooting
-  Function(String message)? _onDebugMessage;
-
   VoiceNotifier(
     this._voiceService,
     this._permissionService,
@@ -36,11 +33,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   ) : super(const VoiceState()) {
     _initialize();
     _listenToHeadphoneChanges();
-  }
-
-  /// Set callback for debug messages (snackbars)
-  void setDebugMessageCallback(Function(String message) callback) {
-    _onDebugMessage = callback;
   }
 
   Future<void> _initialize() async {
@@ -106,8 +98,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     }
 
     try {
-      _onDebugMessage?.call('🎤 Mic: Starting to listen for voice...');
-
       state = state.copyWith(
         isListening: true,
         recognizedText: '',
@@ -126,15 +116,8 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
           // Always update with latest recognized text
           finalText = result.recognizedText;
           state = state.copyWith(recognizedText: result.recognizedText);
-          if (result.recognizedText.isNotEmpty) {
-            _onDebugMessage?.call('🗣️ Voice detected: "${result.recognizedText}"');
-          }
-          if (result.isFinal) {
-            _onDebugMessage?.call('✅ Voice-to-text complete: "$finalText"');
-          }
         },
         onError: (error) {
-          _onDebugMessage?.call('❌ Voice recognition error: $error');
           state = state.copyWith(
             isListening: false,
             error: error.toString(),
@@ -145,10 +128,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
           }
         },
         onDone: () {
-          // Show completion message with the final recognized text
-          if (finalText != null && finalText!.isNotEmpty) {
-            _onDebugMessage?.call('✅ Voice-to-text complete: "$finalText"');
-          }
           state = state.copyWith(
             isListening: false,
             recognitionState: SpeechRecognitionState.idle,
@@ -227,8 +206,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     if (text.trim().isEmpty) return;
 
     try {
-      _onDebugMessage?.call('🔊 Starting text-to-speech...');
-
       state = state.copyWith(
         isSpeaking: true,
         error: null,
@@ -245,7 +222,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
           );
         },
         onError: (error) {
-          _onDebugMessage?.call('❌ TTS error: $error');
           state = state.copyWith(
             isSpeaking: false,
             error: error.toString(),
@@ -253,7 +229,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
           );
         },
         onDone: () {
-          _onDebugMessage?.call('✅ TTS complete');
           state = state.copyWith(
             isSpeaking: false,
             synthesisState: SpeechSynthesisState.idle,
@@ -261,7 +236,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         },
       );
     } catch (e) {
-      _onDebugMessage?.call('❌ TTS exception: $e');
       state = state.copyWith(
         isSpeaking: false,
         error: e.toString(),

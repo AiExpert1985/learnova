@@ -149,9 +149,18 @@
   - `VoiceService` coordinator combines STT + TTS, prevents conflicts
 - **Architecture:** `VoiceService` → `VoiceNotifier` (StateNotifier) → UI widgets
 - **Permissions:** Dedicated `PermissionService` handles microphone/speech permissions with clear error messages
-- **Video Integration:** Video pauses automatically when voice input starts, resumes when stopped
+- **Video Integration:** Video pauses automatically when voice input starts in chat, smart resume in continuous mode
 - **Provider Pattern:** Voice controller exposed via `youtubeControllerProvider` for cross-widget coordination
 - **Future Upgrades:** Easy to swap to cloud providers (Google Cloud STT/TTS, ElevenLabs) by implementing interfaces
+
+### Voice Recognition Text Capture Fix
+- **Problem:** Speech recognition wasn't reliably marking results as "final", causing recognized text to be lost
+- **Root Cause:** `finalText` only updated when `result.isFinal == true`, but STT service sometimes completes without final flag
+- **Solution:** Always update `finalText` with latest `recognizedText` on every stream event
+  - Before: `if (result.isFinal) { finalText = result.recognizedText; }`
+  - After: `finalText = result.recognizedText; // Always update with latest`
+- **Impact:** Voice input now reliably captures and sends text to LLM even when final flag not set
+- **Testing:** Added test `startListening captures last text even without isFinal flag` to verify fix
 
 ### Voice-First Hands-Free UX
 **Philosophy:** Voice is primary interface, text is fallback for edge cases (accessibility, quiet environments).
@@ -159,22 +168,28 @@
 **Implementation:**
 
 1. **Voice-First UI Design**
-   - Text input hidden by default, prominent mic button displayed
-   - "Type instead?" reveals text input on demand with smooth animation
-   - Input method tracking (`InputMethod.voice` vs `InputMethod.text`) in state
+   - Chat UI integrates voice and text input side-by-side (text field + send + mic buttons)
+   - No hidden inputs - both methods equally accessible
+   - Input method tracking (`InputMethod.voice` vs `InputMethod.text`) in state for selective TTS triggering
 
 2. **Auto-Speak for Voice Questions**
-   - Answers automatically spoken when question asked via voice (tap-to-listen or continuous mode)
-   - Text input answers NOT auto-spoken (respects user environment constraints)
+   - Answers automatically spoken when question asked via voice (chat mic button or continuous mode)
+   - Text input answers NOT auto-spoken (respects user environment constraints - may be in public/quiet space)
    - Uses existing TTS completion handlers for lifecycle management
+   - **Implementation:** QANotifier tracks input method, triggers `_onAutoSpeakCallback` only for voice input
+   - **Testing:** Added tests to verify TTS triggered for voice input, NOT triggered for text input
 
 3. **Headphone Detection & Enforcement**
    - Platform-specific implementation: `AudioDeviceService` interface
    - **Android:** `AudioManager.getDevices()` checks wired/Bluetooth headphones (API 23+)
    - **iOS:** `AVAudioSession.currentRoute.outputs` checks audio routes
+   - **Auto-detection on video start:** Checks headphone connection when video fully initializes
+     - If connected: Automatically enables continuous listening mode
+     - If not connected: Listening mode stays off (user can manually enable with dialog prompt)
    - Continuous mode blocked without headphones (shows clear dialog explaining why)
    - Auto-stops continuous mode if headphones disconnect during session
    - Monitors connection changes via broadcast receivers (Android) / notifications (iOS)
+   - **Testing:** Added tests to verify headphone requirement, auto-start with headphones, auto-stop on disconnect
 
 4. **Video Initialization Safety**
    - Tracks `isVideoInitialized` (player ready) + `isTranscriptLoaded` separately
@@ -182,7 +197,17 @@
    - Shows loading indicators on disabled controls with tooltips
    - Prevents errors from premature user interaction
 
-5. **Grace Period Auto-Resume**
+5. **Smart Video Pause/Resume & Grace Period**
+   - **When user speaks:** Video pauses immediately to prevent audio interference
+   - **During processing:** Video stays paused while question sent to LLM
+   - **During TTS:** Video stays paused while answer is spoken aloud
+   - **Grace period:** 5-second grace period for user to ask follow-up questions
+   - **Buffer time:** Additional 2-second buffer after grace period before resuming
+   - **Auto-resume:** Video resumes only if still in continuous mode and listening state
+   - **Why:** Ensures user can hear TTS answer without video audio interference, allows time for follow-up questions
+   - **Implementation:** Callback chain in `_handleContinuousModeToggle()` coordinates video control with voice flow
+   - **State:** `ContinuousListeningState.waitingForNextQuestion` (purple indicator)
+   - **Grace Period Auto-Resume:**
    - New state: `ContinuousListeningState.waitingForNextQuestion` (purple indicator)
    - After TTS completes → 5-second grace period → auto-resume listening + video playback
    - Grace period cancellable: User speaks during waiting → processes new question immediately
@@ -296,21 +321,29 @@ listening → processing → speaking → waitingForNextQuestion → listening (
 - **Position Accuracy:** Store video position at time of question (not current position), enabling accurate context restoration.
 - **Debug Handling:** Wrap debug prints in `if (kDebugMode)` checks for production performance.
 
-### Bottom Action Bar & Clean UI (Step 8)
-- **Decision:** Expandable bottom action bar with context-switching pattern, minimal main body focusing on video + listening toggle.
-- **Why:** Reduces UI clutter, maintains hands-free focus, keeps all actions accessible but not intrusive.
+### Bottom Action Bar & Chat UI (Step 8 - Updated)
+- **Decision:** Simplified bottom action bar with integrated chat UI
+- **Why:** Reduces UI clutter by combining Ask and Chat into unified interface, maintains hands-free focus
 - **Architecture:**
-  - `BottomBarState` enum: collapsed, urlExpanded, askExpanded (stored in QAState)
-  - Three components in one file: `BottomActionBar` (main), `UrlInputBar`, `AskInputBar`
+  - `BottomBarState` enum: collapsed, urlExpanded (askExpanded removed)
+  - Two components: `BottomActionBar` (main), `UrlInputBar`, `ChatBottomSheet` (new)
   - State management via QANotifier: `setBottomBarState()`, `collapseBottomBar()`
-- **Collapsed State (Default):** Three equal-width buttons:
+- **Collapsed State (Default):** Two equal-width buttons:
   - **URL button:** Always enabled (even without video), expands to show input field + Go button + collapse (×)
-  - **Ask button:** Disabled until video loads, expands to show text field + Send + Mic + collapse (×)
-  - **Chat button:** Disabled until video loads, opens session history bottom sheet (85% height)
+  - **Chat button:** Disabled until video loads, opens chat bottom sheet with full conversation interface
 - **Expanded States:**
-  - TextField + primary action button (Go/Send) + additional actions + collapse button
-  - Auto-focus on text field for immediate typing
-  - TextField disabled during loading states
+  - **URL:** TextField + Go button + collapse button, auto-focus for immediate typing, disabled during loading
+  - **Chat:** Full-screen bottom sheet (85% height, adjusts for keyboard) with conversation history + input at bottom
+- **Chat Bottom Sheet Features:**
+  - **History display:** Shows all Q&A from current session at top, auto-scrolls to latest message
+  - **Input at bottom:** Text field + Send button + Mic button for voice input
+  - **Keyboard handling:** Sheet height adjusts automatically to avoid keyboard blocking content (maxHeight = 85% - keyboardHeight)
+  - **Continuous updates:** Auto-scrolls to show new messages after submission (300ms delay)
+  - **Integrated voice input:** Microphone button directly in input row, triggers voice recognition and sends to LLM
+- **Key Behavior Changes:**
+  - Opening chat automatically stops continuous listening mode (prevents voice interference while typing)
+  - Video pauses when chat opens (stays paused after close - user manually resumes)
+  - No separate float button needed (redundant with Chat button)
 - **Large Listening Toggle Button:**
   - Centered in main body with video player
   - 100dp circular Material with elevation 4
@@ -327,8 +360,13 @@ listening → processing → speaking → waitingForNextQuestion → listening (
   - Hides TranscriptHeader until video fully loads
   - Smooth visual transition from loading to ready state
 - **Empty State:** "Add YouTube URL to Start the Learning Journey" centered in body when no video
-- **Auto-Enable Pattern:** Uses `didChangeDependencies` with flag (`_autoEnabledContinuousMode`) to detect when video becomes ready, auto-enables continuous mode once per video load
+- **Auto-Enable Pattern:** Uses `didChangeDependencies` with flag (`_autoEnabledContinuousMode`) to detect when video becomes ready
+  - **Headphone detection:** Checks if headphones connected before auto-enabling listening mode
+  - **If headphones connected:** Auto-enables continuous mode
+  - **If no headphones:** Listening mode stays off (user can manually enable later if desired)
+  - **Why:** Prevents accidental activation without headphones (would pick up video audio from speakers)
 - **Session History:** Only accessible via Chat button (bottom sheet), removed from main body to reduce clutter
+- **Video Pause Behavior:** When chat opens, video pauses and listening mode stops to prevent interference
 
 ### Development
 - **Extract when painful:** Don't premature optimize.

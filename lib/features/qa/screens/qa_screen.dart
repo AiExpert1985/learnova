@@ -50,15 +50,6 @@ class _QAScreenState extends ConsumerState<QAScreen>
       qaNotifier.setAutoSpeakCallback((answer) {
         voiceNotifier.speak(answer);
       });
-
-      // Debug snackbar callbacks for troubleshooting
-      voiceNotifier.setDebugMessageCallback((message) {
-        _showDebugSnackbar(message);
-      });
-
-      qaNotifier.setDebugMessageCallback((message) {
-        _showDebugSnackbar(message);
-      });
     });
   }
 
@@ -94,20 +85,6 @@ class _QAScreenState extends ConsumerState<QAScreen>
       _handleContinuousModeToggle();
     }
     // If no headphones, listening mode stays off (user can manually enable later)
-  }
-
-  /// Show debug snackbar for troubleshooting
-  void _showDebugSnackbar(String message) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 100, left: 16, right: 16),
-      ),
-    );
   }
 
   @override

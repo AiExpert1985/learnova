@@ -10,10 +10,16 @@ import 'package:vidorion/core/services/audio/audio_device_service.dart';
 class MockVoiceService implements VoiceService {
   bool _isListening = false;
   bool _isSpeaking = false;
+  List<SpeechRecognitionResult>? _customResults;
 
   @override
   Future<void> initialize() async {
     // Mock initialization - no state to track
+  }
+
+  /// Set custom results for testing specific scenarios
+  void setCustomResults(List<SpeechRecognitionResult> results) {
+    _customResults = results;
   }
 
   @override
@@ -23,6 +29,12 @@ class MockVoiceService implements VoiceService {
     Duration? pauseFor,
   }) {
     _isListening = true;
+    // Use custom results if set, otherwise use default
+    if (_customResults != null) {
+      final results = _customResults!;
+      _customResults = null; // Reset after use
+      return Stream.fromIterable(results);
+    }
     return Stream.fromIterable([
       SpeechRecognitionResult(
         recognizedText: 'partial text',
@@ -240,6 +252,99 @@ void main() {
       voiceNotifier.clearError();
 
       expect(voiceNotifier.state.error, '');
+    });
+
+    test('startListening captures last text even without isFinal flag', () async {
+      // Setup: mock results without isFinal=true
+      mockVoiceService.setCustomResults([
+        SpeechRecognitionResult(
+          recognizedText: 'first update',
+          confidence: 0.7,
+          isFinal: false,
+        ),
+        SpeechRecognitionResult(
+          recognizedText: 'second update',
+          confidence: 0.8,
+          isFinal: false,
+        ),
+        SpeechRecognitionResult(
+          recognizedText: 'last recognized text',
+          confidence: 0.9,
+          isFinal: false, // No final flag
+        ),
+      ]);
+
+      // Wait for initialization
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      final result = await voiceNotifier.startListening();
+
+      // Should return the last recognized text even without isFinal=true
+      expect(result, 'last recognized text');
+      expect(voiceNotifier.state.recognizedText, 'last recognized text');
+      expect(voiceNotifier.state.isListening, false);
+    });
+
+    test('continuous mode requires headphones', () async {
+      // Wait for initialization
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      mockAudioDeviceService.setHeadphonesConnected(false);
+
+      bool headphonesRequired = false;
+      voiceNotifier.setHeadphoneRequiredCallback(() {
+        headphonesRequired = true;
+      });
+
+      await voiceNotifier.startContinuousMode(
+        onQuestion: (question) {},
+        onAnswerReady: (answer) {},
+      );
+
+      // Should call headphone required callback
+      expect(headphonesRequired, true);
+      expect(voiceNotifier.state.isContinuousModeEnabled, false);
+    });
+
+    test('continuous mode starts when headphones connected', () async {
+      // Wait for initialization
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      mockAudioDeviceService.setHeadphonesConnected(true);
+
+      await voiceNotifier.startContinuousMode(
+        onQuestion: (question) {},
+        onAnswerReady: (answer) {},
+      );
+
+      // Should start continuous mode
+      expect(voiceNotifier.state.isContinuousModeEnabled, true);
+      expect(
+          voiceNotifier.state.continuousListeningState,
+          ContinuousListeningState.listening);
+    });
+
+    test('continuous mode stops when headphones disconnect', () async {
+      // Wait for initialization
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      mockAudioDeviceService.setHeadphonesConnected(true);
+
+      await voiceNotifier.startContinuousMode(
+        onQuestion: (question) {},
+        onAnswerReady: (answer) {},
+      );
+
+      expect(voiceNotifier.state.isContinuousModeEnabled, true);
+
+      // Disconnect headphones
+      mockAudioDeviceService.setHeadphonesConnected(false);
+
+      // Wait for event to propagate
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Should stop continuous mode
+      expect(voiceNotifier.state.isContinuousModeEnabled, false);
     });
   });
 }
