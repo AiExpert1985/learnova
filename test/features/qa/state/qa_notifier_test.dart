@@ -9,6 +9,7 @@ import 'package:vidorion/features/history/data/models/history_result.dart';
 import 'package:vidorion/features/history/data/models/conversation_history.dart';
 import 'package:vidorion/features/history/data/models/qa_entry.dart'
     as history_models;
+import 'package:vidorion/features/qa/state/qa_state.dart';
 
 /// Mock QAService for testing
 class MockQAService implements QAService {
@@ -925,10 +926,7 @@ void main() {
       await notifier.loadVideo('https://youtube.com/watch?v=test');
 
       // Ask question in continuous mode
-      await notifier.askQuestion(
-        'What is this?',
-        isContinuousMode: true,
-      );
+      await notifier.askQuestion('What is this?', isContinuousMode: true);
 
       // Continuous mode callback should have been triggered
       expect(spokenAnswer, 'Continuous mode answer');
