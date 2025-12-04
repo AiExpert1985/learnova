@@ -30,7 +30,9 @@ class ListeningToggleButton extends ConsumerWidget {
         Material(
           elevation: 4,
           shape: const CircleBorder(),
-          color: Colors.teal.shade600,
+          color: isEnabled
+              ? (isListening ? Colors.green.shade600 : Colors.red.shade600)
+              : Colors.grey.shade400,
           child: InkWell(
             onTap: isEnabled ? onToggle : null,
             customBorder: const CircleBorder(),
@@ -39,7 +41,9 @@ class ListeningToggleButton extends ConsumerWidget {
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isEnabled ? Colors.teal.shade600 : Colors.grey.shade400,
+                color: isEnabled
+                    ? (isListening ? Colors.green.shade600 : Colors.red.shade600)
+                    : Colors.grey.shade400,
               ),
               child: Icon(
                 isListening ? Icons.hearing : Icons.hearing_disabled,
@@ -56,7 +60,9 @@ class ListeningToggleButton extends ConsumerWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: isEnabled ? Colors.teal.shade700 : Colors.grey.shade500,
+            color: isEnabled
+                ? (isListening ? Colors.green.shade700 : Colors.red.shade700)
+                : Colors.grey.shade500,
           ),
         ),
         const SizedBox(height: 8),

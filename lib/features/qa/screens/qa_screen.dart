@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../widgets/transcript_header.dart';
@@ -182,6 +183,25 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
     );
   }
 
+  Widget _buildVideoSkeleton() {
+    return Skeletonizer(
+      enabled: true,
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          color: Colors.grey.shade300,
+          child: const Center(
+            child: Icon(
+              Icons.play_circle_outline,
+              size: 64,
+              color: Colors.grey,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final qaState = ref.watch(qaNotifierProvider);
@@ -213,8 +233,12 @@ class _QAScreenState extends ConsumerState<QAScreen> with WidgetsBindingObserver
         bottom: false, // Bottom bar handles its own safe area
         child: Column(
           children: [
-            if (qaState.hasVideo) VideoPlayer(videoId: qaState.videoId!),
-            if (qaState.hasVideo)
+            // Video player with loading skeleton
+            if (qaState.isLoadingVideo)
+              _buildVideoSkeleton()
+            else if (qaState.hasVideo)
+              VideoPlayer(videoId: qaState.videoId!),
+            if (qaState.hasVideo && !qaState.isLoadingVideo)
               TranscriptHeader(
                 title: qaState.videoTitle!,
                 duration: qaState.videoDuration!,
