@@ -206,5 +206,261 @@ void main() {
       expect(mockSTTService._isInitialized, false);
       expect(mockTTSService._isInitialized, false);
     });
+
+    group('Continuous Listening Mode', () {
+      test('captures recognized text even without isFinal flag', () async {
+        await voiceService.initialize();
+
+        // Create mock STT service that emits result without isFinal flag
+        final mockSTTWithoutFinalFlag = MockSTTServiceWithoutFinalFlag();
+        final voiceServiceWithMock = VoiceServiceImpl(
+          sttService: mockSTTWithoutFinalFlag,
+          ttsService: mockTTSService,
+        );
+        await voiceServiceWithMock.initialize();
+
+        String? capturedQuestion;
+
+        voiceServiceWithMock.startContinuousListening(
+          onQuestionDetected: (text) {
+            capturedQuestion = text;
+          },
+          pauseFor: const Duration(seconds: 3),
+          listenFor: const Duration(seconds: 60),
+        );
+
+        // Wait for stream to complete
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Verify question was captured despite isFinal being false
+        expect(capturedQuestion, 'hello how are you');
+      });
+
+      test('captures latest text when multiple results received', () async {
+        await voiceService.initialize();
+
+        // Create mock STT service that emits multiple partial results
+        final mockSTTWithPartialResults = MockSTTServiceWithPartialResults();
+        final voiceServiceWithMock = VoiceServiceImpl(
+          sttService: mockSTTWithPartialResults,
+          ttsService: mockTTSService,
+        );
+        await voiceServiceWithMock.initialize();
+
+        String? capturedQuestion;
+
+        voiceServiceWithMock.startContinuousListening(
+          onQuestionDetected: (text) {
+            capturedQuestion = text;
+          },
+          pauseFor: const Duration(seconds: 3),
+          listenFor: const Duration(seconds: 60),
+        );
+
+        // Wait for stream to complete
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Verify latest recognized text was captured
+        expect(capturedQuestion, 'what is machine learning');
+      });
+
+      test('does not capture empty or whitespace-only text', () async {
+        await voiceService.initialize();
+
+        // Create mock STT service that emits empty result
+        final mockSTTWithEmptyResult = MockSTTServiceWithEmptyResult();
+        final voiceServiceWithMock = VoiceServiceImpl(
+          sttService: mockSTTWithEmptyResult,
+          ttsService: mockTTSService,
+        );
+        await voiceServiceWithMock.initialize();
+
+        String? capturedQuestion;
+
+        voiceServiceWithMock.startContinuousListening(
+          onQuestionDetected: (text) {
+            capturedQuestion = text;
+          },
+          pauseFor: const Duration(seconds: 3),
+          listenFor: const Duration(seconds: 60),
+        );
+
+        // Wait for stream to complete
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Verify no question was captured (callback not invoked)
+        expect(capturedQuestion, null);
+      });
+
+      test('stops continuous listening and cancels subscription', () async {
+        await voiceService.initialize();
+
+        voiceService.startContinuousListening(
+          onQuestionDetected: (text) {},
+          pauseFor: const Duration(seconds: 3),
+          listenFor: const Duration(seconds: 60),
+        );
+
+        expect(voiceService.isContinuousListening, true);
+
+        await voiceService.stopContinuousListening();
+
+        expect(voiceService.isContinuousListening, false);
+        expect(mockSTTService.isListening, false);
+      });
+    });
   });
+}
+
+/// Mock STT Service that emits result without isFinal flag
+class MockSTTServiceWithoutFinalFlag implements STTService {
+  bool _isListening = false;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Stream<SpeechRecognitionResult> startListening({
+    String? localeId,
+    Duration? listenDuration,
+    Duration? pauseFor,
+  }) {
+    _isListening = true;
+    return Stream.fromIterable([
+      SpeechRecognitionResult(
+        recognizedText: 'hello how are you',
+        confidence: 0.8,
+        isFinal: false, // Not marked as final
+      ),
+    ]);
+  }
+
+  @override
+  Future<void> stopListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<void> cancelListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<bool> isAvailable() async => true;
+
+  @override
+  bool get isListening => _isListening;
+
+  @override
+  Future<List<String>> getSupportedLocales() async => ['en-US'];
+
+  @override
+  Future<void> dispose() async {}
+}
+
+/// Mock STT Service that emits multiple partial results
+class MockSTTServiceWithPartialResults implements STTService {
+  bool _isListening = false;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Stream<SpeechRecognitionResult> startListening({
+    String? localeId,
+    Duration? listenDuration,
+    Duration? pauseFor,
+  }) {
+    _isListening = true;
+    return Stream.fromIterable([
+      SpeechRecognitionResult(
+        recognizedText: 'what',
+        confidence: 0.5,
+        isFinal: false,
+      ),
+      SpeechRecognitionResult(
+        recognizedText: 'what is',
+        confidence: 0.6,
+        isFinal: false,
+      ),
+      SpeechRecognitionResult(
+        recognizedText: 'what is machine learning',
+        confidence: 0.9,
+        isFinal: false,
+      ),
+    ]);
+  }
+
+  @override
+  Future<void> stopListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<void> cancelListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<bool> isAvailable() async => true;
+
+  @override
+  bool get isListening => _isListening;
+
+  @override
+  Future<List<String>> getSupportedLocales() async => ['en-US'];
+
+  @override
+  Future<void> dispose() async {}
+}
+
+/// Mock STT Service that emits empty result
+class MockSTTServiceWithEmptyResult implements STTService {
+  bool _isListening = false;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Stream<SpeechRecognitionResult> startListening({
+    String? localeId,
+    Duration? listenDuration,
+    Duration? pauseFor,
+  }) {
+    _isListening = true;
+    return Stream.fromIterable([
+      SpeechRecognitionResult(
+        recognizedText: '',
+        confidence: 0.0,
+        isFinal: false,
+      ),
+      SpeechRecognitionResult(
+        recognizedText: '   ',
+        confidence: 0.0,
+        isFinal: false,
+      ),
+    ]);
+  }
+
+  @override
+  Future<void> stopListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<void> cancelListening() async {
+    _isListening = false;
+  }
+
+  @override
+  Future<bool> isAvailable() async => true;
+
+  @override
+  bool get isListening => _isListening;
+
+  @override
+  Future<List<String>> getSupportedLocales() async => ['en-US'];
+
+  @override
+  Future<void> dispose() async {}
 }

@@ -174,7 +174,8 @@ class VoiceServiceImpl implements VoiceService {
 
     _continuousListeningSubscription = stream.listen(
       (result) {
-        if (result.isFinal && result.recognizedText.trim().isNotEmpty) {
+        // Always update with latest recognized text (STT may not set isFinal flag)
+        if (result.recognizedText.trim().isNotEmpty) {
           finalRecognizedText = result.recognizedText;
         }
       },

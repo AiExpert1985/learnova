@@ -154,13 +154,21 @@
 - **Future Upgrades:** Easy to swap to cloud providers (Google Cloud STT/TTS, ElevenLabs) by implementing interfaces
 
 ### Voice Recognition Text Capture Fix
-- **Problem:** Speech recognition wasn't reliably marking results as "final", causing recognized text to be lost
+- **Problem:** Speech recognition wasn't reliably marking results as "final", causing recognized text to be lost in both one-off and continuous listening modes
 - **Root Cause:** `finalText` only updated when `result.isFinal == true`, but STT service sometimes completes without final flag
-- **Solution:** Always update `finalText` with latest `recognizedText` on every stream event
-  - Before: `if (result.isFinal) { finalText = result.recognizedText; }`
-  - After: `finalText = result.recognizedText; // Always update with latest`
-- **Impact:** Voice input now reliably captures and sends text to LLM even when final flag not set
-- **Testing:** Added test `startListening captures last text even without isFinal flag` to verify fix
+- **Solution:** Always update `finalText` with latest `recognizedText` on every stream event (regardless of `isFinal` flag)
+  - **One-off mode** (`voice_notifier.dart:116`):
+    - Before: `if (result.isFinal) { finalText = result.recognizedText; }`
+    - After: `finalText = result.recognizedText; // Always update with latest`
+  - **Continuous mode** (`voice_service_impl.dart:177`):
+    - Before: `if (result.isFinal && result.recognizedText.trim().isNotEmpty) { finalRecognizedText = result.recognizedText; }`
+    - After: `if (result.recognizedText.trim().isNotEmpty) { finalRecognizedText = result.recognizedText; } // Always update with latest`
+- **Impact:** Both voice input modes now reliably capture and send text to LLM even when final flag not set
+- **Testing:** Added comprehensive tests for continuous listening mode:
+  - `captures recognized text even without isFinal flag` - Verifies text captured when STT doesn't set final flag
+  - `captures latest text when multiple results received` - Ensures latest partial result is used
+  - `does not capture empty or whitespace-only text` - Prevents triggering on silence/noise
+  - `stops continuous listening and cancels subscription` - Validates cleanup
 
 ### Voice-First Hands-Free UX
 **Philosophy:** Voice is primary interface, text is fallback for edge cases (accessibility, quiet environments).
