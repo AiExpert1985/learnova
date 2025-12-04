@@ -62,7 +62,7 @@ class FlutterSTTService implements STTService {
     Duration? listenDuration,
     Duration? pauseFor,
   }) {
-    debugPrint('[STT] 🎤 Start listening requested (locale: $localeId, pauseFor: ${pauseFor?.inSeconds}s)');
+    debugPrint('[STT] 🎤 Start listening requested (locale: $localeId, pauseFor: ${pauseFor?.inSeconds ?? 'default 3'}s)');
 
     if (!_isInitialized) {
       debugPrint('[STT] ❌ Cannot start - not initialized');
