@@ -14,12 +14,6 @@ class QANotifier extends StateNotifier<QAState> {
   final YouTubeService _youtubeService;
   final HistoryService _historyService;
 
-  // Callback for continuous mode to speak answers
-  Function(String answer)? _onAnswerReadyForSpeech;
-
-  // Callback for auto-speaking answers from voice input
-  Function(String answer)? _onAutoSpeakCallback;
-
   QANotifier({
     required QAService qaService,
     required YouTubeService youtubeService,
@@ -49,7 +43,9 @@ class QANotifier extends StateNotifier<QAState> {
       final video = result.video!;
 
       // Check if conversation history exists for this video
-      final historyResult = await _historyService.loadConversationByVideoId(video.id);
+      final historyResult = await _historyService.loadConversationByVideoId(
+        video.id,
+      );
 
       // Print transcript to console for debugging (only in debug mode)
       if (kDebugMode) {
@@ -64,7 +60,9 @@ class QANotifier extends StateNotifier<QAState> {
         print('\nFirst 3 segments with timestamps:');
         final sampleSegments = video.transcriptSegments.take(3);
         for (final seg in sampleSegments) {
-          print('  [${seg.start.inSeconds}s - ${seg.end.inSeconds}s] ${seg.text}');
+          print(
+            '  [${seg.start.inSeconds}s - ${seg.end.inSeconds}s] ${seg.text}',
+          );
         }
 
         print('\nFull transcript content:');
@@ -73,7 +71,9 @@ class QANotifier extends StateNotifier<QAState> {
 
         // Log if existing conversation was found
         if (historyResult.isSuccess && historyResult.data != null) {
-          print('Found existing conversation with ${historyResult.data!.qaHistory.length} Q&As');
+          print(
+            'Found existing conversation with ${historyResult.data!.qaHistory.length} Q&As',
+          );
         }
       }
 
@@ -87,14 +87,16 @@ class QANotifier extends StateNotifier<QAState> {
       if (historyResult.isSuccess && historyResult.data != null) {
         final conversation = historyResult.data!;
         final qaHistoryEntries = conversation.qaHistory
-            .map((entry) => QAHistoryEntry(
-                  question: entry.question,
-                  answer: entry.answer,
-                  error: null,
-                  tokensUsed: entry.tokensUsed,
-                  timestamp: entry.timestamp,
-                  videoPosition: entry.videoPosition,
-                ))
+            .map(
+              (entry) => QAHistoryEntry(
+                question: entry.question,
+                answer: entry.answer,
+                error: null,
+                tokensUsed: entry.tokensUsed,
+                timestamp: entry.timestamp,
+                videoPosition: entry.videoPosition,
+              ),
+            )
             .toList();
 
         state = state.copyWith(history: qaHistoryEntries);
@@ -147,17 +149,16 @@ class QANotifier extends StateNotifier<QAState> {
 
     // Track input method
     final method = inputMethod ?? state.lastInputMethod;
-    state = state.copyWith(
-      isLoadingAnswer: true,
-      lastInputMethod: method,
-    );
+    state = state.copyWith(isLoadingAnswer: true, lastInputMethod: method);
 
     // Get transcript based on current video position
     // Use position-aware transcript only if user has watched past 10 seconds
     final transcript = state.currentPosition.inSeconds > 10
         ? state.videoInfo!.getTranscriptUpTo(state.currentPosition)
         : state.videoInfo!.getFullTranscript();
-    debugPrint('[QANotifier] 📄 Using transcript length: ${transcript.length} chars');
+    debugPrint(
+      '[QANotifier] 📄 Using transcript length: ${transcript.length} chars',
+    );
 
     debugPrint('[QANotifier] 🌐 Calling QA service...');
     final result = await _qaService.askQuestion(
@@ -167,7 +168,9 @@ class QANotifier extends StateNotifier<QAState> {
     debugPrint('[QANotifier] 📥 QA service response received');
 
     if (result.answer != null) {
-      debugPrint('[QANotifier] ✅ Answer: "${result.answer!.text.substring(0, result.answer!.text.length > 50 ? 50 : result.answer!.text.length)}..."');
+      debugPrint(
+        '[QANotifier] ✅ Answer: "${result.answer!.text.substring(0, result.answer!.text.length > 50 ? 50 : result.answer!.text.length)}..."',
+      );
     } else if (result.error != null) {
       debugPrint('[QANotifier] ❌ Error: ${result.error}');
     }
@@ -185,37 +188,14 @@ class QANotifier extends StateNotifier<QAState> {
       isLoadingAnswer: false,
       history: [...state.history, newEntry],
     );
-    debugPrint('[QANotifier] 📝 Added to history (total: ${state.history.length} entries)');
+    debugPrint(
+      '[QANotifier] 📝 Added to history (total: ${state.history.length} entries)',
+    );
 
     // Auto-save conversation to history after successful Q&A
     if (newEntry.hasAnswer) {
       await _saveConversationToHistory();
-
-      // In continuous mode, trigger TTS for the answer
-      if (isContinuousMode && _onAnswerReadyForSpeech != null) {
-        debugPrint('[QANotifier] 🔊 Triggering TTS for continuous mode');
-        _onAnswerReadyForSpeech!(newEntry.answer!);
-      }
-      // Auto-speak for voice input (not continuous mode)
-      else if (!isContinuousMode &&
-          method == InputMethod.voice &&
-          _onAutoSpeakCallback != null) {
-        debugPrint('[QANotifier] 🔊 Triggering auto-speak for voice input');
-        _onAutoSpeakCallback!(newEntry.answer!);
-      } else {
-        debugPrint('[QANotifier] 🔇 No TTS triggered (method: $method, callbacks set: ${_onAutoSpeakCallback != null})');
-      }
     }
-  }
-
-  /// Set callback for continuous mode
-  void setContinuousModeCallback(Function(String answer)? callback) {
-    _onAnswerReadyForSpeech = callback;
-  }
-
-  /// Set callback for auto-speaking voice input answers
-  void setAutoSpeakCallback(Function(String answer)? callback) {
-    _onAutoSpeakCallback = callback;
   }
 
   /// Save current conversation to history storage
@@ -226,13 +206,16 @@ class QANotifier extends StateNotifier<QAState> {
     // Convert QA history entries to history models
     final historyQAEntries = state.history
         .where((entry) => entry.hasAnswer) // Only save successful answers
-        .map((entry) => history_models.QAEntry(
-              question: entry.question,
-              answer: entry.answer!,
-              timestamp: entry.timestamp, // Use actual Q&A timestamp
-              videoPosition: entry.videoPosition, // Use position when question was asked
-              tokensUsed: entry.tokensUsed,
-            ))
+        .map(
+          (entry) => history_models.QAEntry(
+            question: entry.question,
+            answer: entry.answer!,
+            timestamp: entry.timestamp, // Use actual Q&A timestamp
+            videoPosition:
+                entry.videoPosition, // Use position when question was asked
+            tokensUsed: entry.tokensUsed,
+          ),
+        )
         .toList();
 
     final result = await _historyService.saveConversation(
@@ -266,19 +249,23 @@ class QANotifier extends StateNotifier<QAState> {
       final conversation = result.data!;
 
       // Load the video first
-      await loadVideo('https://www.youtube.com/watch?v=${conversation.videoId}');
+      await loadVideo(
+        'https://www.youtube.com/watch?v=${conversation.videoId}',
+      );
 
       // Restore Q&A history after video loads
       if (state.hasVideo) {
         final qaHistoryEntries = conversation.qaHistory
-            .map((entry) => QAHistoryEntry(
-                  question: entry.question,
-                  answer: entry.answer,
-                  error: null,
-                  tokensUsed: entry.tokensUsed,
-                  timestamp: entry.timestamp,
-                  videoPosition: entry.videoPosition,
-                ))
+            .map(
+              (entry) => QAHistoryEntry(
+                question: entry.question,
+                answer: entry.answer,
+                error: null,
+                tokensUsed: entry.tokensUsed,
+                timestamp: entry.timestamp,
+                videoPosition: entry.videoPosition,
+              ),
+            )
             .toList();
 
         state = state.copyWith(history: qaHistoryEntries);

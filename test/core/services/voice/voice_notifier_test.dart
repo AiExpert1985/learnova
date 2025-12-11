@@ -254,36 +254,39 @@ void main() {
       expect(voiceNotifier.state.error, '');
     });
 
-    test('startListening captures last text even without isFinal flag', () async {
-      // Setup: mock results without isFinal=true
-      mockVoiceService.setCustomResults([
-        SpeechRecognitionResult(
-          recognizedText: 'first update',
-          confidence: 0.7,
-          isFinal: false,
-        ),
-        SpeechRecognitionResult(
-          recognizedText: 'second update',
-          confidence: 0.8,
-          isFinal: false,
-        ),
-        SpeechRecognitionResult(
-          recognizedText: 'last recognized text',
-          confidence: 0.9,
-          isFinal: false, // No final flag
-        ),
-      ]);
+    test(
+      'startListening captures last text even without isFinal flag',
+      () async {
+        // Setup: mock results without isFinal=true
+        mockVoiceService.setCustomResults([
+          SpeechRecognitionResult(
+            recognizedText: 'first update',
+            confidence: 0.7,
+            isFinal: false,
+          ),
+          SpeechRecognitionResult(
+            recognizedText: 'second update',
+            confidence: 0.8,
+            isFinal: false,
+          ),
+          SpeechRecognitionResult(
+            recognizedText: 'last recognized text',
+            confidence: 0.9,
+            isFinal: false, // No final flag
+          ),
+        ]);
 
-      // Wait for initialization
-      await Future.delayed(const Duration(milliseconds: 100));
+        // Wait for initialization
+        await Future.delayed(const Duration(milliseconds: 100));
 
-      final result = await voiceNotifier.startListening();
+        final result = await voiceNotifier.startListening();
 
-      // Should return the last recognized text even without isFinal=true
-      expect(result, 'last recognized text');
-      expect(voiceNotifier.state.recognizedText, 'last recognized text');
-      expect(voiceNotifier.state.isListening, false);
-    });
+        // Should return the last recognized text even without isFinal=true
+        expect(result, 'last recognized text');
+        expect(voiceNotifier.state.recognizedText, 'last recognized text');
+        expect(voiceNotifier.state.isListening, false);
+      },
+    );
 
     test('continuous mode requires headphones', () async {
       // Wait for initialization
@@ -291,18 +294,15 @@ void main() {
 
       mockAudioDeviceService.setHeadphonesConnected(false);
 
-      bool headphonesRequired = false;
-      voiceNotifier.setHeadphoneRequiredCallback(() {
-        headphonesRequired = true;
-      });
+      mockAudioDeviceService.setHeadphonesConnected(false);
 
       await voiceNotifier.startContinuousMode(
         onQuestion: (question) {},
         onAnswerReady: (answer) {},
       );
 
-      // Should call headphone required callback
-      expect(headphonesRequired, true);
+      // Should have headphone required error
+      expect(voiceNotifier.state.error, 'headphone_required');
       expect(voiceNotifier.state.isContinuousModeEnabled, false);
     });
 
@@ -320,8 +320,9 @@ void main() {
       // Should start continuous mode
       expect(voiceNotifier.state.isContinuousModeEnabled, true);
       expect(
-          voiceNotifier.state.continuousListeningState,
-          ContinuousListeningState.listening);
+        voiceNotifier.state.continuousListeningState,
+        ContinuousListeningState.listening,
+      );
     });
 
     test('continuous mode stops when headphones disconnect', () async {

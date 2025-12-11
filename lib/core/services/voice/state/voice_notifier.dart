@@ -24,8 +24,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   Timer? _gracePeriodTimer;
 
   // Headphone requirement callback
-  Function()? _onHeadphonesRequired;
-
   VoiceNotifier(
     this._voiceService,
     this._permissionService,
@@ -49,21 +47,17 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
   /// Listen for headphone connection/disconnection changes
   void _listenToHeadphoneChanges() {
-    _headphoneConnectionSubscription =
-        _audioDeviceService.headphoneConnectionStream.listen((isConnected) {
-      if (!isConnected && state.isContinuousModeEnabled) {
-        // Headphones disconnected during continuous mode - stop it
-        stopContinuousMode();
-        state = state.copyWith(
-          error: 'Headphones disconnected. Continuous mode stopped.',
-        );
-      }
-    });
-  }
-
-  /// Set callback for headphone requirement
-  void setHeadphoneRequiredCallback(Function() callback) {
-    _onHeadphonesRequired = callback;
+    _headphoneConnectionSubscription = _audioDeviceService
+        .headphoneConnectionStream
+        .listen((isConnected) {
+          if (!isConnected && state.isContinuousModeEnabled) {
+            // Headphones disconnected during continuous mode - stop it
+            stopContinuousMode();
+            state = state.copyWith(
+              error: 'Headphones disconnected. Continuous mode stopped.',
+            );
+          }
+        });
   }
 
   /// Start listening for voice input
@@ -299,11 +293,10 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     }
 
     // Check if headphones are connected
-    final areHeadphonesConnected =
-        await _audioDeviceService.areHeadphonesConnected();
+    final areHeadphonesConnected = await _audioDeviceService
+        .areHeadphonesConnected();
     if (!areHeadphonesConnected) {
-      // Notify UI to show headphone required dialog
-      _onHeadphonesRequired?.call();
+      state = state.copyWith(error: 'headphone_required');
       return;
     }
 

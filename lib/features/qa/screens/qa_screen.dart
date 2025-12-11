@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/empty_state.dart';
-import '../widgets/transcript_header.dart';
-import '../widgets/error_banner.dart';
-import '../widgets/video_player.dart';
-import '../widgets/continuous_listening_indicator.dart';
 import '../widgets/headphone_required_dialog.dart';
 import '../widgets/bottom_action_bar.dart';
 import '../widgets/listening_toggle_button.dart';
+import '../widgets/qa_video_section.dart';
+import '../widgets/video_player.dart';
 import '../../history/ui/widgets/history_bottom_sheet.dart';
 import '../../history/providers/history_providers.dart';
 import '../../../core/services/voice/voice_models.dart';
+import '../state/qa_state.dart';
 import '../utils/qa_actions.dart';
 
 /// Main Q&A screen with YouTube integration
@@ -26,94 +24,12 @@ class QAScreen extends ConsumerStatefulWidget {
 class _QAScreenState extends ConsumerState<QAScreen>
     with WidgetsBindingObserver {
   bool _wasInContinuousMode = false;
-
   bool _autoEnabledContinuousMode = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
-    // Set up callbacks immediately
-    Future.microtask(() => _setupCallbacks());
-  }
-
-  /// Set up all voice and QA callbacks
-  void _setupCallbacks() {
-    final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
-    final qaNotifier = ref.read(qaNotifierProvider.notifier);
-
-    // Headphone required callback
-    voiceNotifier.setHeadphoneRequiredCallback(() {
-      showHeadphoneRequiredDialog(context);
-    });
-
-    // Auto-speak callback for voice input answers
-    qaNotifier.setAutoSpeakCallback((answer) {
-      voiceNotifier.speak(answer);
-    });
-
-    // Continuous mode callback for speaking answers
-    _setupContinuousModeCallback();
-  }
-
-  /// Set up continuous mode callback (called once during init)
-  void _setupContinuousModeCallback() {
-    final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
-    final qaNotifier = ref.read(qaNotifierProvider.notifier);
-    final videoController = ref.read(youtubeControllerProvider);
-
-    qaNotifier.setContinuousModeCallback((answer) async {
-      // Speak answer and start grace period (video remains paused)
-      await voiceNotifier.speakAnswerAndResume(answer);
-
-      // Wait for grace period (5s) + buffer (2s) = 7s total
-      await Future.delayed(const Duration(seconds: 7));
-
-      if (videoController != null) {
-        final voiceState = ref.read(voiceNotifierProvider);
-        // Only resume if still in continuous mode and listening state
-        if (voiceState.isContinuousModeEnabled &&
-            voiceState.continuousListeningState ==
-                ContinuousListeningState.listening) {
-          await videoController.playVideo();
-        }
-      }
-    });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Auto-enable continuous mode when video becomes ready (only if headphones connected)
-    final qaState = ref.watch(qaNotifierProvider);
-    final voiceState = ref.watch(voiceNotifierProvider);
-
-    if (qaState.isFullyInitialized &&
-        !voiceState.isContinuousModeEnabled &&
-        !_autoEnabledContinuousMode) {
-      _autoEnabledContinuousMode = true;
-      // Check headphones and enable continuous mode if connected
-      Future.microtask(() => _autoEnableListeningMode());
-    }
-
-    // Reset flag when video is cleared
-    if (!qaState.hasVideo) {
-      _autoEnabledContinuousMode = false;
-    }
-  }
-
-  /// Auto-enable listening mode based on headphone connection
-  Future<void> _autoEnableListeningMode() async {
-    final audioDeviceService = ref.read(audioDeviceServiceProvider);
-    final areHeadphonesConnected = await audioDeviceService
-        .areHeadphonesConnected();
-
-    if (areHeadphonesConnected) {
-      // Headphones connected - enable continuous mode automatically
-      await toggleContinuousModeWithVideo(ref);
-    }
-    // If no headphones, listening mode stays off (user can manually enable later)
   }
 
   @override
@@ -124,29 +40,21 @@ class _QAScreenState extends ConsumerState<QAScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
+    // Simplified lifecycle handler - delegating most logic would be better but keeping simple here
     final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
     final voiceState = ref.read(voiceNotifierProvider);
 
-    switch (state) {
-      case AppLifecycleState.paused:
-      case AppLifecycleState.inactive:
-        // App going to background - pause continuous mode
-        if (voiceState.isContinuousModeEnabled) {
-          _wasInContinuousMode = true;
-          voiceNotifier.stopContinuousMode();
-        }
-        break;
-      case AppLifecycleState.resumed:
-        // App returning to foreground - optionally resume
-        if (_wasInContinuousMode && mounted) {
-          _wasInContinuousMode = false;
-          _showResumeDialog();
-        }
-        break;
-      case AppLifecycleState.detached:
-      case AppLifecycleState.hidden:
-        break;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      if (voiceState.isContinuousModeEnabled) {
+        _wasInContinuousMode = true;
+        voiceNotifier.stopContinuousMode();
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_wasInContinuousMode && mounted) {
+        _wasInContinuousMode = false;
+        _showResumeDialog();
+      }
     }
   }
 
@@ -160,12 +68,12 @@ class _QAScreenState extends ConsumerState<QAScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.pop(context),
             child: const Text('No'),
           ),
           FilledButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.pop(context);
               toggleContinuousModeWithVideo(ref);
             },
             child: const Text('Resume'),
@@ -176,9 +84,7 @@ class _QAScreenState extends ConsumerState<QAScreen>
   }
 
   void _showHistoryBottomSheet(BuildContext context) {
-    // Refresh history before showing
     ref.read(historyNotifierProvider.notifier).loadHistory();
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -189,29 +95,83 @@ class _QAScreenState extends ConsumerState<QAScreen>
     );
   }
 
-  Widget _buildVideoSkeleton() {
-    return Skeletonizer(
-      enabled: true,
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Container(
-          color: Colors.grey.shade300,
-          child: const Center(
-            child: Icon(
-              Icons.play_circle_outline,
-              size: 64,
-              color: Colors.grey,
-            ),
-          ),
-        ),
-      ),
-    );
+  void _listenToStateChanges() {
+    // 1. Listen for Headphone Requirements
+    ref.listen(voiceNotifierProvider, (previous, next) {
+      if (next.error == 'headphone_required' &&
+          previous?.error != 'headphone_required') {
+        showHeadphoneRequiredDialog(context);
+        ref.read(voiceNotifierProvider.notifier).clearError();
+      }
+
+      // 2. Video Control Synchronization (Resume Video)
+      if (next.continuousListeningState == ContinuousListeningState.listening &&
+          previous?.continuousListeningState ==
+              ContinuousListeningState.waitingForNextQuestion) {
+        ref.read(youtubeControllerProvider)?.playVideo();
+      }
+
+      // 3. Video Control Synchronization (Pause Video)
+      if (next.isSpeaking && !(previous?.isSpeaking ?? false)) {
+        ref.read(youtubeControllerProvider)?.pauseVideo();
+      }
+    });
+
+    // 4. Listen for New Answers (Auto-Speak)
+    ref.listen(qaNotifierProvider, (previous, next) {
+      final prevLen = previous?.history.length ?? 0;
+      if (next.history.length > prevLen) {
+        final lastEntry = next.history.last;
+        if (lastEntry.hasAnswer) {
+          final voiceState = ref.read(voiceNotifierProvider);
+          // Logic: Speak if continuous mode OR if input was voice
+          if (voiceState.isContinuousModeEnabled) {
+            ref
+                .read(voiceNotifierProvider.notifier)
+                .speakAnswerAndResume(lastEntry.answer!);
+          } else if (next.lastInputMethod == InputMethod.voice) {
+            ref.read(voiceNotifierProvider.notifier).speak(lastEntry.answer!);
+          }
+        }
+      }
+
+      // 5. Auto-Enable Continuous Mode Logic
+      if (next.hasVideo &&
+          !next.isLoadingVideo &&
+          !_autoEnabledContinuousMode) {
+        // Check if this is a fresh load (video changed or first load)
+        // Assuming hasVideo becomes true.
+        // We need to trigger this ONCE per video load.
+        // checking equality of videoId might be safer but this flag works if reset properly.
+        if (previous?.hasVideo == false || previous?.videoId != next.videoId) {
+          // New video loaded
+          _autoEnabledContinuousMode = true;
+          // Use microtask to avoid building-phase side effects
+          Future.microtask(() async {
+            // Try to enable continuous mode (will fail if no headphones, handled by error listener)
+            // Actually, we should check implicitly to avoid error dialog on auto-start?
+            // The design says: "If connected: Auto-enable. If no headphones: Stay off (no dialog)."
+            // So we need to check manually here to avoid the "Required" dialog.
+            final audioService = ref.read(audioDeviceServiceProvider);
+            if (await audioService.areHeadphonesConnected()) {
+              toggleContinuousModeWithVideo(ref);
+            }
+          });
+        }
+      }
+
+      // Reset flag if video cleared
+      if (!next.hasVideo) {
+        _autoEnabledContinuousMode = false;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    _listenToStateChanges();
+
     final qaState = ref.watch(qaNotifierProvider);
-    final voiceState = ref.watch(voiceNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -226,28 +186,10 @@ class _QAScreenState extends ConsumerState<QAScreen>
         ],
       ),
       body: SafeArea(
-        bottom: false, // Bottom bar handles its own safe area
+        bottom: false,
         child: Column(
           children: [
-            // Video player with loading skeleton
-            if (qaState.isLoadingVideo)
-              _buildVideoSkeleton()
-            else if (qaState.hasVideo)
-              VideoPlayer(videoId: qaState.videoId!),
-            if (qaState.hasVideo && !qaState.isLoadingVideo)
-              TranscriptHeader(
-                title: qaState.videoTitle!,
-                duration: qaState.videoDuration!,
-              ),
-            // Continuous listening indicator
-            if (qaState.hasVideo && voiceState.isContinuousModeEnabled)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ContinuousListeningIndicator(),
-              ),
-            if (qaState.videoError != null && qaState.videoError!.isNotEmpty)
-              ErrorBanner(error: qaState.videoError!),
-            // Empty space for clean UI - history accessed via bottom bar
+            QAVideoSection(qaState: qaState),
             Expanded(
               child: qaState.hasVideo
                   ? const Center(child: ListeningToggleButton())
@@ -256,7 +198,6 @@ class _QAScreenState extends ConsumerState<QAScreen>
                       message: 'Add YouTube URL to Start the Learning Journey',
                     ),
             ),
-            // Bottom action bar
             const BottomActionBar(),
           ],
         ),
