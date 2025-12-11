@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/services/voice/voice_models.dart';
+import '../utils/qa_actions.dart';
 
 /// Large listening toggle button (ear icon)
 /// Primary interaction for hands-free learning
 /// Listening is ON by default when video loads
 class ListeningToggleButton extends ConsumerWidget {
-  final VoidCallback onToggle;
+  const ListeningToggleButton({super.key});
 
-  const ListeningToggleButton({
-    super.key,
-    required this.onToggle,
-  });
+  Future<void> _handleToggle(WidgetRef ref) async {
+    await toggleContinuousModeWithVideo(ref);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,7 +34,7 @@ class ListeningToggleButton extends ConsumerWidget {
               ? (isListening ? Colors.green.shade600 : Colors.red.shade600)
               : Colors.grey.shade400,
           child: InkWell(
-            onTap: isEnabled ? onToggle : null,
+            onTap: isEnabled ? () => _handleToggle(ref) : null,
             customBorder: const CircleBorder(),
             child: Container(
               width: 100,
@@ -42,7 +42,9 @@ class ListeningToggleButton extends ConsumerWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isEnabled
-                    ? (isListening ? Colors.green.shade600 : Colors.red.shade600)
+                    ? (isListening
+                          ? Colors.green.shade600
+                          : Colors.red.shade600)
                     : Colors.grey.shade400,
               ),
               child: Icon(

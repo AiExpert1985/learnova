@@ -8,14 +8,12 @@ import '../widgets/error_banner.dart';
 import '../widgets/video_player.dart';
 import '../widgets/continuous_listening_indicator.dart';
 import '../widgets/headphone_required_dialog.dart';
-import '../widgets/chat_bottom_sheet.dart';
 import '../widgets/bottom_action_bar.dart';
 import '../widgets/listening_toggle_button.dart';
-import '../state/qa_state.dart';
 import '../../history/ui/widgets/history_bottom_sheet.dart';
 import '../../history/providers/history_providers.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../../core/services/voice/voice_models.dart';
+import '../utils/qa_actions.dart';
 
 /// Main Q&A screen with YouTube integration
 class QAScreen extends ConsumerStatefulWidget {
@@ -113,7 +111,7 @@ class _QAScreenState extends ConsumerState<QAScreen>
 
     if (areHeadphonesConnected) {
       // Headphones connected - enable continuous mode automatically
-      _handleContinuousModeToggle();
+      await toggleContinuousModeWithVideo(ref);
     }
     // If no headphones, listening mode stays off (user can manually enable later)
   }
@@ -168,7 +166,7 @@ class _QAScreenState extends ConsumerState<QAScreen>
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _handleContinuousModeToggle();
+              toggleContinuousModeWithVideo(ref);
             },
             child: const Text('Resume'),
           ),
@@ -188,70 +186,6 @@ class _QAScreenState extends ConsumerState<QAScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => const HistoryBottomSheet(),
-    );
-  }
-
-  void _showSessionHistoryDrawer(BuildContext context) async {
-    // Stop continuous listening mode if active
-    final voiceState = ref.read(voiceNotifierProvider);
-    if (voiceState.isContinuousModeEnabled) {
-      await ref.read(voiceNotifierProvider.notifier).stopContinuousMode();
-    }
-
-    // Pause video when chat opens
-    final videoController = ref.read(youtubeControllerProvider);
-    bool wasPlaying = false;
-    if (videoController != null) {
-      final playerState = await videoController.playerState;
-      wasPlaying = playerState == PlayerState.playing;
-      if (wasPlaying) {
-        await videoController.pauseVideo();
-      }
-    }
-
-    // Check if widget is still mounted before using context
-    if (!context.mounted) return;
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: Colors.transparent,
-      builder: (context) =>
-          ChatBottomSheet(onClose: () => Navigator.of(context).pop()),
-    );
-
-    // Video remains paused after chat closes (user can manually resume)
-  }
-
-  void _handleBottomBarAction(BottomBarState newState) {
-    ref.read(qaNotifierProvider.notifier).setBottomBarState(newState);
-  }
-
-  void _handleContinuousModeToggle() async {
-    final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
-    final qaNotifier = ref.read(qaNotifierProvider.notifier);
-    final videoController = ref.read(youtubeControllerProvider);
-
-    await voiceNotifier.toggleContinuousMode(
-      onQuestion: (question) async {
-        // Pause video when user speaks
-        if (videoController != null) {
-          final playerState = await videoController.playerState;
-          if (playerState == PlayerState.playing) {
-            await videoController.pauseVideo();
-          }
-        }
-
-        // Process question through QA service
-        qaNotifier.askQuestion(question, isContinuousMode: true);
-      },
-      onAnswerReady: (answer) {
-        // This is called if TTS fails, to display answer as text
-        // The answer is already in the QA history, so nothing to do here
-      },
     );
   }
 
@@ -316,22 +250,14 @@ class _QAScreenState extends ConsumerState<QAScreen>
             // Empty space for clean UI - history accessed via bottom bar
             Expanded(
               child: qaState.hasVideo
-                  ? Center(
-                      child: ListeningToggleButton(
-                        onToggle: _handleContinuousModeToggle,
-                      ),
-                    )
+                  ? const Center(child: ListeningToggleButton())
                   : EmptyState(
                       icon: Icons.video_library_outlined,
                       message: 'Add YouTube URL to Start the Learning Journey',
                     ),
             ),
             // Bottom action bar
-            BottomActionBar(
-              onUrlPressed: () =>
-                  _handleBottomBarAction(BottomBarState.urlExpanded),
-              onChatPressed: () => _showSessionHistoryDrawer(context),
-            ),
+            const BottomActionBar(),
           ],
         ),
       ),

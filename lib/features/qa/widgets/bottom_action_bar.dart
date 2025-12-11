@@ -1,19 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../../core/providers/app_providers.dart';
 import '../state/qa_state.dart';
+import 'chat_bottom_sheet.dart';
+import 'video_player.dart';
 
 /// Bottom action bar with expandable states
 /// Shows 2 buttons (collapsed) or expanded input fields
 class BottomActionBar extends ConsumerWidget {
-  final VoidCallback onUrlPressed;
-  final VoidCallback onChatPressed;
+  const BottomActionBar({super.key});
 
-  const BottomActionBar({
-    super.key,
-    required this.onUrlPressed,
-    required this.onChatPressed,
-  });
+  void _handleUrlPressed(WidgetRef ref) {
+    ref
+        .read(qaNotifierProvider.notifier)
+        .setBottomBarState(BottomBarState.urlExpanded);
+  }
+
+  Future<void> _handleChatPressed(BuildContext context, WidgetRef ref) async {
+    // Stop continuous listening mode if active
+    final voiceState = ref.read(voiceNotifierProvider);
+    if (voiceState.isContinuousModeEnabled) {
+      await ref.read(voiceNotifierProvider.notifier).stopContinuousMode();
+    }
+
+    // Pause video when chat opens
+    final videoController = ref.read(youtubeControllerProvider);
+    if (videoController != null) {
+      final playerState = await videoController.playerState;
+      if (playerState == PlayerState.playing) {
+        await videoController.pauseVideo();
+      }
+    }
+
+    // Check if widget is still mounted before using context
+    if (!context.mounted) return;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          ChatBottomSheet(onClose: () => Navigator.of(context).pop()),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,14 +71,19 @@ class BottomActionBar extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: barState == BottomBarState.collapsed
-              ? _buildCollapsedBar(hasVideo, isLoading)
+              ? _buildCollapsedBar(context, ref, hasVideo, isLoading)
               : const UrlInputBar(),
         ),
       ),
     );
   }
 
-  Widget _buildCollapsedBar(bool hasVideo, bool isLoading) {
+  Widget _buildCollapsedBar(
+    BuildContext context,
+    WidgetRef ref,
+    bool hasVideo,
+    bool isLoading,
+  ) {
     // Chat button disabled when no video or loading
     final buttonsEnabled = hasVideo && !isLoading;
 
@@ -56,7 +94,7 @@ class BottomActionBar extends ConsumerWidget {
             icon: Icons.add,
             label: 'URL',
             enabled: true, // Always enabled
-            onPressed: onUrlPressed,
+            onPressed: () => _handleUrlPressed(ref),
           ),
         ),
         const SizedBox(width: 12),
@@ -65,7 +103,9 @@ class BottomActionBar extends ConsumerWidget {
             icon: Icons.chat_bubble_outline,
             label: 'Chat',
             enabled: buttonsEnabled,
-            onPressed: buttonsEnabled ? onChatPressed : null,
+            onPressed: buttonsEnabled
+                ? () => _handleChatPressed(context, ref)
+                : null,
           ),
         ),
       ],
@@ -97,9 +137,7 @@ class _ActionButton extends StatelessWidget {
         disabledBackgroundColor: Colors.grey.shade300,
         disabledForegroundColor: Colors.grey.shade500,
         padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -204,4 +242,3 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
     );
   }
 }
-
