@@ -27,7 +27,7 @@ class ListeningToggleButton extends ConsumerWidget {
         ? (isListening ? Colors.green.shade600 : Colors.red.shade600)
         : Colors.grey.shade400;
 
-    final IconData icon = isListening ? Icons.hearing : Icons.mic_off;
+    final IconData icon = isListening ? Icons.hearing : Icons.hearing_disabled;
     final String label = isListening ? '(listening on)' : '(listening is off)';
 
     return Column(
