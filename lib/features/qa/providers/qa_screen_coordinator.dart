@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vidorion/core/services/voice/state/voice_state.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/services/voice/voice_models.dart';
 import '../state/qa_state.dart';
@@ -214,14 +215,15 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
 
 /// Callback provider for continuous mode toggle (set by screen)
 /// Allows coordinator to trigger continuous mode without WidgetRef
-final _continuousModeCallbackProvider =
-    StateProvider<void Function()?>((_) => null);
+final _continuousModeCallbackProvider = StateProvider<void Function()?>(
+  (_) => null,
+);
 
 /// Provider for QA screen coordinator
 final qaScreenCoordinatorProvider =
     StateNotifierProvider<QAScreenCoordinator, QAScreenCoordinatorState>(
-  (ref) => QAScreenCoordinator(ref),
-);
+      (ref) => QAScreenCoordinator(ref),
+    );
 
 /// Call this from the screen's initState to set up the continuous mode callback
 void setupContinuousModeCallback(WidgetRef ref) {
