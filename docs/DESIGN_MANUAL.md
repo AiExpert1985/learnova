@@ -394,6 +394,19 @@ listening → processing → speaking → waitingForNextQuestion → listening (
 - **Position Accuracy:** Store video position at time of question (not current position), enabling accurate context restoration.
 - **Debug Handling:** Wrap debug prints in `if (kDebugMode)` checks for production performance.
 
+### Voice & Q/A Interaction (Updated)
+- **Continuous Listening Mode:**
+  - **Default:** OFF (User must manually enable).
+  - **Auto-Enable:** Disabled (Headphone connection does *not* auto-trigger listening to prevent accidental activation).
+  - **Icons:** Consistent "Ear" theme (`Icons.hearing` / `Icons.hearing_disabled`).
+  - **UI:** Large Red/Green toggle button.
+- **Headphone Requirement:**
+  - **Dialog:** Simplified "Connect headset" message.
+  - **Disclosure:** Progressive "Why?" button for detailed explanation to reduce cognitive load.
+- **Auto-Speak Logic:**
+  - **Startup:** Silent (Loading history does *not* trigger speech).
+  - **Active Session:** Speaks only new answers generated during the session.
+
 ### Bottom Action Bar & Chat UI (Step 8 - Updated)
 - **Decision:** Simplified bottom action bar with integrated chat UI
 - **Why:** Reduces UI clutter by combining Ask and Chat into unified interface, maintains hands-free focus
@@ -421,8 +434,7 @@ listening → processing → speaking → waitingForNextQuestion → listening (
   - Centered in main body with video player
   - 100dp circular Material with elevation 4
   - Icons: `Icons.hearing` (active) / `Icons.hearing_disabled` (off)
-  - Text: "Listening" / "Off" with state indicator below (Ready/Processing/Speaking/Waiting)
-  - Auto-enabled when video fully initializes (both player ready + transcript loaded)
+  - Text: "Listening" / "Off"
   - Color-coded states for instant visual feedback:
     - Green (Colors.green.shade600) when listening is ON
     - Red (Colors.red.shade600) when listening is OFF
@@ -433,11 +445,6 @@ listening → processing → speaking → waitingForNextQuestion → listening (
   - Hides TranscriptHeader until video fully loads
   - Smooth visual transition from loading to ready state
 - **Empty State:** "Add YouTube URL to Start the Learning Journey" centered in body when no video
-- **Auto-Enable Pattern:** Uses `didChangeDependencies` with flag (`_autoEnabledContinuousMode`) to detect when video becomes ready
-  - **Headphone detection:** Checks if headphones connected before auto-enabling listening mode
-  - **If headphones connected:** Auto-enables continuous mode
-  - **If no headphones:** Listening mode stays off (user can manually enable later if desired)
-  - **Why:** Prevents accidental activation without headphones (would pick up video audio from speakers)
 - **Session History:** Only accessible via Chat button (bottom sheet), removed from main body to reduce clutter
 - **Video Pause Behavior:** When chat opens, video pauses and listening mode stops to prevent interference
 
