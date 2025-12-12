@@ -71,6 +71,8 @@
 **Decision:** `StateNotifier` for logic, widgets call `ref.read(notifier).method()`.
 **Avoid:** Callback drilling.
 
+**copyWith Nullable Fields:** `copyWith(field: null)` doesn't work because `null ?? existingValue` returns the existing value. For nullable fields that need resetting to null, create the state object directly instead of using `copyWith`.
+
 ### Screen Coordinator Pattern
 **Decision:** Use a dedicated `StateNotifier` coordinator when a screen needs to coordinate between multiple providers.
 
