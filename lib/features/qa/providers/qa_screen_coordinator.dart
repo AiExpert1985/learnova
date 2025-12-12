@@ -87,7 +87,10 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
 
   /// Speak answer aloud if input was voice or in continuous mode
   void _handleAutoSpeak(QAState? previous, QAState next) {
-    final previousLength = previous?.history.length ?? 0;
+    // Prevent auto-speak on initial history load/restoration
+    if (previous == null || previous.history.isEmpty) return;
+
+    final previousLength = previous.history.length;
     if (next.history.length <= previousLength) return;
 
     final lastEntry = next.history.last;
