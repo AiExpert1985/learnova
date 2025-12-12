@@ -26,7 +26,10 @@ class _QAScreenState extends ConsumerState<QAScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Set up callback for coordinator to trigger continuous mode
-    setupContinuousModeCallback(ref);
+    // Delayed to avoid "modifying provider during build" error
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setupContinuousModeCallback(ref);
+    });
   }
 
   @override

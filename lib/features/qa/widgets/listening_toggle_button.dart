@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
-import '../../../core/services/voice/voice_models.dart';
+
 import '../utils/qa_actions.dart';
 
 /// Large listening toggle button (ear icon)
@@ -21,86 +21,45 @@ class ListeningToggleButton extends ConsumerWidget {
 
     final isEnabled = voiceState.isInitialized && qaState.isFullyInitialized;
     final isListening = voiceState.isContinuousModeEnabled;
-    final currentState = voiceState.continuousListeningState;
+
+    // Define styles based on state
+    final Color color = isEnabled
+        ? (isListening ? Colors.green.shade600 : Colors.red.shade600)
+        : Colors.grey.shade400;
+
+    final IconData icon = isListening ? Icons.hearing : Icons.mic_off;
+    final String label = isListening ? '(listening on)' : '(listening is off)';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Large ear button
+        // Large circular button
         Material(
           elevation: 4,
           shape: const CircleBorder(),
-          color: isEnabled
-              ? (isListening ? Colors.green.shade600 : Colors.red.shade600)
-              : Colors.grey.shade400,
+          color: color,
           child: InkWell(
             onTap: isEnabled ? () => _handleToggle(ref) : null,
             customBorder: const CircleBorder(),
             child: Container(
               width: 100,
               height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isEnabled
-                    ? (isListening
-                          ? Colors.green.shade600
-                          : Colors.red.shade600)
-                    : Colors.grey.shade400,
-              ),
-              child: Icon(
-                isListening ? Icons.hearing : Icons.hearing_disabled,
-                size: 48,
-                color: Colors.white,
-              ),
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: Icon(icon, size: 48, color: Colors.white),
             ),
           ),
         ),
         const SizedBox(height: 12),
-        // Status text
+        // Status label
         Text(
-          isListening ? 'Listening' : 'Off',
+          label,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: isEnabled
-                ? (isListening ? Colors.green.shade700 : Colors.red.shade700)
-                : Colors.grey.shade500,
+            color: color,
           ),
         ),
-        const SizedBox(height: 8),
-        // Minimal state indicator
-        if (isListening) _buildStateIndicator(currentState),
       ],
-    );
-  }
-
-  Widget _buildStateIndicator(ContinuousListeningState state) {
-    String text;
-    switch (state) {
-      case ContinuousListeningState.listening:
-        text = 'Ready...';
-        break;
-      case ContinuousListeningState.processing:
-        text = 'Processing...';
-        break;
-      case ContinuousListeningState.speaking:
-        text = 'Speaking...';
-        break;
-      case ContinuousListeningState.waitingForNextQuestion:
-        text = 'Waiting for next question...';
-        break;
-      case ContinuousListeningState.idle:
-        text = 'Idle';
-        break;
-    }
-
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 12,
-        color: Colors.grey.shade600,
-        fontStyle: FontStyle.italic,
-      ),
     );
   }
 }
