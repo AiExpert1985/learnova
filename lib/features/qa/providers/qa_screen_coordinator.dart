@@ -13,47 +13,22 @@ class QAScreenCoordinatorState {
   /// True if continuous mode was active before app went to background
   final bool wasInContinuousMode;
 
-  /// True if we've already auto-enabled continuous mode for current video
-  final bool hasAutoEnabledForCurrentVideo;
-
-  /// Video ID we last auto-enabled for (prevents duplicate auto-enable)
-  final String? lastAutoEnabledVideoId;
-
   /// True if resume dialog should be shown
   final bool shouldShowResumeDialog;
 
   const QAScreenCoordinatorState({
     this.wasInContinuousMode = false,
-    this.hasAutoEnabledForCurrentVideo = false,
-    this.lastAutoEnabledVideoId,
     this.shouldShowResumeDialog = false,
   });
 
   QAScreenCoordinatorState copyWith({
     bool? wasInContinuousMode,
-    bool? hasAutoEnabledForCurrentVideo,
-    String? lastAutoEnabledVideoId,
     bool? shouldShowResumeDialog,
   }) {
     return QAScreenCoordinatorState(
       wasInContinuousMode: wasInContinuousMode ?? this.wasInContinuousMode,
-      hasAutoEnabledForCurrentVideo:
-          hasAutoEnabledForCurrentVideo ?? this.hasAutoEnabledForCurrentVideo,
-      lastAutoEnabledVideoId:
-          lastAutoEnabledVideoId ?? this.lastAutoEnabledVideoId,
       shouldShowResumeDialog:
           shouldShowResumeDialog ?? this.shouldShowResumeDialog,
-    );
-  }
-
-  /// Reset auto-enable tracking (called when video cleared)
-  QAScreenCoordinatorState resetAutoEnable() {
-    // Can't use copyWith for null - create new state directly
-    return QAScreenCoordinatorState(
-      wasInContinuousMode: wasInContinuousMode,
-      hasAutoEnabledForCurrentVideo: false,
-      lastAutoEnabledVideoId: null,
-      shouldShowResumeDialog: shouldShowResumeDialog,
     );
   }
 }
@@ -108,8 +83,6 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
 
   void _onQAStateChanged(QAState? previous, QAState next) {
     _handleAutoSpeak(previous, next);
-    _handleAutoEnableContinuousMode(previous, next);
-    _handleVideoCleared(next);
   }
 
   /// Speak answer aloud if input was voice or in continuous mode
@@ -127,44 +100,6 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
       voiceNotifier.speakAnswerAndResume(lastEntry.answer!);
     } else if (next.lastInputMethod == InputMethod.voice) {
       voiceNotifier.speak(lastEntry.answer!);
-    }
-  }
-
-  /// Auto-enable continuous mode when video loads (if headphones connected)
-  void _handleAutoEnableContinuousMode(QAState? previous, QAState next) {
-    if (!next.hasVideo || next.isLoadingVideo) return;
-
-    final isNewVideo = _isNewVideoLoaded(previous, next);
-    if (!isNewVideo || state.hasAutoEnabledForCurrentVideo) return;
-
-    // Mark as attempted for this video
-    state = state.copyWith(
-      hasAutoEnabledForCurrentVideo: true,
-      lastAutoEnabledVideoId: next.videoId,
-    );
-
-    // Check headphones and enable (async, no dialog on failure)
-    Future.microtask(() async {
-      final audioService = _ref.read(audioDeviceServiceProvider);
-      if (await audioService.areHeadphonesConnected()) {
-        _enableContinuousMode();
-      }
-    });
-  }
-
-  bool _isNewVideoLoaded(QAState? previous, QAState next) {
-    if (previous?.hasVideo == false) return true;
-    if (previous?.videoId != next.videoId &&
-        next.videoId != state.lastAutoEnabledVideoId) {
-      return true;
-    }
-    return false;
-  }
-
-  /// Reset auto-enable tracking when video cleared
-  void _handleVideoCleared(QAState next) {
-    if (!next.hasVideo && state.hasAutoEnabledForCurrentVideo) {
-      state = state.resetAutoEnable();
     }
   }
 
