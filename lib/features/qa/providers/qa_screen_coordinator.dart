@@ -48,9 +48,12 @@ class QAScreenCoordinatorState {
 
   /// Reset auto-enable tracking (called when video cleared)
   QAScreenCoordinatorState resetAutoEnable() {
-    return copyWith(
+    // Can't use copyWith for null - create new state directly
+    return QAScreenCoordinatorState(
+      wasInContinuousMode: wasInContinuousMode,
       hasAutoEnabledForCurrentVideo: false,
       lastAutoEnabledVideoId: null,
+      shouldShowResumeDialog: shouldShowResumeDialog,
     );
   }
 }
