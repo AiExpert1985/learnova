@@ -71,6 +71,55 @@
 **Decision:** `StateNotifier` for logic, widgets call `ref.read(notifier).method()`.
 **Avoid:** Callback drilling.
 
+### Screen Coordinator Pattern
+**Decision:** Use a dedicated `StateNotifier` coordinator when a screen needs to coordinate between multiple providers.
+
+**When to Use:**
+- Screen needs to react to changes in multiple providers (e.g., QA + Voice + Video)
+- Coordination logic is complex (auto-speak, auto-enable, lifecycle handling)
+- Screen would exceed 150 lines with inline coordination logic
+
+**Structure:**
+```
+┌─────────────────────────────────────────┐
+│           Screen (Pure UI)              │
+│  • Watches coordinator state            │
+│  • Renders widgets                      │
+│  • Shows dialogs (UI-only reactions)    │
+└─────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────┐
+│    ScreenCoordinator (StateNotifier)    │
+│  • Owns coordination state              │
+│  • Listens to other providers           │
+│  • Coordinates cross-feature behavior   │
+└─────────────────────────────────────────┘
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+   FeatureA    FeatureB    FeatureC
+   Notifier    Notifier    Notifier
+```
+
+**Implementation:**
+- Coordinator extends `StateNotifier<CoordinatorState>`
+- Sets up `ref.listen()` calls in constructor
+- State tracks coordination flags (e.g., `wasInContinuousMode`, `shouldShowResumeDialog`)
+- Screen watches coordinator state and reacts to UI-triggering flags
+
+**Example:** `QAScreenCoordinator` coordinates QA, Voice, and Video:
+- Auto-speaks answers when input was voice
+- Auto-enables continuous mode when video loads
+- Syncs video playback with voice state
+- Handles app lifecycle for continuous mode
+
+**Benefits:**
+- Clear separation: logic in StateNotifier, UI in screen
+- Testable: coordinator has explicit, observable state
+- Maintainable: one place for all coordination logic
+- Readable: team/AI can understand coordination at a glance
+
 ---
 
 ## Code Organization & Refactoring
