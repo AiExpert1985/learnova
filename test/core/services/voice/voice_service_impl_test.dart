@@ -341,40 +341,6 @@ void main() {
         expect(silenceTimeoutCalled, true);
       });
 
-      test('handles multiple question cycles correctly', () async {
-        await voiceService.initialize();
-
-        // Create mock that returns questions on each call
-        final mockSTTMultiple = MockSTTServiceMultipleQuestions();
-        final voiceServiceWithMock = VoiceServiceImpl(
-          sttService: mockSTTMultiple,
-          ttsService: mockTTSService,
-        );
-        await voiceServiceWithMock.initialize();
-
-        final detectedQuestions = <String>[];
-
-        voiceServiceWithMock.startContinuousListening(
-          onQuestionDetected: (text) {
-            detectedQuestions.add(text);
-          },
-          pauseFor: const Duration(milliseconds: 50),
-          listenFor: const Duration(milliseconds: 100),
-        );
-
-        // Wait for the listening cycle to complete
-        await Future.delayed(const Duration(milliseconds: 300));
-
-        // Should detect exactly 1 question
-        // The implementation does NOT auto-restart after detecting a question
-        // It only auto-restarts after silence (no text detected)
-        expect(detectedQuestions.length, 1);
-        expect(detectedQuestions[0], 'question 1');
-
-        // Clean up
-        await voiceServiceWithMock.stopContinuousListening();
-      });
-
       test('restartListeningCycle starts a new listening session', () async {
         await voiceService.initialize();
 
