@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vidorion/core/services/voice/state/voice_state.dart';
@@ -6,6 +7,7 @@ import '../../../core/services/voice/voice_models.dart';
 import '../state/qa_state.dart';
 import '../utils/qa_actions.dart';
 import '../widgets/video_player.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 /// State for QA screen coordination
 /// Tracks lifecycle and auto-enable flags for cross-feature coordination
@@ -49,6 +51,9 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
 
     // Listen to QA state changes for auto-speak and auto-enable
     _ref.listen(qaNotifierProvider, _onQAStateChanged);
+
+    // Track video state for timeout behavior
+    _ref.listen(youtubePlayerStateProvider, _onVideoStateChanged);
   }
 
   // ============================================================
@@ -57,6 +62,10 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
 
   void _onVoiceStateChanged(VoiceState? previous, VoiceState next) {
     _syncVideoWithVoiceState(previous, next);
+
+    if (!next.isContinuousModeEnabled) {
+      _ref.read(voiceNotifierProvider.notifier).cancelVideoPauseTimer();
+    }
   }
 
   /// Pause video when speaking, resume when returning to listening
@@ -71,9 +80,45 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
       controller.playVideo();
     }
 
-    // Pause video: started speaking
+    final transitionedToUserSpeaking =
+        next.continuousListeningState == ContinuousListeningState.userSpeaking &&
+            previous?.continuousListeningState !=
+                ContinuousListeningState.userSpeaking;
+    final transitionedToSpeaking =
+        next.continuousListeningState == ContinuousListeningState.speaking &&
+            previous?.continuousListeningState !=
+                ContinuousListeningState.speaking;
+    final transitionedToProcessing =
+        next.continuousListeningState == ContinuousListeningState.processing &&
+            previous?.continuousListeningState !=
+                ContinuousListeningState.processing;
+
+    if (transitionedToUserSpeaking ||
+        transitionedToSpeaking ||
+        transitionedToProcessing) {
+      controller.pauseVideo();
+    }
+
     if (next.isSpeaking && !(previous?.isSpeaking ?? false)) {
       controller.pauseVideo();
+    }
+  }
+
+  void _onVideoStateChanged(PlayerState? previous, PlayerState? next) {
+    if (next == null) return;
+
+    final voiceState = _ref.read(voiceNotifierProvider);
+    final voiceNotifier = _ref.read(voiceNotifierProvider.notifier);
+
+    if (!voiceState.isContinuousModeEnabled) {
+      voiceNotifier.cancelVideoPauseTimer();
+      return;
+    }
+
+    if (next == PlayerState.paused || next == PlayerState.ended) {
+      voiceNotifier.startVideoPauseTimer();
+    } else if (next == PlayerState.playing) {
+      voiceNotifier.cancelVideoPauseTimer();
     }
   }
 

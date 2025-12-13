@@ -12,14 +12,6 @@ Future<void> toggleContinuousModeWithVideo(WidgetRef ref) async {
 
   await voiceNotifier.toggleContinuousMode(
     onQuestion: (question) async {
-      // Pause video when user speaks
-      if (videoController != null) {
-        final playerState = await videoController.playerState;
-        if (playerState == PlayerState.playing) {
-          await videoController.pauseVideo();
-        }
-      }
-
       // Process question through QA service
       qaNotifier.askQuestion(question, isContinuousMode: true);
     },

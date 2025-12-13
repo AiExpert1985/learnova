@@ -34,6 +34,7 @@ enum SpeechSynthesisState {
 enum ContinuousListeningState {
   idle,
   listening,
+  userSpeaking,
   processing,
   speaking,
   waitingForNextQuestion, // Grace period after speaking, before resuming listening
