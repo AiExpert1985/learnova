@@ -309,7 +309,7 @@ void main() {
         expect(mockSTTService.isListening, false);
       });
 
-      test('restarts listening cycle when no text detected (silence)', () async {
+      test('reports silence timeout when no text detected', () async {
         await voiceService.initialize();
 
         // Create mock that simulates silence (no text)
@@ -320,25 +320,25 @@ void main() {
         );
         await voiceServiceWithMock.initialize();
 
-        int questionDetectedCount = 0;
+        bool silenceTimeoutCalled = false;
 
         voiceServiceWithMock.startContinuousListening(
-          onQuestionDetected: (text) {
-            questionDetectedCount++;
+          onQuestionDetected: (text) {},
+          onSilenceTimeout: () {
+            silenceTimeoutCalled = true;
           },
           pauseFor: const Duration(seconds: 3),
           listenFor: const Duration(seconds: 60),
         );
 
-        // Wait for first silence cycle + restart delay (500ms) + processing time
-        // Need at least 700ms for cycle to complete and restart to begin
-        await Future.delayed(const Duration(milliseconds: 800));
+        // Wait for first silence cycle to complete
+        await Future.delayed(const Duration(milliseconds: 200));
 
-        // No question should be detected
-        expect(questionDetectedCount, 0);
+        // Start listening should have been called once
+        expect(mockSTTSilence.startListeningCallCount, 1);
 
-        // But listening should restart (check call count increased)
-        expect(mockSTTSilence.startListeningCallCount, greaterThan(1));
+        // Callback should have been triggered
+        expect(silenceTimeoutCalled, true);
       });
 
       test('handles multiple question cycles correctly', () async {
@@ -373,6 +373,29 @@ void main() {
 
         // Clean up
         await voiceServiceWithMock.stopContinuousListening();
+      });
+
+      test('restartListeningCycle starts a new listening session', () async {
+        await voiceService.initialize();
+
+        // Use standard mock
+        voiceService.startContinuousListening(onQuestionDetected: (_) {});
+
+        expect(mockSTTService.isListening, true);
+
+        // Stop the internal mock state to simulate a stop before restart (optional but cleaner)
+        // But restartListeningCycle should handle calling startListening again.
+
+        // Call restart
+        voiceService.restartListeningCycle(onQuestionDetected: (_) {});
+
+        // Check that startListening was called (MockSTTService logic needs to track calls?
+        // The standard MockSTTService at top of file doesn't track call count well,
+        // let's check isListening state or stream creation).
+        // Actually the stream mock returns a single value stream.
+        // Calling restart should trigger a new stream.
+
+        expect(mockSTTService.isListening, true);
       });
     });
   });

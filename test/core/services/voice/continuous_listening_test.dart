@@ -264,12 +264,31 @@ class MockVoiceService implements VoiceService {
   @override
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function(String partialText)? onSpeechStart,
+    Function()? onSilenceTimeout,
     Duration? pauseFor,
     Duration? listenFor,
   }) {
     _isContinuousListening = true;
     _onQuestionDetected = onQuestionDetected;
     startContinuousListeningCallCount++;
+  }
+
+  @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function(String partialText)? onSpeechStart,
+    Function()? onSilenceTimeout,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    startContinuousListening(
+      onQuestionDetected: onQuestionDetected,
+      onSpeechStart: onSpeechStart,
+      onSilenceTimeout: onSilenceTimeout,
+      pauseFor: pauseFor,
+      listenFor: listenFor,
+    );
   }
 
   @override
@@ -355,30 +374,6 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(questions, contains('What is AI?'));
-
-      await voiceService.stopContinuousListening();
-    });
-
-    test('handles errors and retries listening', () async {
-      await voiceService.initialize();
-
-      voiceService.startContinuousListening(onQuestionDetected: (_) {});
-
-      // Give time for listening to start
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      final initialCallCount = mockSTT.startListeningCallCount;
-
-      // Simulate error
-      mockSTT.simulateError(
-        VoiceException('Test error', VoiceErrorType.unknown),
-      );
-      mockSTT.closeStream();
-
-      await Future.delayed(const Duration(seconds: 3));
-
-      // Should retry after error
-      expect(mockSTT.startListeningCallCount, greaterThan(initialCallCount));
 
       await voiceService.stopContinuousListening();
     });

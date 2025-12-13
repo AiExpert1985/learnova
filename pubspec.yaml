@@ -63,6 +63,7 @@ dependencies:
 
   # Loading skeleton/shimmer
   skeletonizer: ^2.1.1
+  audio_session: ^0.2.2
 
 dev_dependencies:
   flutter_test:

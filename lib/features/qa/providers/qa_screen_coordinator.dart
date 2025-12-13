@@ -71,7 +71,15 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
       controller.playVideo();
     }
 
-    // Pause video: started speaking
+    // Pause video: User started speaking (Detected via partial result)
+    if (next.continuousListeningState ==
+            ContinuousListeningState.userSpeaking &&
+        previous?.continuousListeningState !=
+            ContinuousListeningState.userSpeaking) {
+      controller.pauseVideo();
+    }
+
+    // Pause video: started speaking (TTS) - Fallback/Normal voice mode
     if (next.isSpeaking && !(previous?.isSpeaking ?? false)) {
       controller.pauseVideo();
     }

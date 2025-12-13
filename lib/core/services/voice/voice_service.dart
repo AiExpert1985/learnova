@@ -55,16 +55,25 @@ abstract class VoiceService {
     String? language,
   });
 
-  /// Start continuous listening mode
-  /// Callback is invoked when a question is detected (after silence)
-  /// Returns a stream controller that can be used to stop continuous mode
+  /// Start continuous listening mode (looping until stopped)
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function(String partialText)? onSpeechStart,
+    Function()? onSilenceTimeout,
     Duration? pauseFor,
     Duration? listenFor,
   });
 
-  /// Stop continuous listening mode
+  /// Restart the continuous listening cycle (called after processing a question)
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function(String partialText)? onSpeechStart,
+    Function()? onSilenceTimeout,
+    Duration? pauseFor,
+    Duration? listenFor,
+  });
+
+  /// Stop continuous listening mode loop
   Future<void> stopContinuousListening();
 
   /// Check if continuous listening is active

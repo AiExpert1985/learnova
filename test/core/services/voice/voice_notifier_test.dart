@@ -99,6 +99,19 @@ class MockVoiceService implements VoiceService {
   @override
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function(String partialText)? onSpeechStart,
+    Function()? onSilenceTimeout,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    // Mock implementation - no-op for basic tests
+  }
+
+  @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function(String partialText)? onSpeechStart,
+    Function()? onSilenceTimeout,
     Duration? pauseFor,
     Duration? listenFor,
   }) {

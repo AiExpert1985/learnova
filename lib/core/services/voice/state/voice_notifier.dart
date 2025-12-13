@@ -334,6 +334,8 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     // Start continuous listening with 5-second pause threshold
     _voiceService.startContinuousListening(
       onQuestionDetected: _handleQuestionDetected,
+      onSpeechStart: _handleSpeechStart,
+      onSilenceTimeout: _handleSilenceTimeout,
       pauseFor: const Duration(seconds: 5),
       listenFor: const Duration(seconds: 60),
     );
@@ -351,6 +353,33 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
       isContinuousModeEnabled: false,
       continuousListeningState: ContinuousListeningState.idle,
     );
+  }
+
+  /// Handle speech onset (partial result)
+  void _handleSpeechStart(String partialText) {
+    if (!state.isContinuousModeEnabled) return;
+
+    // Transition to UserSpeaking state immediately to pause video
+    if (state.continuousListeningState !=
+        ContinuousListeningState.userSpeaking) {
+      state = state.copyWith(
+        continuousListeningState: ContinuousListeningState.userSpeaking,
+      );
+      _resetInactivityTimer();
+    }
+  }
+
+  /// Handle silence timeout (debounced restart)
+  void _handleSilenceTimeout() {
+    if (!state.isContinuousModeEnabled) return;
+
+    // Safety fallback: if we loop too fast (e.g. 5 times in 5 seconds), pause briefly
+    // But since we have a 5s pauseFor, a loop implies silence was detected *not* locally but maybe error?
+    // Actually, onSilenceTimeout comes from the service.
+
+    // Restart listening cycle immediately if < max retries, else debounce?
+    // For now, simple restart is fine as VoiceService no longer loops itself.
+    _resumeListening();
   }
 
   /// Handle question detected in continuous mode
@@ -383,65 +412,69 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
       continuousListeningState: ContinuousListeningState.speaking,
     );
 
-    // Create completer to make this properly awaitable
     final completer = Completer<void>();
+    bool ttsCompleted = false;
 
-    // Speak the answer
+    // Speak the answer with retry logic (simple version)
     final stream = _voiceService.speak(answer);
 
     _synthesisSubscription = stream.listen(
       (synthesisState) {
-        // Update synthesis state
         state = state.copyWith(synthesisState: synthesisState);
       },
       onError: (error) {
-        // On TTS error, show answer as text and resume listening
-        _onAnswerCallback?.call(answer);
-        _resumeListening();
-        if (!completer.isCompleted) {
-          completer.complete();
+        // Fallback: show answer text if TTS fails
+        if (!ttsCompleted) {
+          _onAnswerCallback?.call(answer);
+          ttsCompleted = true;
+          _startGracePeriod();
         }
+        if (!completer.isCompleted) completer.complete();
       },
       onDone: () {
-        // When speaking completes, resume listening
-        _resumeListening();
-        if (!completer.isCompleted) {
-          completer.complete();
+        if (!ttsCompleted) {
+          ttsCompleted = true;
+          _startGracePeriod();
         }
+        if (!completer.isCompleted) completer.complete();
       },
     );
 
-    // Wait for TTS to complete before returning
     await completer.future;
   }
 
-  /// Resume listening after speaking (with grace period)
-  void _resumeListening() {
+  /// Start grace period then resume listening
+  void _startGracePeriod() {
     if (!state.isContinuousModeEnabled) return;
 
-    // Enter grace period state
     state = state.copyWith(
       continuousListeningState: ContinuousListeningState.waitingForNextQuestion,
       recognizedText: '',
     );
 
-    // Start 5-second grace period timer
     _gracePeriodTimer?.cancel();
+    // Dynamic grace period? For now keep 5s constant as per request to fix bugs first.
     _gracePeriodTimer = Timer(const Duration(seconds: 5), () {
-      // Grace period elapsed, resume listening
-      if (!state.isContinuousModeEnabled) return;
-
-      state = state.copyWith(
-        continuousListeningState: ContinuousListeningState.listening,
-      );
-
-      // Restart listening cycle with 5-second pause threshold
-      _voiceService.startContinuousListening(
-        onQuestionDetected: _handleQuestionDetected,
-        pauseFor: const Duration(seconds: 5),
-        listenFor: const Duration(seconds: 60),
-      );
+      _resumeListening();
     });
+  }
+
+  /// Resume listening after speaking/silence
+  void _resumeListening() {
+    if (!state.isContinuousModeEnabled) return;
+
+    state = state.copyWith(
+      continuousListeningState: ContinuousListeningState.listening,
+    );
+
+    // Restart listening cycle
+    _voiceService.restartListeningCycle(
+      onQuestionDetected: _handleQuestionDetected,
+      onSpeechStart: _handleSpeechStart,
+      onSilenceTimeout: _handleSilenceTimeout,
+      pauseFor: const Duration(seconds: 5),
+      listenFor: const Duration(seconds: 60),
+    );
   }
 
   /// Start inactivity timer

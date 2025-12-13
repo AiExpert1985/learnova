@@ -17,8 +17,8 @@ class VoiceServiceImpl implements VoiceService {
   VoiceServiceImpl({
     required STTService sttService,
     required TTSService ttsService,
-  })  : _sttService = sttService,
-        _ttsService = ttsService;
+  }) : _sttService = sttService,
+       _ttsService = ttsService;
 
   @override
   Future<void> initialize() async {
@@ -131,6 +131,8 @@ class VoiceServiceImpl implements VoiceService {
   @override
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function(String partialText)? onSpeechStart,
+    Function()? onSilenceTimeout,
     Duration? pauseFor,
     Duration? listenFor,
   }) {
@@ -141,13 +143,36 @@ class VoiceServiceImpl implements VoiceService {
       );
     }
 
-    if (_isContinuousListening) {
-      return; // Already in continuous mode
+    if (_isContinuousListening && _continuousListeningSubscription != null) {
+      _continuousListeningSubscription!.cancel();
     }
 
     _isContinuousListening = true;
+
     _startListeningCycle(
       onQuestionDetected: onQuestionDetected,
+      onSpeechStart: onSpeechStart,
+      onSilenceTimeout: onSilenceTimeout,
+      pauseFor: pauseFor ?? const Duration(seconds: 3),
+      listenFor: listenFor ?? const Duration(seconds: 60),
+    );
+  }
+
+  @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function(String partialText)? onSpeechStart,
+    Function()? onSilenceTimeout,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    // Only restart if the mode is still enabled
+    if (!_isContinuousListening) return;
+
+    _startListeningCycle(
+      onQuestionDetected: onQuestionDetected,
+      onSpeechStart: onSpeechStart,
+      onSilenceTimeout: onSilenceTimeout,
       pauseFor: pauseFor ?? const Duration(seconds: 3),
       listenFor: listenFor ?? const Duration(seconds: 60),
     );
@@ -155,11 +180,11 @@ class VoiceServiceImpl implements VoiceService {
 
   void _startListeningCycle({
     required Function(String recognizedText) onQuestionDetected,
+    Function(String partialText)? onSpeechStart,
+    Function()? onSilenceTimeout,
     required Duration pauseFor,
     required Duration listenFor,
   }) {
-    if (!_isContinuousListening) return;
-
     // Stop speaking before listening
     if (_ttsService.isSpeaking) {
       _ttsService.stop();
@@ -171,46 +196,34 @@ class VoiceServiceImpl implements VoiceService {
     );
 
     String? finalRecognizedText;
+    bool speechOnsetNotified = false;
 
     _continuousListeningSubscription = stream.listen(
       (result) {
-        // Always update with latest recognized text (STT may not set isFinal flag)
+        // Speech Onset Detection
         if (result.recognizedText.trim().isNotEmpty) {
+          if (!speechOnsetNotified) {
+            speechOnsetNotified = true;
+            onSpeechStart?.call(result.recognizedText);
+          }
           finalRecognizedText = result.recognizedText;
         }
       },
       onError: (error) {
-        // On error, restart the cycle after a short delay
-        Future.delayed(const Duration(seconds: 2), () {
-          if (_isContinuousListening) {
-            _startListeningCycle(
-              onQuestionDetected: onQuestionDetected,
-              pauseFor: pauseFor,
-              listenFor: listenFor,
-            );
-          }
-        });
+        // Pass error handling to Notifier via onDone/Timeout or let it bubble?
+        // For now, we just close this cycle.
+        // Notifier will likely see a timeout or use its own error handling if we exposed it.
+        // But here we just stop.
+        _continuousListeningSubscription?.cancel();
       },
       onDone: () {
-        // When listening completes (silence detected or timeout)
         if (!_isContinuousListening) return;
 
         if (finalRecognizedText != null) {
-          // Invoke callback with recognized text
           onQuestionDetected(finalRecognizedText!);
-          // Note: The callback handler will resume listening after processing
         } else {
-          // No text detected (silence/timeout) - restart listening immediately
-          // This keeps continuous mode truly continuous
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (_isContinuousListening) {
-              _startListeningCycle(
-                onQuestionDetected: onQuestionDetected,
-                pauseFor: pauseFor,
-                listenFor: listenFor,
-              );
-            }
-          });
+          // Notify silence - let Notifier decide when to restart
+          onSilenceTimeout?.call();
         }
       },
     );

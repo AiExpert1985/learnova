@@ -15,25 +15,16 @@ class SpeechRecognitionResult {
 }
 
 /// Represents the state of speech recognition
-enum SpeechRecognitionState {
-  idle,
-  listening,
-  processing,
-  error,
-}
+enum SpeechRecognitionState { idle, listening, processing, error }
 
 /// Represents the state of text-to-speech
-enum SpeechSynthesisState {
-  idle,
-  speaking,
-  paused,
-  error,
-}
+enum SpeechSynthesisState { idle, speaking, paused, error }
 
 /// Represents the state of continuous listening mode
 enum ContinuousListeningState {
   idle,
   listening,
+  userSpeaking, // User started speaking, video paused
   processing,
   speaking,
   waitingForNextQuestion, // Grace period after speaking, before resuming listening
