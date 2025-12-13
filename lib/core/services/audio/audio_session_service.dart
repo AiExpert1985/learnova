@@ -34,19 +34,20 @@ class AudioSessionServiceImpl implements AudioSessionService {
 
     final session = await _getSession();
 
+    // Note: Cannot use const here because AVAudioSessionCategoryOptions
+    // uses bitwise OR which requires runtime evaluation
     await session.configure(
-      const AudioSessionConfiguration(
+      AudioSessionConfiguration(
         // iOS: Allow playback and recording simultaneously
         avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-        avAudioSessionCategoryOptions:
-            AVAudioSessionCategoryOptions.allowBluetooth |
-                AVAudioSessionCategoryOptions.defaultToSpeaker |
-                AVAudioSessionCategoryOptions.mixWithOthers,
+        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.allowBluetooth
+            .union(AVAudioSessionCategoryOptions.defaultToSpeaker)
+            .union(AVAudioSessionCategoryOptions.mixWithOthers),
         avAudioSessionMode: AVAudioSessionMode.spokenAudio,
 
         // Android: Request audio focus that allows other audio to duck
         // This prevents the video from pausing when STT starts
-        androidAudioAttributes: AndroidAudioAttributes(
+        androidAudioAttributes: const AndroidAudioAttributes(
           contentType: AndroidAudioContentType.speech,
           usage: AndroidAudioUsage.voiceCommunication,
         ),

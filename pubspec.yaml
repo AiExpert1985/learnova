@@ -57,8 +57,9 @@ dependencies:
   # Audio session for simultaneous recording and playback
   audio_session: ^0.1.21
 
-  # Voice Activity Detection for efficient continuous listening
-  vad: ^0.0.4
+  # Note: VAD (Voice Activity Detection) is planned for future integration
+  # Currently using stub implementation with STT-based speech onset detection
+  # See docs/CONTINUOUS_LISTENING.md for details
 
   # Local storage
   hive: ^2.2.3

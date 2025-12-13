@@ -11,7 +11,7 @@ import '../services/voice/flutter_tts_service.dart';
 import '../services/voice/voice_service_impl.dart';
 import '../services/voice/permission_service.dart';
 import '../services/voice/vad_service.dart';
-import '../services/voice/silero_vad_service.dart';
+import '../services/voice/silero_vad_service.dart' show StubVADService;
 import '../services/voice/state/voice_notifier.dart';
 import '../services/voice/state/voice_state.dart';
 import '../services/audio/audio_device_service.dart';
@@ -92,8 +92,10 @@ final ttsServiceProvider = Provider<TTSService>((ref) {
 });
 
 /// Provider for VAD service (voice activity detection)
+/// Note: Currently using stub implementation. See silero_vad_service.dart
+/// for details on future VAD integration.
 final vadServiceProvider = Provider<VADService>((ref) {
-  return SileroVADService();
+  return StubVADService();
 });
 
 /// Provider for voice service coordinator
