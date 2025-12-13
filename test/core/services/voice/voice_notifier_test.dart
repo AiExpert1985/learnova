@@ -4,13 +4,18 @@ import 'package:vidorion/core/services/voice/state/voice_notifier.dart';
 import 'package:vidorion/core/services/voice/voice_service.dart';
 import 'package:vidorion/core/services/voice/permission_service.dart';
 import 'package:vidorion/core/services/voice/voice_models.dart';
+import 'package:vidorion/core/services/voice/vad_service.dart';
 import 'package:vidorion/core/services/audio/audio_device_service.dart';
+import 'package:vidorion/core/services/audio/audio_session_service.dart';
 
 /// Mock Voice Service for testing
 class MockVoiceService implements VoiceService {
   bool _isListening = false;
   bool _isSpeaking = false;
+  bool _isContinuousListening = false;
   List<SpeechRecognitionResult>? _customResults;
+  Function(String)? _onQuestionCallback;
+  Function()? _onSpeechStartCallback;
 
   @override
   Future<void> initialize() async {
@@ -20,6 +25,16 @@ class MockVoiceService implements VoiceService {
   /// Set custom results for testing specific scenarios
   void setCustomResults(List<SpeechRecognitionResult> results) {
     _customResults = results;
+  }
+
+  /// Simulate detecting a question in continuous mode
+  void simulateQuestionDetected(String question) {
+    _onQuestionCallback?.call(question);
+  }
+
+  /// Simulate speech start in continuous mode
+  void simulateSpeechStart() {
+    _onSpeechStartCallback?.call();
   }
 
   @override
@@ -99,19 +114,36 @@ class MockVoiceService implements VoiceService {
   @override
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
     Duration? pauseFor,
     Duration? listenFor,
   }) {
-    // Mock implementation - no-op for basic tests
+    _isContinuousListening = true;
+    _onQuestionCallback = onQuestionDetected;
+    _onSpeechStartCallback = onSpeechStart;
+  }
+
+  @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    // Mock implementation - restart listening cycle
+    _onQuestionCallback = onQuestionDetected;
+    _onSpeechStartCallback = onSpeechStart;
   }
 
   @override
   Future<void> stopContinuousListening() async {
-    // Mock implementation - no-op for basic tests
+    _isContinuousListening = false;
+    _onQuestionCallback = null;
+    _onSpeechStartCallback = null;
   }
 
   @override
-  bool get isContinuousListening => false;
+  bool get isContinuousListening => _isContinuousListening;
 
   @override
   Future<void> dispose() async {
@@ -160,21 +192,99 @@ class MockAudioDeviceService implements AudioDeviceService {
   }
 }
 
+/// Mock Audio Session Service for testing
+class MockAudioSessionService implements AudioSessionService {
+  bool _isConfiguredForContinuousListening = false;
+
+  @override
+  Future<void> configureForContinuousListening() async {
+    _isConfiguredForContinuousListening = true;
+  }
+
+  @override
+  Future<void> configureForPlayback() async {
+    _isConfiguredForContinuousListening = false;
+  }
+
+  @override
+  Future<void> dispose() async {}
+
+  bool get isConfiguredForContinuousListening =>
+      _isConfiguredForContinuousListening;
+}
+
+/// Mock VAD Service for testing
+class MockVADService implements VADService {
+  bool _isMonitoring = false;
+  bool _isVoiceActive = false;
+  Function()? _onVoiceStart;
+  Function()? _onVoiceEnd;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  void startMonitoring({
+    required Function() onVoiceStart,
+    required Function() onVoiceEnd,
+  }) {
+    _isMonitoring = true;
+    _onVoiceStart = onVoiceStart;
+    _onVoiceEnd = onVoiceEnd;
+  }
+
+  @override
+  Future<void> stopMonitoring() async {
+    _isMonitoring = false;
+    _onVoiceStart = null;
+    _onVoiceEnd = null;
+  }
+
+  @override
+  bool get isMonitoring => _isMonitoring;
+
+  @override
+  bool get isVoiceActive => _isVoiceActive;
+
+  @override
+  Future<void> dispose() async {
+    await stopMonitoring();
+  }
+
+  /// Simulate voice detected
+  void simulateVoiceStart() {
+    _isVoiceActive = true;
+    _onVoiceStart?.call();
+  }
+
+  /// Simulate voice ended
+  void simulateVoiceEnd() {
+    _isVoiceActive = false;
+    _onVoiceEnd?.call();
+  }
+}
+
 void main() {
   group('VoiceNotifier', () {
     late VoiceNotifier voiceNotifier;
     late MockVoiceService mockVoiceService;
     late MockPermissionService mockPermissionService;
     late MockAudioDeviceService mockAudioDeviceService;
+    late MockAudioSessionService mockAudioSessionService;
+    late MockVADService mockVADService;
 
     setUp(() {
       mockVoiceService = MockVoiceService();
       mockPermissionService = MockPermissionService();
       mockAudioDeviceService = MockAudioDeviceService();
+      mockAudioSessionService = MockAudioSessionService();
+      mockVADService = MockVADService();
       voiceNotifier = VoiceNotifier(
         mockVoiceService,
         mockPermissionService,
         mockAudioDeviceService,
+        mockAudioSessionService,
+        mockVADService,
       );
     });
 
@@ -294,8 +404,6 @@ void main() {
 
       mockAudioDeviceService.setHeadphonesConnected(false);
 
-      mockAudioDeviceService.setHeadphonesConnected(false);
-
       await voiceNotifier.startContinuousMode(
         onQuestion: (question) {},
         onAnswerReady: (answer) {},
@@ -323,6 +431,8 @@ void main() {
         voiceNotifier.state.continuousListeningState,
         ContinuousListeningState.listening,
       );
+      // Audio session should be configured
+      expect(mockAudioSessionService.isConfiguredForContinuousListening, true);
     });
 
     test('continuous mode stops when headphones disconnect', () async {
@@ -346,6 +456,73 @@ void main() {
 
       // Should stop continuous mode
       expect(voiceNotifier.state.isContinuousModeEnabled, false);
+    });
+
+    test('userSpeaking state is set when speech starts', () async {
+      // Wait for initialization
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      mockAudioDeviceService.setHeadphonesConnected(true);
+
+      await voiceNotifier.startContinuousMode(
+        onQuestion: (question) {},
+        onAnswerReady: (answer) {},
+      );
+
+      // Simulate speech start
+      mockVoiceService.simulateSpeechStart();
+
+      expect(
+        voiceNotifier.state.continuousListeningState,
+        ContinuousListeningState.userSpeaking,
+      );
+    });
+
+    test('question callback is triggered on question detection', () async {
+      // Wait for initialization
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      mockAudioDeviceService.setHeadphonesConnected(true);
+
+      String? detectedQuestion;
+      await voiceNotifier.startContinuousMode(
+        onQuestion: (question) {
+          detectedQuestion = question;
+        },
+        onAnswerReady: (answer) {},
+      );
+
+      // Simulate question detected
+      mockVoiceService.simulateQuestionDetected('What is Flutter?');
+
+      expect(detectedQuestion, 'What is Flutter?');
+      expect(
+        voiceNotifier.state.continuousListeningState,
+        ContinuousListeningState.processing,
+      );
+      expect(voiceNotifier.state.recognizedText, 'What is Flutter?');
+    });
+
+    test('stopContinuousMode resets audio session', () async {
+      // Wait for initialization
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      mockAudioDeviceService.setHeadphonesConnected(true);
+
+      await voiceNotifier.startContinuousMode(
+        onQuestion: (question) {},
+        onAnswerReady: (answer) {},
+      );
+
+      expect(mockAudioSessionService.isConfiguredForContinuousListening, true);
+
+      await voiceNotifier.stopContinuousMode();
+
+      expect(voiceNotifier.state.isContinuousModeEnabled, false);
+      expect(
+        mockAudioSessionService.isConfiguredForContinuousListening,
+        false,
+      );
     });
   });
 }

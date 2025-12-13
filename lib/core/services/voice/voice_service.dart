@@ -57,9 +57,21 @@ abstract class VoiceService {
 
   /// Start continuous listening mode
   /// Callback is invoked when a question is detected (after silence)
-  /// Returns a stream controller that can be used to stop continuous mode
+  /// [onSpeechStart] is called when speech is first detected (for pausing video)
+  /// This is called once when user enables continuous mode
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
+    Duration? pauseFor,
+    Duration? listenFor,
+  });
+
+  /// Restart listening cycle after Q/A completes
+  /// This is called to restart listening after TTS finishes + grace period
+  /// Does NOT check _isContinuousListening flag (assumes mode is still enabled)
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
     Duration? pauseFor,
     Duration? listenFor,
   });

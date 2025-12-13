@@ -54,6 +54,12 @@ dependencies:
   flutter_tts: ^4.2.0
   permission_handler: ^11.3.1
 
+  # Audio session for simultaneous recording and playback
+  audio_session: ^0.1.21
+
+  # Voice Activity Detection for efficient continuous listening
+  vad: ^0.0.4
+
   # Local storage
   hive: ^2.2.3
   hive_flutter: ^1.1.0

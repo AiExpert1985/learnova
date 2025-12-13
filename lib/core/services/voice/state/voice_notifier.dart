@@ -1,4 +1,4 @@
-/// Voice state notifier
+/// Voice state notifier with VAD integration for continuous listening
 library;
 
 import 'dart:async';
@@ -6,13 +6,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../voice_service.dart';
 import '../voice_models.dart';
 import '../permission_service.dart';
+import '../vad_service.dart';
 import '../../audio/audio_device_service.dart';
+import '../../audio/audio_session_service.dart';
 import 'voice_state.dart';
 
 class VoiceNotifier extends StateNotifier<VoiceState> {
   final VoiceService _voiceService;
   final PermissionService _permissionService;
   final AudioDeviceService _audioDeviceService;
+  final AudioSessionService _audioSessionService;
+  final VADService _vadService;
+
   StreamSubscription<SpeechRecognitionResult>? _recognitionSubscription;
   StreamSubscription<SpeechSynthesisState>? _synthesisSubscription;
   StreamSubscription<bool>? _headphoneConnectionSubscription;
@@ -20,14 +25,20 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   // Continuous mode fields
   Function(String question)? _onQuestionCallback;
   Function(String answer)? _onAnswerCallback;
+  Function()? _onSpeechStartCallback;
   Timer? _inactivityTimer;
   Timer? _gracePeriodTimer;
 
-  // Headphone requirement callback
+  // Video pause tracking for inactivity timeout
+  bool _wasVideoPlayingBeforePause = false;
+  Timer? _videoPausedTimeoutTimer;
+
   VoiceNotifier(
     this._voiceService,
     this._permissionService,
     this._audioDeviceService,
+    this._audioSessionService,
+    this._vadService,
   ) : super(const VoiceState()) {
     _initialize();
     _listenToHeadphoneChanges();
@@ -36,6 +47,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   Future<void> _initialize() async {
     try {
       await _voiceService.initialize();
+      await _vadService.initialize();
       state = state.copyWith(isInitialized: true);
     } catch (e) {
       state = state.copyWith(
@@ -51,7 +63,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         .headphoneConnectionStream
         .listen((isConnected) {
           if (!isConnected && state.isContinuousModeEnabled) {
-            // Headphones disconnected during continuous mode - stop it
             stopContinuousMode();
             state = state.copyWith(
               error: 'Headphones disconnected. Continuous mode stopped.',
@@ -60,8 +71,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         });
   }
 
-  /// Start listening for voice input
-  /// Returns the final recognized text or null if cancelled/error
+  /// Start listening for voice input (one-off, non-continuous)
   Future<String?> startListening() async {
     if (!state.isInitialized) {
       state = state.copyWith(error: 'Voice service not initialized');
@@ -107,7 +117,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
       _recognitionSubscription = stream.listen(
         (result) {
-          // Always update with latest recognized text
           finalText = result.recognizedText;
           state = state.copyWith(recognizedText: result.recognizedText);
         },
@@ -174,7 +183,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         _recognitionSubscription = null;
       }
 
-      // Always clear recognized text when cancelling
       state = state.copyWith(
         isListening: false,
         recognizedText: '',
@@ -190,7 +198,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     }
   }
 
-  /// Speak text
+  /// Speak text (one-off, non-continuous)
   Future<void> speak(String text) async {
     if (!state.isInitialized) {
       state = state.copyWith(error: 'Voice service not initialized');
@@ -269,23 +277,24 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   Future<void> toggleContinuousMode({
     required Function(String question) onQuestion,
     required Function(String answer) onAnswerReady,
+    Function()? onSpeechStart,
   }) async {
     if (state.isContinuousModeEnabled) {
-      // Disable continuous mode
       await stopContinuousMode();
     } else {
-      // Enable continuous mode
       await startContinuousMode(
         onQuestion: onQuestion,
         onAnswerReady: onAnswerReady,
+        onSpeechStart: onSpeechStart,
       );
     }
   }
 
-  /// Start continuous listening mode
+  /// Start continuous listening mode with VAD-based monitoring
   Future<void> startContinuousMode({
     required Function(String question) onQuestion,
     required Function(String answer) onAnswerReady,
+    Function()? onSpeechStart,
   }) async {
     if (!state.isInitialized) {
       state = state.copyWith(error: 'Voice service not initialized');
@@ -319,8 +328,12 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
       }
     }
 
+    // Configure audio session for simultaneous playback and recording
+    await _audioSessionService.configureForContinuousListening();
+
     _onQuestionCallback = onQuestion;
     _onAnswerCallback = onAnswerReady;
+    _onSpeechStartCallback = onSpeechStart;
 
     state = state.copyWith(
       isContinuousModeEnabled: true,
@@ -331,9 +344,10 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     // Start inactivity timer (5 minutes)
     _startInactivityTimer();
 
-    // Start continuous listening with 5-second pause threshold
+    // Start continuous listening with speech onset callback
     _voiceService.startContinuousListening(
       onQuestionDetected: _handleQuestionDetected,
+      onSpeechStart: _handleSpeechStart,
       pauseFor: const Duration(seconds: 5),
       listenFor: const Duration(seconds: 60),
     );
@@ -342,15 +356,39 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   /// Stop continuous listening mode
   Future<void> stopContinuousMode() async {
     await _voiceService.stopContinuousListening();
+    await _vadService.stopMonitoring();
+
     _inactivityTimer?.cancel();
     _inactivityTimer = null;
+    _gracePeriodTimer?.cancel();
+    _gracePeriodTimer = null;
+    _videoPausedTimeoutTimer?.cancel();
+    _videoPausedTimeoutTimer = null;
+
     _onQuestionCallback = null;
     _onAnswerCallback = null;
+    _onSpeechStartCallback = null;
+
+    // Reset audio session
+    await _audioSessionService.configureForPlayback();
 
     state = state.copyWith(
       isContinuousModeEnabled: false,
       continuousListeningState: ContinuousListeningState.idle,
     );
+  }
+
+  /// Handle speech start detected (user started speaking)
+  void _handleSpeechStart() {
+    if (!state.isContinuousModeEnabled) return;
+
+    // Transition to userSpeaking state
+    state = state.copyWith(
+      continuousListeningState: ContinuousListeningState.userSpeaking,
+    );
+
+    // Notify coordinator to pause video
+    _onSpeechStartCallback?.call();
   }
 
   /// Handle question detected in continuous mode
@@ -359,10 +397,11 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
     // Cancel grace period timer if question detected during grace period
     _gracePeriodTimer?.cancel();
+    _videoPausedTimeoutTimer?.cancel();
 
     _resetInactivityTimer();
 
-    // Update state to processing
+    // Transition to processing state
     state = state.copyWith(
       continuousListeningState: ContinuousListeningState.processing,
       recognizedText: recognizedText,
@@ -373,7 +412,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   }
 
   /// Speak answer in continuous mode and resume listening
-  /// Returns a Future that completes when TTS finishes and grace period starts
   Future<void> speakAnswerAndResume(String answer) async {
     if (!state.isContinuousModeEnabled) return;
 
@@ -381,42 +419,51 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
     state = state.copyWith(
       continuousListeningState: ContinuousListeningState.speaking,
+      isSpeaking: true,
     );
 
-    // Create completer to make this properly awaitable
     final completer = Completer<void>();
+    int retryCount = 0;
+    const maxRetries = 1;
 
-    // Speak the answer
-    final stream = _voiceService.speak(answer);
+    Future<void> attemptSpeak() async {
+      final stream = _voiceService.speak(answer);
 
-    _synthesisSubscription = stream.listen(
-      (synthesisState) {
-        // Update synthesis state
-        state = state.copyWith(synthesisState: synthesisState);
-      },
-      onError: (error) {
-        // On TTS error, show answer as text and resume listening
-        _onAnswerCallback?.call(answer);
-        _resumeListening();
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      },
-      onDone: () {
-        // When speaking completes, resume listening
-        _resumeListening();
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      },
-    );
+      _synthesisSubscription = stream.listen(
+        (synthesisState) {
+          state = state.copyWith(synthesisState: synthesisState);
+        },
+        onError: (error) {
+          if (retryCount < maxRetries) {
+            retryCount++;
+            // Retry after short delay
+            Future.delayed(const Duration(milliseconds: 500), attemptSpeak);
+          } else {
+            // TTS failed after retry - show answer as text and continue
+            _onAnswerCallback?.call(answer);
+            state = state.copyWith(isSpeaking: false);
+            _startGracePeriod();
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          }
+        },
+        onDone: () {
+          state = state.copyWith(isSpeaking: false);
+          _startGracePeriod();
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        },
+      );
+    }
 
-    // Wait for TTS to complete before returning
+    await attemptSpeak();
     await completer.future;
   }
 
-  /// Resume listening after speaking (with grace period)
-  void _resumeListening() {
+  /// Start grace period after TTS completes
+  void _startGracePeriod() {
     if (!state.isContinuousModeEnabled) return;
 
     // Enter grace period state
@@ -428,27 +475,56 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     // Start 5-second grace period timer
     _gracePeriodTimer?.cancel();
     _gracePeriodTimer = Timer(const Duration(seconds: 5), () {
-      // Grace period elapsed, resume listening
-      if (!state.isContinuousModeEnabled) return;
-
-      state = state.copyWith(
-        continuousListeningState: ContinuousListeningState.listening,
-      );
-
-      // Restart listening cycle with 5-second pause threshold
-      _voiceService.startContinuousListening(
-        onQuestionDetected: _handleQuestionDetected,
-        pauseFor: const Duration(seconds: 5),
-        listenFor: const Duration(seconds: 60),
-      );
+      _resumeListeningAfterGracePeriod();
     });
   }
 
-  /// Start inactivity timer
+  /// Resume listening after grace period (using restartListeningCycle)
+  void _resumeListeningAfterGracePeriod() {
+    if (!state.isContinuousModeEnabled) return;
+
+    state = state.copyWith(
+      continuousListeningState: ContinuousListeningState.listening,
+    );
+
+    // Use restartListeningCycle instead of startContinuousListening
+    // This avoids the flag bug where startContinuousListening returns early
+    _voiceService.restartListeningCycle(
+      onQuestionDetected: _handleQuestionDetected,
+      onSpeechStart: _handleSpeechStart,
+      pauseFor: const Duration(seconds: 5),
+      listenFor: const Duration(seconds: 60),
+    );
+  }
+
+  /// Called when video pauses - start 1-minute timeout
+  void onVideoPaused() {
+    if (!state.isContinuousModeEnabled) return;
+
+    _wasVideoPlayingBeforePause = true;
+    _videoPausedTimeoutTimer?.cancel();
+    _videoPausedTimeoutTimer = Timer(const Duration(minutes: 1), () {
+      // Auto-disable after 1 minute of video paused
+      if (state.isContinuousModeEnabled) {
+        stopContinuousMode();
+        state = state.copyWith(
+          error: 'Listening mode turned off due to inactivity',
+        );
+      }
+    });
+  }
+
+  /// Called when video resumes - cancel the 1-minute timeout
+  void onVideoResumed() {
+    _wasVideoPlayingBeforePause = false;
+    _videoPausedTimeoutTimer?.cancel();
+    _videoPausedTimeoutTimer = null;
+  }
+
+  /// Start inactivity timer (5 minutes of no speech)
   void _startInactivityTimer() {
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer(const Duration(minutes: 5), () {
-      // Auto-disable after 5 minutes of inactivity
       stopContinuousMode();
     });
   }
@@ -456,17 +532,25 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   /// Reset inactivity timer
   void _resetInactivityTimer() {
     _startInactivityTimer();
+    // Also reset video paused timeout if video is playing
+    if (!_wasVideoPlayingBeforePause) {
+      _videoPausedTimeoutTimer?.cancel();
+      _videoPausedTimeoutTimer = null;
+    }
   }
 
   @override
   void dispose() {
     _inactivityTimer?.cancel();
     _gracePeriodTimer?.cancel();
+    _videoPausedTimeoutTimer?.cancel();
     _recognitionSubscription?.cancel();
     _synthesisSubscription?.cancel();
     _headphoneConnectionSubscription?.cancel();
     _voiceService.dispose();
+    _vadService.dispose();
     _audioDeviceService.dispose();
+    _audioSessionService.dispose();
     super.dispose();
   }
 }

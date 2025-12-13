@@ -10,10 +10,13 @@ import '../services/voice/flutter_stt_service.dart';
 import '../services/voice/flutter_tts_service.dart';
 import '../services/voice/voice_service_impl.dart';
 import '../services/voice/permission_service.dart';
+import '../services/voice/vad_service.dart';
+import '../services/voice/silero_vad_service.dart';
 import '../services/voice/state/voice_notifier.dart';
 import '../services/voice/state/voice_state.dart';
 import '../services/audio/audio_device_service.dart';
 import '../services/audio/audio_device_service_impl.dart';
+import '../services/audio/audio_session_service.dart';
 import '../services/storage/preferences_service.dart';
 import '../../features/qa/services/qa_service.dart';
 import '../../features/qa/state/qa_notifier.dart';
@@ -69,6 +72,11 @@ final audioDeviceServiceProvider = Provider<AudioDeviceService>((ref) {
   return AudioDeviceServiceImpl();
 });
 
+/// Provider for audio session service (playAndRecord mode configuration)
+final audioSessionServiceProvider = Provider<AudioSessionService>((ref) {
+  return AudioSessionServiceImpl();
+});
+
 /// Provider for STT service (speech_to_text implementation)
 final sttServiceProvider = Provider<STTService>((ref) {
   return FlutterSTTService();
@@ -81,6 +89,11 @@ final ttsServiceProvider = Provider<TTSService>((ref) {
   return FlutterTTSService();
   // Future: swap to different TTS providers
   // return GoogleCloudTTSService(apiKey: key);
+});
+
+/// Provider for VAD service (voice activity detection)
+final vadServiceProvider = Provider<VADService>((ref) {
+  return SileroVADService();
 });
 
 /// Provider for voice service coordinator
@@ -99,7 +112,15 @@ final voiceNotifierProvider =
   final voiceService = ref.watch(voiceServiceProvider);
   final permissionService = ref.watch(permissionServiceProvider);
   final audioDeviceService = ref.watch(audioDeviceServiceProvider);
-  return VoiceNotifier(voiceService, permissionService, audioDeviceService);
+  final audioSessionService = ref.watch(audioSessionServiceProvider);
+  final vadService = ref.watch(vadServiceProvider);
+  return VoiceNotifier(
+    voiceService,
+    permissionService,
+    audioDeviceService,
+    audioSessionService,
+    vadService,
+  );
 });
 
 /// Provider for preferences service (state persistence)

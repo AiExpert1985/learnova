@@ -16,19 +16,25 @@ class QAScreenCoordinatorState {
   /// True if resume dialog should be shown
   final bool shouldShowResumeDialog;
 
+  /// Tracks if video was playing before we paused it for user speaking
+  final bool wasVideoPlaying;
+
   const QAScreenCoordinatorState({
     this.wasInContinuousMode = false,
     this.shouldShowResumeDialog = false,
+    this.wasVideoPlaying = false,
   });
 
   QAScreenCoordinatorState copyWith({
     bool? wasInContinuousMode,
     bool? shouldShowResumeDialog,
+    bool? wasVideoPlaying,
   }) {
     return QAScreenCoordinatorState(
       wasInContinuousMode: wasInContinuousMode ?? this.wasInContinuousMode,
       shouldShowResumeDialog:
           shouldShowResumeDialog ?? this.shouldShowResumeDialog,
+      wasVideoPlaying: wasVideoPlaying ?? this.wasVideoPlaying,
     );
   }
 }
@@ -59,21 +65,75 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
     _syncVideoWithVoiceState(previous, next);
   }
 
-  /// Pause video when speaking, resume when returning to listening
+  /// Sync video playback with voice state
+  ///
+  /// Video Control Rules:
+  /// - Pause: listening -> userSpeaking (user STARTS speaking)
+  /// - Keep paused: userSpeaking -> processing -> speaking -> waitingForNextQuestion
+  /// - Resume: waitingForNextQuestion -> listening (after grace period)
   void _syncVideoWithVoiceState(VoiceState? previous, VoiceState next) {
     final controller = _ref.read(youtubeControllerProvider);
     if (controller == null) return;
 
-    // Resume video: waiting -> listening transition
-    if (next.continuousListeningState == ContinuousListeningState.listening &&
-        previous?.continuousListeningState ==
-            ContinuousListeningState.waitingForNextQuestion) {
-      controller.playVideo();
+    final previousState = previous?.continuousListeningState;
+    final nextState = next.continuousListeningState;
+
+    // Pause video: listening -> userSpeaking (user STARTS speaking)
+    // This is triggered by onSpeechStart callback in VoiceService
+    if (nextState == ContinuousListeningState.userSpeaking &&
+        previousState == ContinuousListeningState.listening) {
+      _pauseVideoForSpeaking(controller);
     }
 
-    // Pause video: started speaking
-    if (next.isSpeaking && !(previous?.isSpeaking ?? false)) {
+    // Also pause on TTS speaking if not already paused
+    // (handles case where TTS starts without userSpeaking transition)
+    if (nextState == ContinuousListeningState.speaking &&
+        previousState != ContinuousListeningState.userSpeaking &&
+        previousState != ContinuousListeningState.processing) {
+      _pauseVideoForSpeaking(controller);
+    }
+
+    // Resume video: waitingForNextQuestion -> listening (after grace period)
+    if (nextState == ContinuousListeningState.listening &&
+        previousState == ContinuousListeningState.waitingForNextQuestion) {
+      _resumeVideoAfterGracePeriod(controller);
+    }
+
+    // Handle continuous mode disabled - resume if we had paused
+    if (!next.isContinuousModeEnabled &&
+        (previous?.isContinuousModeEnabled ?? false)) {
+      if (state.wasVideoPlaying) {
+        controller.playVideo();
+        state = state.copyWith(wasVideoPlaying: false);
+        _ref.read(voiceNotifierProvider.notifier).onVideoResumed();
+      }
+    }
+  }
+
+  /// Pause video when user starts speaking
+  Future<void> _pauseVideoForSpeaking(dynamic controller) async {
+    // Check if video was playing before we pause it
+    try {
+      final playerState = await controller.playerState;
+      if (playerState.toString().contains('playing')) {
+        state = state.copyWith(wasVideoPlaying: true);
+        await controller.pauseVideo();
+        _ref.read(voiceNotifierProvider.notifier).onVideoPaused();
+      }
+    } catch (_) {
+      // If we can't check state, just try to pause
+      state = state.copyWith(wasVideoPlaying: true);
       controller.pauseVideo();
+      _ref.read(voiceNotifierProvider.notifier).onVideoPaused();
+    }
+  }
+
+  /// Resume video after grace period if it was playing before
+  void _resumeVideoAfterGracePeriod(dynamic controller) {
+    if (state.wasVideoPlaying) {
+      controller.playVideo();
+      state = state.copyWith(wasVideoPlaying: false);
+      _ref.read(voiceNotifierProvider.notifier).onVideoResumed();
     }
   }
 

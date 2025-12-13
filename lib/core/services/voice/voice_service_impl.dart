@@ -131,6 +131,7 @@ class VoiceServiceImpl implements VoiceService {
   @override
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
     Duration? pauseFor,
     Duration? listenFor,
   }) {
@@ -142,19 +143,40 @@ class VoiceServiceImpl implements VoiceService {
     }
 
     if (_isContinuousListening) {
-      return; // Already in continuous mode
+      return; // Already in continuous mode - use restartListeningCycle instead
     }
 
     _isContinuousListening = true;
     _startListeningCycle(
       onQuestionDetected: onQuestionDetected,
-      pauseFor: pauseFor ?? const Duration(seconds: 3),
+      onSpeechStart: onSpeechStart,
+      pauseFor: pauseFor ?? const Duration(seconds: 5),
+      listenFor: listenFor ?? const Duration(seconds: 60),
+    );
+  }
+
+  @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    // This method restarts listening after Q/A cycle without checking the flag
+    // It assumes continuous mode is still enabled
+    if (!_isContinuousListening) return;
+
+    _startListeningCycle(
+      onQuestionDetected: onQuestionDetected,
+      onSpeechStart: onSpeechStart,
+      pauseFor: pauseFor ?? const Duration(seconds: 5),
       listenFor: listenFor ?? const Duration(seconds: 60),
     );
   }
 
   void _startListeningCycle({
     required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
     required Duration pauseFor,
     required Duration listenFor,
   }) {
@@ -171,11 +193,16 @@ class VoiceServiceImpl implements VoiceService {
     );
 
     String? finalRecognizedText;
+    bool speechOnsetNotified = false;
 
     _continuousListeningSubscription = stream.listen(
       (result) {
-        // Always update with latest recognized text (STT may not set isFinal flag)
+        // Detect speech onset - first non-empty result means user started speaking
         if (result.recognizedText.trim().isNotEmpty) {
+          if (!speechOnsetNotified) {
+            speechOnsetNotified = true;
+            onSpeechStart?.call();
+          }
           finalRecognizedText = result.recognizedText;
         }
       },
@@ -185,6 +212,7 @@ class VoiceServiceImpl implements VoiceService {
           if (_isContinuousListening) {
             _startListeningCycle(
               onQuestionDetected: onQuestionDetected,
+              onSpeechStart: onSpeechStart,
               pauseFor: pauseFor,
               listenFor: listenFor,
             );
@@ -198,14 +226,14 @@ class VoiceServiceImpl implements VoiceService {
         if (finalRecognizedText != null) {
           // Invoke callback with recognized text
           onQuestionDetected(finalRecognizedText!);
-          // Note: The callback handler will resume listening after processing
+          // Note: The callback handler will resume listening via restartListeningCycle
         } else {
           // No text detected (silence/timeout) - restart listening immediately
-          // This keeps continuous mode truly continuous
           Future.delayed(const Duration(milliseconds: 500), () {
             if (_isContinuousListening) {
               _startListeningCycle(
                 onQuestionDetected: onQuestionDetected,
+                onSpeechStart: onSpeechStart,
                 pauseFor: pauseFor,
                 listenFor: listenFor,
               );
