@@ -34,15 +34,17 @@ class AudioSessionServiceImpl implements AudioSessionService {
 
     final session = await _getSession();
 
-    // Note: Cannot use const here because AVAudioSessionCategoryOptions
-    // uses bitwise OR which requires runtime evaluation
+    // Configure for simultaneous playback and recording
     await session.configure(
       AudioSessionConfiguration(
         // iOS: Allow playback and recording simultaneously
         avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.allowBluetooth
-            .union(AVAudioSessionCategoryOptions.defaultToSpeaker)
-            .union(AVAudioSessionCategoryOptions.mixWithOthers),
+        // Combine multiple options using the Set constructor
+        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions(
+          AVAudioSessionCategoryOptions.allowBluetooth.value |
+              AVAudioSessionCategoryOptions.defaultToSpeaker.value |
+              AVAudioSessionCategoryOptions.mixWithOthers.value,
+        ),
         avAudioSessionMode: AVAudioSessionMode.spokenAudio,
 
         // Android: Request audio focus that allows other audio to duck
