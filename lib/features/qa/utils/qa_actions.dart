@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../../core/providers/app_providers.dart';
 import '../widgets/video_player.dart';
 
@@ -8,7 +7,6 @@ import '../widgets/video_player.dart';
 Future<void> toggleContinuousModeWithVideo(WidgetRef ref) async {
   final voiceNotifier = ref.read(voiceNotifierProvider.notifier);
   final qaNotifier = ref.read(qaNotifierProvider.notifier);
-  final videoController = ref.read(youtubeControllerProvider);
 
   await voiceNotifier.toggleContinuousMode(
     onQuestion: (question) async {

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vidorion/core/services/voice/state/voice_state.dart';
@@ -53,7 +52,7 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
     _ref.listen(qaNotifierProvider, _onQAStateChanged);
 
     // Track video state for timeout behavior
-    _ref.listen(youtubePlayerStateProvider, _onVideoStateChanged);
+    _ref.listen<PlayerState?>(youtubePlayerStateProvider, _onVideoStateChanged);
   }
 
   // ============================================================
