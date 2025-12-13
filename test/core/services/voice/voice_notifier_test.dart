@@ -361,7 +361,7 @@ void main() {
 
       voiceNotifier.clearError();
 
-      expect(voiceNotifier.state.error, '');
+      expect(voiceNotifier.state.error, isNull);
     });
 
     test(
@@ -523,6 +523,30 @@ void main() {
         mockAudioSessionService.isConfiguredForContinuousListening,
         false,
       );
+    });
+
+    test('error is preserved when other state fields are updated', () async {
+      // This test verifies the fix for the race condition where
+      // _initialize() completing would clear errors set by startListening()
+
+      // Don't wait for initialization - trigger the race condition scenario
+      mockPermissionService.setMicPermission(false);
+
+      // Start listening (should fail due to permission)
+      final result = await voiceNotifier.startListening();
+
+      // Result should be null (failed)
+      expect(result, isNull);
+
+      // Wait for initialization to complete (if it hasn't already)
+      await Future.delayed(const Duration(milliseconds: 150));
+
+      // The key assertion: error should NOT be cleared by _initialize()
+      // completing after startListening set the error
+      // The error message could be either:
+      // - 'Voice service not initialized' (if init hasn't completed)
+      // - 'Microphone permission denied' (if init completed before startListening)
+      expect(voiceNotifier.state.error, isNotNull);
     });
   });
 }

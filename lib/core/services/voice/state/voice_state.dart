@@ -3,6 +3,9 @@ library;
 
 import '../voice_models.dart';
 
+/// Sentinel value to distinguish between "not passed" and "explicitly null"
+const _sentinel = Object();
+
 class VoiceState {
   final bool isListening;
   final bool isSpeaking;
@@ -32,7 +35,7 @@ class VoiceState {
     bool? isListening,
     bool? isSpeaking,
     String? recognizedText,
-    String? error,
+    Object? error = _sentinel,
     bool? isInitialized,
     SpeechRecognitionState? recognitionState,
     SpeechSynthesisState? synthesisState,
@@ -43,7 +46,7 @@ class VoiceState {
       isListening: isListening ?? this.isListening,
       isSpeaking: isSpeaking ?? this.isSpeaking,
       recognizedText: recognizedText ?? this.recognizedText,
-      error: error,
+      error: error == _sentinel ? this.error : error as String?,
       isInitialized: isInitialized ?? this.isInitialized,
       recognitionState: recognitionState ?? this.recognitionState,
       synthesisState: synthesisState ?? this.synthesisState,
@@ -54,7 +57,7 @@ class VoiceState {
 
   /// Clear error
   VoiceState clearError() {
-    return copyWith(error: '');
+    return copyWith(error: null);
   }
 
   @override

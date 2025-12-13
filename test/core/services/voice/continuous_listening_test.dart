@@ -623,5 +623,66 @@ void main() {
       expect(state1, equals(state2));
       expect(state1, isNot(equals(state3)));
     });
+
+    test('copyWith preserves error when not explicitly passed', () {
+      const stateWithError = VoiceState(error: 'Test error message');
+
+      // Update another field without touching error
+      final updatedState = stateWithError.copyWith(isListening: true);
+
+      // Error should be preserved
+      expect(updatedState.error, 'Test error message');
+      expect(updatedState.isListening, true);
+    });
+
+    test('copyWith can explicitly set error to null', () {
+      const stateWithError = VoiceState(error: 'Test error message');
+
+      // Explicitly clear the error
+      final clearedState = stateWithError.copyWith(error: null);
+
+      expect(clearedState.error, isNull);
+    });
+
+    test('copyWith can update error to new value', () {
+      const stateWithError = VoiceState(error: 'Original error');
+
+      final updatedState = stateWithError.copyWith(error: 'New error');
+
+      expect(updatedState.error, 'New error');
+    });
+
+    test('clearError sets error to null', () {
+      const stateWithError = VoiceState(error: 'Test error');
+
+      final clearedState = stateWithError.clearError();
+
+      expect(clearedState.error, isNull);
+    });
+
+    test('multiple copyWith calls preserve error correctly', () {
+      const initialState = VoiceState();
+
+      // Set error
+      final stateWithError = initialState.copyWith(
+        error: 'Permission denied',
+      );
+      expect(stateWithError.error, 'Permission denied');
+
+      // Update listening state - error should be preserved
+      final listeningState = stateWithError.copyWith(isListening: true);
+      expect(listeningState.error, 'Permission denied');
+      expect(listeningState.isListening, true);
+
+      // Update initialized - error should still be preserved
+      final initializedState = listeningState.copyWith(isInitialized: true);
+      expect(initializedState.error, 'Permission denied');
+      expect(initializedState.isInitialized, true);
+
+      // Now explicitly clear the error
+      final noErrorState = initializedState.copyWith(error: null);
+      expect(noErrorState.error, isNull);
+      expect(noErrorState.isInitialized, true);
+    });
   });
 }
