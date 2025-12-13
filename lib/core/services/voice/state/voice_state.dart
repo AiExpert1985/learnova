@@ -43,7 +43,7 @@ class VoiceState {
       isListening: isListening ?? this.isListening,
       isSpeaking: isSpeaking ?? this.isSpeaking,
       recognizedText: recognizedText ?? this.recognizedText,
-      error: error,
+      error: error ?? this.error,
       isInitialized: isInitialized ?? this.isInitialized,
       recognitionState: recognitionState ?? this.recognitionState,
       synthesisState: synthesisState ?? this.synthesisState,

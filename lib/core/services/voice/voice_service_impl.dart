@@ -212,7 +212,7 @@ class VoiceServiceImpl implements VoiceService {
           // Note: The callback handler will resume listening after processing
         } else {
           // No text detected (silence/timeout) - restart listening after brief pause
-          Future.delayed(const Duration(seconds: 1), () {
+          Future.delayed(const Duration(milliseconds: 400), () {
             if (_isContinuousListening) {
               _startListeningCycle(
                 onQuestionDetected: onQuestionDetected,
