@@ -316,13 +316,11 @@ void main() {
   late MockTTSService mockTTS;
   late MockPermissionService mockPermissionService;
   late VoiceServiceImpl voiceService;
-  late MockAudioSessionService mockAudioSessionService;
 
   setUp(() {
     mockSTT = MockSTTService();
     mockTTS = MockTTSService();
     mockPermissionService = MockPermissionService();
-    mockAudioSessionService = MockAudioSessionService();
     voiceService = VoiceServiceImpl(sttService: mockSTT, ttsService: mockTTS);
   });
 

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
-import '../widgets/video_player.dart';
 
 /// Toggles continuous listening mode with video integration
 /// Pauses video when speaking, resumes via callback (handled in initialization)
