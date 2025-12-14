@@ -9,6 +9,9 @@ import '../../../core/providers/app_providers.dart';
 final youtubeControllerProvider =
     StateProvider<YoutubePlayerController?>((ref) => null);
 
+/// Tracks the last known YouTube player state for coordination logic
+final youtubePlayerStateProvider = StateProvider<PlayerState?>((ref) => null);
+
 /// YouTube video player widget
 /// Plays video and tracks playback position for context-aware Q&A
 class VideoPlayer extends ConsumerStatefulWidget {
@@ -57,6 +60,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> {
         // Video is initialized and ready
         ref.read(qaNotifierProvider.notifier).setVideoInitialized(true);
       }
+
+      ref.read(youtubePlayerStateProvider.notifier).state = event.playerState;
     });
 
     // Poll playback position every second and update QA state
@@ -88,6 +93,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> {
     _controller.close();
     // Clear controller from provider
     ref.read(youtubeControllerProvider.notifier).state = null;
+    ref.read(youtubePlayerStateProvider.notifier).state = null;
     super.dispose();
   }
 

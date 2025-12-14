@@ -5,6 +5,7 @@ import 'package:vidorion/core/services/voice/voice_service.dart';
 import 'package:vidorion/core/services/voice/permission_service.dart';
 import 'package:vidorion/core/services/voice/voice_models.dart';
 import 'package:vidorion/core/services/audio/audio_device_service.dart';
+import 'package:vidorion/core/services/audio/audio_session_service.dart';
 
 /// Mock Voice Service for testing
 class MockVoiceService implements VoiceService {
@@ -99,11 +100,20 @@ class MockVoiceService implements VoiceService {
   @override
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
     Duration? pauseFor,
     Duration? listenFor,
   }) {
     // Mock implementation - no-op for basic tests
   }
+
+  @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {}
 
   @override
   Future<void> stopContinuousListening() async {
@@ -160,21 +170,29 @@ class MockAudioDeviceService implements AudioDeviceService {
   }
 }
 
+class MockAudioSessionService extends AudioSessionService {
+  @override
+  Future<void> configureForVoice() async {}
+}
+
 void main() {
   group('VoiceNotifier', () {
     late VoiceNotifier voiceNotifier;
     late MockVoiceService mockVoiceService;
     late MockPermissionService mockPermissionService;
     late MockAudioDeviceService mockAudioDeviceService;
+    late MockAudioSessionService mockAudioSessionService;
 
     setUp(() {
       mockVoiceService = MockVoiceService();
       mockPermissionService = MockPermissionService();
       mockAudioDeviceService = MockAudioDeviceService();
+      mockAudioSessionService = MockAudioSessionService();
       voiceNotifier = VoiceNotifier(
         mockVoiceService,
         mockPermissionService,
         mockAudioDeviceService,
+        mockAudioSessionService,
       );
     });
 

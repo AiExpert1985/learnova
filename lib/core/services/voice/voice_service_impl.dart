@@ -131,6 +131,7 @@ class VoiceServiceImpl implements VoiceService {
   @override
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
     Duration? pauseFor,
     Duration? listenFor,
   }) {
@@ -148,6 +149,7 @@ class VoiceServiceImpl implements VoiceService {
     _isContinuousListening = true;
     _startListeningCycle(
       onQuestionDetected: onQuestionDetected,
+      onSpeechStart: onSpeechStart,
       pauseFor: pauseFor ?? const Duration(seconds: 3),
       listenFor: listenFor ?? const Duration(seconds: 60),
     );
@@ -155,6 +157,7 @@ class VoiceServiceImpl implements VoiceService {
 
   void _startListeningCycle({
     required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
     required Duration pauseFor,
     required Duration listenFor,
   }) {
@@ -165,18 +168,26 @@ class VoiceServiceImpl implements VoiceService {
       _ttsService.stop();
     }
 
+    _continuousListeningSubscription?.cancel();
+
     final stream = _sttService.startListening(
       listenDuration: listenFor,
       pauseFor: pauseFor,
     );
 
     String? finalRecognizedText;
+    bool speechOnsetNotified = false;
 
     _continuousListeningSubscription = stream.listen(
       (result) {
         // Always update with latest recognized text (STT may not set isFinal flag)
         if (result.recognizedText.trim().isNotEmpty) {
           finalRecognizedText = result.recognizedText;
+
+          if (!speechOnsetNotified) {
+            onSpeechStart?.call();
+            speechOnsetNotified = true;
+          }
         }
       },
       onError: (error) {
@@ -200,12 +211,12 @@ class VoiceServiceImpl implements VoiceService {
           onQuestionDetected(finalRecognizedText!);
           // Note: The callback handler will resume listening after processing
         } else {
-          // No text detected (silence/timeout) - restart listening immediately
-          // This keeps continuous mode truly continuous
-          Future.delayed(const Duration(milliseconds: 500), () {
+          // No text detected (silence/timeout) - restart listening after brief pause
+          Future.delayed(const Duration(milliseconds: 400), () {
             if (_isContinuousListening) {
               _startListeningCycle(
                 onQuestionDetected: onQuestionDetected,
+                onSpeechStart: onSpeechStart,
                 pauseFor: pauseFor,
                 listenFor: listenFor,
               );
@@ -213,6 +224,23 @@ class VoiceServiceImpl implements VoiceService {
           });
         }
       },
+    );
+  }
+
+  @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    if (!_isContinuousListening) return;
+
+    _startListeningCycle(
+      onQuestionDetected: onQuestionDetected,
+      onSpeechStart: onSpeechStart,
+      pauseFor: pauseFor ?? const Duration(seconds: 3),
+      listenFor: listenFor ?? const Duration(seconds: 60),
     );
   }
 

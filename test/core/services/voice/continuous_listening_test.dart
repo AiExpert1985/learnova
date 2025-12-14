@@ -12,6 +12,7 @@ import 'package:vidorion/core/services/voice/state/voice_notifier.dart';
 import 'package:vidorion/core/services/voice/state/voice_state.dart';
 import 'package:vidorion/core/services/voice/permission_service.dart';
 import 'package:vidorion/core/services/audio/audio_device_service.dart';
+import 'package:vidorion/core/services/audio/audio_session_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 // Manual Mocks
@@ -188,6 +189,11 @@ class MockAudioDeviceService implements AudioDeviceService {
   }
 }
 
+class MockAudioSessionService extends AudioSessionService {
+  @override
+  Future<void> configureForVoice() async {}
+}
+
 class MockVoiceService implements VoiceService {
   bool _isListening = false;
   bool _isSpeaking = false;
@@ -264,12 +270,28 @@ class MockVoiceService implements VoiceService {
   @override
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
     Duration? pauseFor,
     Duration? listenFor,
   }) {
     _isContinuousListening = true;
     _onQuestionDetected = onQuestionDetected;
     startContinuousListeningCallCount++;
+  }
+
+  @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    startContinuousListening(
+      onQuestionDetected: onQuestionDetected,
+      onSpeechStart: onSpeechStart,
+      pauseFor: pauseFor,
+      listenFor: listenFor,
+    );
   }
 
   @override
@@ -388,14 +410,17 @@ void main() {
     late VoiceNotifier voiceNotifier;
     late MockVoiceService mockVoiceService;
     late MockAudioDeviceService mockAudioDeviceService;
+    late MockAudioSessionService mockAudioSessionService;
 
     setUp(() {
       mockVoiceService = MockVoiceService();
       mockAudioDeviceService = MockAudioDeviceService();
+      mockAudioSessionService = MockAudioSessionService();
       voiceNotifier = VoiceNotifier(
         mockVoiceService,
         mockPermissionService,
         mockAudioDeviceService,
+        mockAudioSessionService,
       );
     });
 

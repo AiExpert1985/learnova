@@ -60,6 +60,15 @@ abstract class VoiceService {
   /// Returns a stream controller that can be used to stop continuous mode
   void startContinuousListening({
     required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
+    Duration? pauseFor,
+    Duration? listenFor,
+  });
+
+  /// Restart an existing listening cycle without resetting the continuous flag
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Function()? onSpeechStart,
     Duration? pauseFor,
     Duration? listenFor,
   });
