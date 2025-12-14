@@ -8,6 +8,7 @@ import 'package:vidorion/core/services/voice/voice_service_impl.dart';
 import 'package:vidorion/core/services/voice/stt_service.dart';
 import 'package:vidorion/core/services/voice/tts_service.dart';
 import 'package:vidorion/core/services/voice/voice_models.dart';
+import 'package:vidorion/core/services/voice/vad_service.dart';
 import 'package:vidorion/core/services/voice/state/voice_notifier.dart';
 import 'package:vidorion/core/services/voice/state/voice_state.dart';
 import 'package:vidorion/core/services/voice/permission_service.dart';
@@ -188,6 +189,46 @@ class MockAudioDeviceService implements AudioDeviceService {
   }
 }
 
+class MockVADService implements VADService {
+  final StreamController<VADEvent> _controller =
+      StreamController<VADEvent>.broadcast();
+  bool _isMonitoring = false;
+
+  @override
+  Stream<VADEvent> startMonitoring() {
+    _isMonitoring = true;
+    return _controller.stream;
+  }
+
+  @override
+  Future<void> stopMonitoring() async {
+    _isMonitoring = false;
+  }
+
+  @override
+  bool get isMonitoring => _isMonitoring;
+
+  @override
+  Future<void> dispose() async {
+    await _controller.close();
+  }
+
+  // Test helper to simulate VAD events
+  void simulateSpeechStart() {
+    _controller.add(VADEvent(
+      type: VADEventType.speechStart,
+      timestamp: DateTime.now(),
+    ));
+  }
+
+  void simulateSpeechEnd() {
+    _controller.add(VADEvent(
+      type: VADEventType.speechEnd,
+      timestamp: DateTime.now(),
+    ));
+  }
+}
+
 class MockVoiceService implements VoiceService {
   bool _isListening = false;
   bool _isSpeaking = false;
@@ -270,6 +311,16 @@ class MockVoiceService implements VoiceService {
     _isContinuousListening = true;
     _onQuestionDetected = onQuestionDetected;
     startContinuousListeningCallCount++;
+  }
+
+  @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    // Mock implementation - same as start for testing
+    _onQuestionDetected = onQuestionDetected;
   }
 
   @override
@@ -388,14 +439,17 @@ void main() {
     late VoiceNotifier voiceNotifier;
     late MockVoiceService mockVoiceService;
     late MockAudioDeviceService mockAudioDeviceService;
+    late MockVADService mockVADService;
 
     setUp(() {
       mockVoiceService = MockVoiceService();
       mockAudioDeviceService = MockAudioDeviceService();
+      mockVADService = MockVADService();
       voiceNotifier = VoiceNotifier(
         mockVoiceService,
         mockPermissionService,
         mockAudioDeviceService,
+        mockVADService,
       );
     });
 

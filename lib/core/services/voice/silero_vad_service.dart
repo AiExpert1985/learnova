@@ -10,7 +10,10 @@ import 'vad_service.dart';
 class SileroVADService implements VADService {
   final StreamController<VADEvent> _eventController =
       StreamController<VADEvent>.broadcast();
-  VoiceActivityDetector? _detector;
+  VadHandler? _handler;
+  StreamSubscription<void>? _speechStartSubscription;
+  StreamSubscription<List<double>>? _speechEndSubscription;
+  StreamSubscription<String>? _errorSubscription;
   bool _isMonitoring = false;
 
   @override
@@ -25,35 +28,38 @@ class SileroVADService implements VADService {
 
   Future<void> _initializeDetector() async {
     try {
-      _detector = VoiceActivityDetector();
+      // Create VadHandler with debug mode enabled for testing
+      _handler = VadHandler.create(isDebug: false);
 
-      await _detector!.start(
-        // Use Silero VAD v5 model (512 sample frames = 32ms per frame)
+      // Listen to speech start events
+      _speechStartSubscription = _handler!.onSpeechStart.listen((_) {
+        _eventController.add(VADEvent(
+          type: VADEventType.speechStart,
+          timestamp: DateTime.now(),
+        ));
+      });
+
+      // Listen to speech end events
+      _speechEndSubscription = _handler!.onSpeechEnd.listen((samples) {
+        _eventController.add(VADEvent(
+          type: VADEventType.speechEnd,
+          timestamp: DateTime.now(),
+        ));
+      });
+
+      // Listen to error events
+      _errorSubscription = _handler!.onError.listen((error) {
+        _eventController.add(VADEvent(
+          type: VADEventType.error,
+          timestamp: DateTime.now(),
+          errorMessage: error,
+        ));
+      });
+
+      // Start listening with VAD v5 model (frameSamples must be 512 for v5)
+      await _handler!.startListening(
+        model: 'v5',
         frameSamples: 512,
-        sampleRate: 16000,
-
-        // Callbacks for VAD events
-        onSpeechStart: () {
-          _eventController.add(VADEvent(
-            type: VADEventType.speechStart,
-            timestamp: DateTime.now(),
-          ));
-        },
-
-        onSpeechEnd: () {
-          _eventController.add(VADEvent(
-            type: VADEventType.speechEnd,
-            timestamp: DateTime.now(),
-          ));
-        },
-
-        onError: (error) {
-          _eventController.add(VADEvent(
-            type: VADEventType.error,
-            timestamp: DateTime.now(),
-            errorMessage: error.toString(),
-          ));
-        },
       );
 
       _isMonitoring = true;
@@ -71,7 +77,13 @@ class SileroVADService implements VADService {
     if (!_isMonitoring) return;
 
     try {
-      await _detector?.stop();
+      await _handler?.stopListening();
+      await _speechStartSubscription?.cancel();
+      await _speechEndSubscription?.cancel();
+      await _errorSubscription?.cancel();
+      _speechStartSubscription = null;
+      _speechEndSubscription = null;
+      _errorSubscription = null;
       _isMonitoring = false;
     } catch (e) {
       _eventController.add(VADEvent(
@@ -88,6 +100,7 @@ class SileroVADService implements VADService {
   @override
   Future<void> dispose() async {
     await stopMonitoring();
+    await _handler?.dispose();
     await _eventController.close();
   }
 }

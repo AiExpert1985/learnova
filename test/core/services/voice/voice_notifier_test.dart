@@ -4,6 +4,7 @@ import 'package:vidorion/core/services/voice/state/voice_notifier.dart';
 import 'package:vidorion/core/services/voice/voice_service.dart';
 import 'package:vidorion/core/services/voice/permission_service.dart';
 import 'package:vidorion/core/services/voice/voice_models.dart';
+import 'package:vidorion/core/services/voice/vad_service.dart';
 import 'package:vidorion/core/services/audio/audio_device_service.dart';
 
 /// Mock Voice Service for testing
@@ -106,6 +107,15 @@ class MockVoiceService implements VoiceService {
   }
 
   @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    // Mock implementation - no-op for basic tests
+  }
+
+  @override
   Future<void> stopContinuousListening() async {
     // Mock implementation - no-op for basic tests
   }
@@ -134,6 +144,47 @@ class MockPermissionService extends PermissionService {
 
   void setMicPermission(bool value) {
     _hasMicPermission = value;
+  }
+}
+
+/// Mock VAD Service for testing
+class MockVADService implements VADService {
+  final StreamController<VADEvent> _controller =
+      StreamController<VADEvent>.broadcast();
+  bool _isMonitoring = false;
+
+  @override
+  Stream<VADEvent> startMonitoring() {
+    _isMonitoring = true;
+    return _controller.stream;
+  }
+
+  @override
+  Future<void> stopMonitoring() async {
+    _isMonitoring = false;
+  }
+
+  @override
+  bool get isMonitoring => _isMonitoring;
+
+  @override
+  Future<void> dispose() async {
+    await _controller.close();
+  }
+
+  // Test helper to simulate VAD events
+  void simulateSpeechStart() {
+    _controller.add(VADEvent(
+      type: VADEventType.speechStart,
+      timestamp: DateTime.now(),
+    ));
+  }
+
+  void simulateSpeechEnd() {
+    _controller.add(VADEvent(
+      type: VADEventType.speechEnd,
+      timestamp: DateTime.now(),
+    ));
   }
 }
 
@@ -166,15 +217,18 @@ void main() {
     late MockVoiceService mockVoiceService;
     late MockPermissionService mockPermissionService;
     late MockAudioDeviceService mockAudioDeviceService;
+    late MockVADService mockVADService;
 
     setUp(() {
       mockVoiceService = MockVoiceService();
       mockPermissionService = MockPermissionService();
       mockAudioDeviceService = MockAudioDeviceService();
+      mockVADService = MockVADService();
       voiceNotifier = VoiceNotifier(
         mockVoiceService,
         mockPermissionService,
         mockAudioDeviceService,
+        mockVADService,
       );
     });
 
