@@ -153,6 +153,22 @@ class VoiceServiceImpl implements VoiceService {
     );
   }
 
+  @override
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Duration? pauseFor,
+    Duration? listenFor,
+  }) {
+    if (!_isContinuousListening) return; // Only if mode is still enabled
+
+    // Don't check flag again - just restart the cycle
+    _startListeningCycle(
+      onQuestionDetected: onQuestionDetected,
+      pauseFor: pauseFor ?? const Duration(seconds: 3),
+      listenFor: listenFor ?? const Duration(seconds: 60),
+    );
+  }
+
   void _startListeningCycle({
     required Function(String recognizedText) onQuestionDetected,
     required Duration pauseFor,

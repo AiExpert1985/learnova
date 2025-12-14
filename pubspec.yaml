@@ -53,6 +53,8 @@ dependencies:
   speech_to_text: ^7.0.0
   flutter_tts: ^4.2.0
   permission_handler: ^11.3.1
+  vad: ^0.0.5  # Voice Activity Detection (Silero VAD)
+  audio_session: ^0.1.21  # Audio session management for simultaneous playback
 
   # Local storage
   hive: ^2.2.3

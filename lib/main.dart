@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/routes/app_router.dart';
+import 'core/providers/app_providers.dart';
+import 'core/utils/debug_logger.dart';
 import 'features/history/providers/history_providers.dart';
 
 void main() async {
@@ -21,14 +23,28 @@ class LearnovaApp extends ConsumerStatefulWidget {
 }
 
 class _LearnovaAppState extends ConsumerState<LearnovaApp> with WidgetsBindingObserver {
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Initialize history storage after widget tree is ready
-    Future.microtask(() {
+    // Initialize audio session and debug logger after widget tree is ready
+    Future.microtask(() async {
+      // Initialize audio session for simultaneous playback and recording
+      final audioSessionService = ref.read(audioSessionServiceProvider);
+      await audioSessionService.initialize();
+
+      // Initialize history storage
       ref.read(historyNotifierProvider.notifier).initialize();
+
+      // Set up debug logger with scaffold messenger key
+      DebugLogger.setScaffoldMessengerKey(_scaffoldMessengerKey);
+
+      // Enable debug mode for testing (set to false in production)
+      DebugLogger.setDebugMode(true);
     });
   }
 
@@ -57,6 +73,7 @@ class _LearnovaAppState extends ConsumerState<LearnovaApp> with WidgetsBindingOb
         useMaterial3: true,
       ),
       routerConfig: appRouter,
+      scaffoldMessengerKey: _scaffoldMessengerKey,
     );
   }
 }

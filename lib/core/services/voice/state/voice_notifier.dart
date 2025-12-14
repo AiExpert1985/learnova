@@ -7,27 +7,34 @@ import '../voice_service.dart';
 import '../voice_models.dart';
 import '../permission_service.dart';
 import '../../audio/audio_device_service.dart';
+import '../vad_service.dart';
+import '../../../utils/debug_logger.dart';
 import 'voice_state.dart';
 
 class VoiceNotifier extends StateNotifier<VoiceState> {
   final VoiceService _voiceService;
   final PermissionService _permissionService;
   final AudioDeviceService _audioDeviceService;
+  final VADService _vadService;
   StreamSubscription<SpeechRecognitionResult>? _recognitionSubscription;
   StreamSubscription<SpeechSynthesisState>? _synthesisSubscription;
   StreamSubscription<bool>? _headphoneConnectionSubscription;
+  StreamSubscription<VADEvent>? _vadSubscription;
 
   // Continuous mode fields
   Function(String question)? _onQuestionCallback;
   Function(String answer)? _onAnswerCallback;
   Timer? _inactivityTimer;
   Timer? _gracePeriodTimer;
+  Duration? _currentPauseFor;
+  Duration? _currentListenFor;
 
   // Headphone requirement callback
   VoiceNotifier(
     this._voiceService,
     this._permissionService,
     this._audioDeviceService,
+    this._vadService,
   ) : super(const VoiceState()) {
     _initialize();
     _listenToHeadphoneChanges();
@@ -37,11 +44,13 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     try {
       await _voiceService.initialize();
       state = state.copyWith(isInitialized: true);
+      DebugLogger.log('Voice service initialized', level: DebugLogLevel.success);
     } catch (e) {
       state = state.copyWith(
         error: 'Failed to initialize voice services: $e',
         isInitialized: false,
       );
+      DebugLogger.log('Voice init failed: $e', level: DebugLogLevel.error);
     }
   }
 
@@ -52,6 +61,8 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         .listen((isConnected) {
           if (!isConnected && state.isContinuousModeEnabled) {
             // Headphones disconnected during continuous mode - stop it
+            DebugLogger.log('Headphones disconnected - stopping continuous mode',
+                level: DebugLogLevel.warning);
             stopContinuousMode();
             state = state.copyWith(
               error: 'Headphones disconnected. Continuous mode stopped.',
@@ -292,10 +303,13 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
       return;
     }
 
+    DebugLogger.log('Starting continuous mode...', level: DebugLogLevel.info);
+
     // Check if headphones are connected
     final areHeadphonesConnected = await _audioDeviceService
         .areHeadphonesConnected();
     if (!areHeadphonesConnected) {
+      DebugLogger.log('Headphones required', level: DebugLogLevel.warning);
       state = state.copyWith(error: 'headphone_required');
       return;
     }
@@ -315,12 +329,15 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         } else {
           state = state.copyWith(error: 'Microphone permission denied');
         }
+        DebugLogger.log('Mic permission denied', level: DebugLogLevel.error);
         return;
       }
     }
 
     _onQuestionCallback = onQuestion;
     _onAnswerCallback = onAnswerReady;
+    _currentPauseFor = const Duration(seconds: 5);
+    _currentListenFor = const Duration(seconds: 60);
 
     state = state.copyWith(
       isContinuousModeEnabled: true,
@@ -331,19 +348,108 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     // Start inactivity timer (5 minutes)
     _startInactivityTimer();
 
-    // Start continuous listening with 5-second pause threshold
-    _voiceService.startContinuousListening(
-      onQuestionDetected: _handleQuestionDetected,
-      pauseFor: const Duration(seconds: 5),
-      listenFor: const Duration(seconds: 60),
+    DebugLogger.log('VAD monitoring started (video should play)',
+        level: DebugLogLevel.success);
+
+    // Start VAD monitoring instead of STT
+    final vadStream = _vadService.startMonitoring();
+    _vadSubscription = vadStream.listen(_handleVADEvent);
+  }
+
+  /// Handle VAD events
+  void _handleVADEvent(VADEvent event) {
+    if (!state.isContinuousModeEnabled) return;
+
+    switch (event.type) {
+      case VADEventType.speechStart:
+        DebugLogger.log('🎤 Voice detected - pausing video',
+            level: DebugLogLevel.info);
+        _onSpeechStart();
+        break;
+
+      case VADEventType.speechEnd:
+        // Handled by STT silence detection
+        break;
+
+      case VADEventType.error:
+        DebugLogger.log('VAD error: ${event.errorMessage}',
+            level: DebugLogLevel.error);
+        break;
+    }
+  }
+
+  /// Handle speech start (VAD detected voice)
+  void _onSpeechStart() {
+    if (!state.isContinuousModeEnabled) return;
+
+    _resetInactivityTimer();
+
+    // Update state to userSpeaking (video will pause via coordinator)
+    state = state.copyWith(
+      continuousListeningState: ContinuousListeningState.userSpeaking,
+    );
+
+    DebugLogger.log('▶️ STT started capturing words',
+        level: DebugLogLevel.info);
+
+    // Now start STT to capture actual words
+    String? finalRecognizedText;
+    final stream = _voiceService.startListening(
+      pauseFor: _currentPauseFor,
+      listenDuration: _currentListenFor,
+    );
+
+    _recognitionSubscription = stream.listen(
+      (result) {
+        if (result.recognizedText.trim().isNotEmpty) {
+          finalRecognizedText = result.recognizedText;
+          state = state.copyWith(recognizedText: result.recognizedText);
+        }
+      },
+      onError: (error) {
+        DebugLogger.log('STT error: $error', level: DebugLogLevel.error);
+        // On error, return to listening state and restart VAD
+        state = state.copyWith(
+          continuousListeningState: ContinuousListeningState.listening,
+        );
+        // VAD is still running, will detect next speech
+      },
+      onDone: () {
+        if (!state.isContinuousModeEnabled) return;
+
+        if (finalRecognizedText != null) {
+          DebugLogger.log('✓ Question: "$finalRecognizedText"',
+              level: DebugLogLevel.success);
+          _handleQuestionDetected(finalRecognizedText!);
+        } else {
+          DebugLogger.log('No speech detected - back to listening',
+              level: DebugLogLevel.info);
+          // No text detected, return to listening
+          state = state.copyWith(
+            continuousListeningState: ContinuousListeningState.listening,
+          );
+          // VAD is still running, will detect next speech
+        }
+      },
     );
   }
 
   /// Stop continuous listening mode
   Future<void> stopContinuousMode() async {
+    DebugLogger.log('Stopping continuous mode', level: DebugLogLevel.info);
+
+    await _vadService.stopMonitoring();
+    await _vadSubscription?.cancel();
+    _vadSubscription = null;
+
     await _voiceService.stopContinuousListening();
+    await _recognitionSubscription?.cancel();
+    _recognitionSubscription = null;
+
     _inactivityTimer?.cancel();
+    _gracePeriodTimer?.cancel();
     _inactivityTimer = null;
+    _gracePeriodTimer = null;
     _onQuestionCallback = null;
     _onAnswerCallback = null;
 
@@ -351,6 +457,8 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
       isContinuousModeEnabled: false,
       continuousListeningState: ContinuousListeningState.idle,
     );
+
+    DebugLogger.log('Continuous mode stopped', level: DebugLogLevel.success);
   }
 
   /// Handle question detected in continuous mode
@@ -368,6 +476,8 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
       recognizedText: recognizedText,
     );
 
+    DebugLogger.log('📤 Sending question to API', level: DebugLogLevel.info);
+
     // Notify the QA feature to process the question
     _onQuestionCallback?.call(recognizedText);
   }
@@ -379,9 +489,13 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
     _resetInactivityTimer();
 
+    DebugLogger.log('📥 API response received', level: DebugLogLevel.success);
+
     state = state.copyWith(
       continuousListeningState: ContinuousListeningState.speaking,
     );
+
+    DebugLogger.log('🔊 TTS speaking answer', level: DebugLogLevel.info);
 
     // Create completer to make this properly awaitable
     final completer = Completer<void>();
@@ -395,6 +509,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         state = state.copyWith(synthesisState: synthesisState);
       },
       onError: (error) {
+        DebugLogger.log('TTS error: $error', level: DebugLogLevel.error);
         // On TTS error, show answer as text and resume listening
         _onAnswerCallback?.call(answer);
         _resumeListening();
@@ -403,6 +518,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
         }
       },
       onDone: () {
+        DebugLogger.log('✓ TTS finished', level: DebugLogLevel.success);
         // When speaking completes, resume listening
         _resumeListening();
         if (!completer.isCompleted) {
@@ -425,22 +541,24 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
       recognizedText: '',
     );
 
+    DebugLogger.log('⏳ Grace period (5s) - waiting for follow-up',
+        level: DebugLogLevel.info);
+
     // Start 5-second grace period timer
     _gracePeriodTimer?.cancel();
     _gracePeriodTimer = Timer(const Duration(seconds: 5), () {
       // Grace period elapsed, resume listening
       if (!state.isContinuousModeEnabled) return;
 
+      DebugLogger.log('▶️ Resuming video + VAD monitoring',
+          level: DebugLogLevel.success);
+
       state = state.copyWith(
         continuousListeningState: ContinuousListeningState.listening,
       );
 
-      // Restart listening cycle with 5-second pause threshold
-      _voiceService.startContinuousListening(
-        onQuestionDetected: _handleQuestionDetected,
-        pauseFor: const Duration(seconds: 5),
-        listenFor: const Duration(seconds: 60),
-      );
+      // VAD is still monitoring, no need to restart it
+      // It will detect the next speech automatically
     });
   }
 
@@ -449,6 +567,8 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer(const Duration(minutes: 5), () {
       // Auto-disable after 5 minutes of inactivity
+      DebugLogger.log('Inactivity timeout - stopping continuous mode',
+          level: DebugLogLevel.warning);
       stopContinuousMode();
     });
   }
@@ -465,8 +585,10 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     _recognitionSubscription?.cancel();
     _synthesisSubscription?.cancel();
     _headphoneConnectionSubscription?.cancel();
+    _vadSubscription?.cancel();
     _voiceService.dispose();
     _audioDeviceService.dispose();
+    _vadService.dispose();
     super.dispose();
   }
 }

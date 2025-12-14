@@ -64,6 +64,14 @@ abstract class VoiceService {
     Duration? listenFor,
   });
 
+  /// Restart listening cycle (used after Q/A cycle completes)
+  /// Unlike startContinuousListening, this doesn't check the flag
+  void restartListeningCycle({
+    required Function(String recognizedText) onQuestionDetected,
+    Duration? pauseFor,
+    Duration? listenFor,
+  });
+
   /// Stop continuous listening mode
   Future<void> stopContinuousListening();
 

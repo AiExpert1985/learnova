@@ -59,21 +59,28 @@ class QAScreenCoordinator extends StateNotifier<QAScreenCoordinatorState> {
     _syncVideoWithVoiceState(previous, next);
   }
 
-  /// Pause video when speaking, resume when returning to listening
+  /// Pause video when user starts speaking or TTS speaks, resume when returning to listening
   void _syncVideoWithVoiceState(VoiceState? previous, VoiceState next) {
     final controller = _ref.read(youtubeControllerProvider);
     if (controller == null) return;
 
-    // Resume video: waiting -> listening transition
+    // Pause video when VAD detects user speaking (listening -> userSpeaking)
+    if (next.continuousListeningState == ContinuousListeningState.userSpeaking &&
+        previous?.continuousListeningState == ContinuousListeningState.listening) {
+      controller.pauseVideo();
+    }
+
+    // Pause video when TTS starts speaking (processing -> speaking)
+    if (next.continuousListeningState == ContinuousListeningState.speaking &&
+        previous?.continuousListeningState == ContinuousListeningState.processing) {
+      controller.pauseVideo();
+    }
+
+    // Resume video after grace period (waiting -> listening transition)
     if (next.continuousListeningState == ContinuousListeningState.listening &&
         previous?.continuousListeningState ==
             ContinuousListeningState.waitingForNextQuestion) {
       controller.playVideo();
-    }
-
-    // Pause video: started speaking
-    if (next.isSpeaking && !(previous?.isSpeaking ?? false)) {
-      controller.pauseVideo();
     }
   }
 

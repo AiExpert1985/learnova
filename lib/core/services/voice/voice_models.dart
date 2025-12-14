@@ -33,9 +33,10 @@ enum SpeechSynthesisState {
 /// Represents the state of continuous listening mode
 enum ContinuousListeningState {
   idle,
-  listening,
-  processing,
-  speaking,
+  listening, // VAD is monitoring, video plays
+  userSpeaking, // User started speaking, video paused, STT capturing
+  processing, // STT done, calling LLM API
+  speaking, // TTS reading answer
   waitingForNextQuestion, // Grace period after speaking, before resuming listening
 }
 
