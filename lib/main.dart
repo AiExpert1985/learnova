@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:audio_session/audio_session.dart';
 import 'core/routes/app_router.dart';
-import 'core/providers/app_providers.dart';
 import 'core/utils/debug_logger.dart';
 import 'features/history/providers/history_providers.dart';
 
@@ -31,11 +31,25 @@ class _LearnovaAppState extends ConsumerState<LearnovaApp> with WidgetsBindingOb
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Initialize audio session and debug logger after widget tree is ready
+    // Initialize audio session and other services after widget tree is ready
     Future.microtask(() async {
-      // Initialize audio session for simultaneous playback and recording
-      final audioSessionService = ref.read(audioSessionServiceProvider);
-      await audioSessionService.initialize();
+      // Configure audio session for simultaneous playback and recording
+      try {
+        final session = await AudioSession.instance;
+        await session.configure(AudioSessionConfiguration(
+          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+          avAudioSessionCategoryOptions:
+              AVAudioSessionCategoryOptions.allowBluetooth,
+          androidAudioAttributes: const AndroidAudioAttributes(
+            contentType: AndroidAudioContentType.speech,
+            usage: AndroidAudioUsage.voiceCommunication,
+          ),
+          androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransientMayDuck,
+        ));
+        DebugLogger.log('[Audio] Session configured');
+      } catch (e) {
+        DebugLogger.log('[Audio] Config failed: $e');
+      }
 
       // Initialize history storage
       ref.read(historyNotifierProvider.notifier).initialize();

@@ -3,11 +3,11 @@ library;
 
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vad/vad.dart';
 import '../voice_service.dart';
 import '../voice_models.dart';
 import '../permission_service.dart';
 import '../../audio/audio_device_service.dart';
-import '../vad_service.dart';
 import '../../../utils/debug_logger.dart';
 import 'voice_state.dart';
 
@@ -15,11 +15,15 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   final VoiceService _voiceService;
   final PermissionService _permissionService;
   final AudioDeviceService _audioDeviceService;
-  final VADService _vadService;
+
+  // VAD handler for voice activity detection
+  VadHandler? _vadHandler;
+
   StreamSubscription<SpeechRecognitionResult>? _recognitionSubscription;
   StreamSubscription<SpeechSynthesisState>? _synthesisSubscription;
   StreamSubscription<bool>? _headphoneConnectionSubscription;
-  StreamSubscription<VADEvent>? _vadSubscription;
+  StreamSubscription<void>? _vadSpeechStartSubscription;
+  StreamSubscription<String>? _vadErrorSubscription;
 
   // Continuous mode fields
   Function(String question)? _onQuestionCallback;
@@ -34,7 +38,6 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     this._voiceService,
     this._permissionService,
     this._audioDeviceService,
-    this._vadService,
   ) : super(const VoiceState()) {
     _initialize();
     _listenToHeadphoneChanges();
@@ -348,33 +351,35 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     // Start inactivity timer (5 minutes)
     _startInactivityTimer();
 
-    DebugLogger.log('VAD monitoring started (video should play)',
-        level: DebugLogLevel.success);
-
-    // Start VAD monitoring instead of STT
-    final vadStream = _vadService.startMonitoring();
-    _vadSubscription = vadStream.listen(_handleVADEvent);
+    // Initialize and start VAD for voice detection
+    await _startVAD();
   }
 
-  /// Handle VAD events
-  void _handleVADEvent(VADEvent event) {
-    if (!state.isContinuousModeEnabled) return;
+  /// Initialize and start Voice Activity Detection
+  Future<void> _startVAD() async {
+    try {
+      DebugLogger.log('[VAD] Initializing...');
 
-    switch (event.type) {
-      case VADEventType.speechStart:
-        DebugLogger.log('🎤 Voice detected - pausing video',
-            level: DebugLogLevel.info);
+      _vadHandler = VadHandler.create();
+
+      // Listen for speech detection
+      _vadSpeechStartSubscription = _vadHandler!.onSpeechStart.listen((_) {
+        if (!state.isContinuousModeEnabled) return;
+        DebugLogger.log('[VAD] 🎤 Speech detected');
         _onSpeechStart();
-        break;
+      });
 
-      case VADEventType.speechEnd:
-        // Handled by STT silence detection
-        break;
+      // Listen for errors
+      _vadErrorSubscription = _vadHandler!.onError.listen((error) {
+        DebugLogger.log('[VAD] ❌ Error: $error');
+      });
 
-      case VADEventType.error:
-        DebugLogger.log('VAD error: ${event.errorMessage}',
-            level: DebugLogLevel.error);
-        break;
+      // Start VAD listening
+      await _vadHandler!.startListening(model: 'v5', frameSamples: 512);
+
+      DebugLogger.log('[VAD] ✓ Monitoring started');
+    } catch (e) {
+      DebugLogger.log('[VAD] ❌ Failed to start: $e');
     }
   }
 
@@ -436,11 +441,14 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
   /// Stop continuous listening mode
   Future<void> stopContinuousMode() async {
-    DebugLogger.log('Stopping continuous mode', level: DebugLogLevel.info);
+    DebugLogger.log('[Mode] Stopping continuous listening');
 
-    await _vadService.stopMonitoring();
-    await _vadSubscription?.cancel();
-    _vadSubscription = null;
+    // Stop VAD
+    await _vadSpeechStartSubscription?.cancel();
+    await _vadErrorSubscription?.cancel();
+    _vadSpeechStartSubscription = null;
+    _vadErrorSubscription = null;
+    _vadHandler = null;
 
     await _voiceService.stopContinuousListening();
     await _recognitionSubscription?.cancel();
@@ -585,10 +593,10 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     _recognitionSubscription?.cancel();
     _synthesisSubscription?.cancel();
     _headphoneConnectionSubscription?.cancel();
-    _vadSubscription?.cancel();
+    _vadSpeechStartSubscription?.cancel();
+    _vadErrorSubscription?.cancel();
     _voiceService.dispose();
     _audioDeviceService.dispose();
-    _vadService.dispose();
     super.dispose();
   }
 }

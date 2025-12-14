@@ -12,11 +12,8 @@ import '../services/voice/voice_service_impl.dart';
 import '../services/voice/permission_service.dart';
 import '../services/voice/state/voice_notifier.dart';
 import '../services/voice/state/voice_state.dart';
-import '../services/voice/vad_service.dart';
-import '../services/voice/silero_vad_service.dart';
 import '../services/audio/audio_device_service.dart';
 import '../services/audio/audio_device_service_impl.dart';
-import '../services/audio/audio_session_service.dart';
 import '../services/storage/preferences_service.dart';
 import '../../features/qa/services/qa_service.dart';
 import '../../features/qa/state/qa_notifier.dart';
@@ -72,17 +69,6 @@ final audioDeviceServiceProvider = Provider<AudioDeviceService>((ref) {
   return AudioDeviceServiceImpl();
 });
 
-/// Provider for VAD service (Silero VAD implementation)
-final vadServiceProvider = Provider<VADService>((ref) {
-  return SileroVADService();
-  // Future: swap to different VAD providers if needed
-});
-
-/// Provider for audio session service (audio focus configuration)
-final audioSessionServiceProvider = Provider<AudioSessionService>((ref) {
-  return AudioSessionService();
-});
-
 /// Provider for STT service (speech_to_text implementation)
 final sttServiceProvider = Provider<STTService>((ref) {
   return FlutterSTTService();
@@ -113,12 +99,10 @@ final voiceNotifierProvider =
   final voiceService = ref.watch(voiceServiceProvider);
   final permissionService = ref.watch(permissionServiceProvider);
   final audioDeviceService = ref.watch(audioDeviceServiceProvider);
-  final vadService = ref.watch(vadServiceProvider);
   return VoiceNotifier(
     voiceService,
     permissionService,
     audioDeviceService,
-    vadService,
   );
 });
 
