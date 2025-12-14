@@ -3,8 +3,8 @@ library;
 
 import 'dart:async';
 import 'package:vad/vad.dart';
+import '../../utils/debug_logger.dart';
 import 'vad_service.dart';
-import '../../../utils/debug_logger.dart';
 
 /// Implementation of VAD service using Silero VAD model
 /// Lightweight voice activity detection that does NOT request audio focus
@@ -25,8 +25,10 @@ class SileroVADService implements VADService {
     }
 
     if (_isInitializing) {
-      DebugLogger.log('VAD already initializing, returning stream',
-          level: DebugLogLevel.warning);
+      DebugLogger.log(
+        'VAD already initializing, returning stream',
+        level: DebugLogLevel.warning,
+      );
       return _eventController.stream;
     }
 
@@ -42,63 +44,72 @@ class SileroVADService implements VADService {
       // Create VadHandler with debug mode for troubleshooting
       _handler = VadHandler.create(isDebug: true);
 
-      DebugLogger.log('Setting up VAD event listeners...',
-          level: DebugLogLevel.info);
+      DebugLogger.log(
+        'Setting up VAD event listeners...',
+        level: DebugLogLevel.info,
+      );
 
       // Listen to speech start events
       _speechStartSubscription = _handler!.onSpeechStart.listen((_) {
-        DebugLogger.log('VAD: Speech start event received',
-            level: DebugLogLevel.success);
-        _eventController.add(VADEvent(
-          type: VADEventType.speechStart,
-          timestamp: DateTime.now(),
-        ));
+        DebugLogger.log(
+          'VAD: Speech start event received',
+          level: DebugLogLevel.success,
+        );
+        _eventController.add(
+          VADEvent(type: VADEventType.speechStart, timestamp: DateTime.now()),
+        );
       });
 
       // Listen to speech end events
       _speechEndSubscription = _handler!.onSpeechEnd.listen((samples) {
-        DebugLogger.log('VAD: Speech end event received (${samples.length} samples)',
-            level: DebugLogLevel.info);
-        _eventController.add(VADEvent(
-          type: VADEventType.speechEnd,
-          timestamp: DateTime.now(),
-        ));
+        DebugLogger.log(
+          'VAD: Speech end event received (${samples.length} samples)',
+          level: DebugLogLevel.info,
+        );
+        _eventController.add(
+          VADEvent(type: VADEventType.speechEnd, timestamp: DateTime.now()),
+        );
       });
 
       // Listen to error events
       _errorSubscription = _handler!.onError.listen((error) {
         DebugLogger.log('VAD Error: $error', level: DebugLogLevel.error);
-        _eventController.add(VADEvent(
-          type: VADEventType.error,
-          timestamp: DateTime.now(),
-          errorMessage: error,
-        ));
+        _eventController.add(
+          VADEvent(
+            type: VADEventType.error,
+            timestamp: DateTime.now(),
+            errorMessage: error,
+          ),
+        );
       });
 
-      DebugLogger.log('Starting VAD listening (model: v5, frameSamples: 512)...',
-          level: DebugLogLevel.info);
+      DebugLogger.log(
+        'Starting VAD listening (model: v5, frameSamples: 512)...',
+        level: DebugLogLevel.info,
+      );
 
       // Start listening with VAD v5 model (frameSamples must be 512 for v5)
-      await _handler!.startListening(
-        model: 'v5',
-        frameSamples: 512,
-      );
+      await _handler!.startListening(model: 'v5', frameSamples: 512);
 
       _isMonitoring = true;
       _isInitializing = false;
 
-      DebugLogger.log('✓ VAD initialized and listening',
-          level: DebugLogLevel.success);
+      DebugLogger.log(
+        '✓ VAD initialized and listening',
+        level: DebugLogLevel.success,
+      );
     } catch (e) {
       _isInitializing = false;
       final errorMsg = 'Failed to start VAD: $e';
       DebugLogger.log(errorMsg, level: DebugLogLevel.error);
 
-      _eventController.add(VADEvent(
-        type: VADEventType.error,
-        timestamp: DateTime.now(),
-        errorMessage: errorMsg,
-      ));
+      _eventController.add(
+        VADEvent(
+          type: VADEventType.error,
+          timestamp: DateTime.now(),
+          errorMessage: errorMsg,
+        ),
+      );
     }
   }
 
@@ -123,11 +134,13 @@ class SileroVADService implements VADService {
       final errorMsg = 'Failed to stop VAD: $e';
       DebugLogger.log(errorMsg, level: DebugLogLevel.error);
 
-      _eventController.add(VADEvent(
-        type: VADEventType.error,
-        timestamp: DateTime.now(),
-        errorMessage: errorMsg,
-      ));
+      _eventController.add(
+        VADEvent(
+          type: VADEventType.error,
+          timestamp: DateTime.now(),
+          errorMessage: errorMsg,
+        ),
+      );
     }
   }
 
