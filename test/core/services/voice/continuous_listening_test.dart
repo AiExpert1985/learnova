@@ -235,6 +235,7 @@ class MockVoiceService implements VoiceService {
   bool _isContinuousListening = false;
   Function(String)? _onQuestionDetected;
   int startContinuousListeningCallCount = 0;
+  StreamController<SpeechRecognitionResult>? _sttStreamController;
 
   @override
   Future<void> initialize() async {}
@@ -246,13 +247,8 @@ class MockVoiceService implements VoiceService {
     Duration? pauseFor,
   }) {
     _isListening = true;
-    return Stream.fromIterable([
-      SpeechRecognitionResult(
-        recognizedText: 'test',
-        confidence: 0.9,
-        isFinal: true,
-      ),
-    ]);
+    _sttStreamController = StreamController<SpeechRecognitionResult>();
+    return _sttStreamController!.stream;
   }
 
   @override
@@ -337,6 +333,15 @@ class MockVoiceService implements VoiceService {
   // Test helper to simulate question detection
   void simulateQuestionDetected(String question) {
     _onQuestionDetected?.call(question);
+  }
+
+  // Test helpers to control STT stream
+  void simulateSTTResult(SpeechRecognitionResult result) {
+    _sttStreamController?.add(result);
+  }
+
+  void closeSTTStream() {
+    _sttStreamController?.close();
   }
 }
 
@@ -521,9 +526,20 @@ void main() {
         ContinuousListeningState.userSpeaking,
       );
 
-      // Wait for STT stream to complete (MockVoiceService returns results)
-      // The stream completes with "final recognized text"
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Simulate STT recognizing speech (with final result)
+      mockVoiceService.simulateSTTResult(
+        SpeechRecognitionResult(
+          recognizedText: 'final recognized text',
+          confidence: 0.9,
+          isFinal: true,
+        ),
+      );
+
+      // Close the STT stream to trigger completion
+      mockVoiceService.closeSTTStream();
+
+      // Wait for state transition to processing
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // After STT completes, _handleQuestionDetected is called
       // State should now be processing
