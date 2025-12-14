@@ -505,14 +505,33 @@ void main() {
         onAnswerReady: (_) {},
       );
 
-      // Simulate question detection
-      mockVoiceService.simulateQuestionDetected('What is machine learning?');
+      // Wait for VAD to initialize
+      await Future.delayed(const Duration(milliseconds: 50));
 
+      // With new VAD-based flow: simulate VAD detecting speech
+      // This triggers userSpeaking state and starts STT
+      mockVADService.simulateSpeechStart();
+
+      // Wait for state transition to userSpeaking
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Verify we're in userSpeaking state
+      expect(
+        voiceNotifier.state.continuousListeningState,
+        ContinuousListeningState.userSpeaking,
+      );
+
+      // Wait for STT stream to complete (MockVoiceService returns results)
+      // The stream completes with "final recognized text"
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // After STT completes, _handleQuestionDetected is called
+      // State should now be processing
       expect(
         voiceNotifier.state.continuousListeningState,
         ContinuousListeningState.processing,
       );
-      expect(detectedQuestion, 'What is machine learning?');
+      expect(detectedQuestion, 'final recognized text');
     });
 
     test('transitions through speaking to grace period state', () async {

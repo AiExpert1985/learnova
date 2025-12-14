@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/services/voice/voice_models.dart';
 
 import '../utils/qa_actions.dart';
 
 /// Large listening toggle button (ear icon)
 /// Primary interaction for hands-free learning
 /// Listening is ON by default when video loads
+/// Shows recognized text when user is speaking
 class ListeningToggleButton extends ConsumerWidget {
   const ListeningToggleButton({super.key});
 
@@ -21,6 +23,14 @@ class ListeningToggleButton extends ConsumerWidget {
 
     final isEnabled = voiceState.isInitialized && qaState.isFullyInitialized;
     final isListening = voiceState.isContinuousModeEnabled;
+    final recognizedText = voiceState.recognizedText;
+    final listeningState = voiceState.continuousListeningState;
+
+    // Show recognized text when user is speaking
+    final showRecognizedText = isListening &&
+        recognizedText.trim().isNotEmpty &&
+        (listeningState == ContinuousListeningState.userSpeaking ||
+            listeningState == ContinuousListeningState.processing);
 
     // Define styles based on state
     final Color color = isEnabled
@@ -45,7 +55,24 @@ class ListeningToggleButton extends ConsumerWidget {
               width: 100,
               height: 100,
               decoration: const BoxDecoration(shape: BoxShape.circle),
-              child: Icon(icon, size: 48, color: Colors.white),
+              child: showRecognizedText
+                  ? Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Center(
+                        child: Text(
+                          recognizedText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                  : Icon(icon, size: 48, color: Colors.white),
             ),
           ),
         ),
